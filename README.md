@@ -10,21 +10,62 @@
 
 ## 🎯 Problem
 
-Public blockchains expose all transaction data. For DAO payroll, this means:
-- 💸 Competitor DAOs see your compensation structure
-- 👀 Contributors' salaries become publicly searchable  
-- 📊 Payment timing reveals organizational cash flow
+Public blockchains expose all transaction data. For DAO payroll:
+- 💸 Competitors see your compensation structure
+- 👀 Salaries become publicly searchable  
+- 📊 Payment timing reveals cash flow
 
 ## 💡 Solution
 
-ZK Payroll uses Aleo's zero-knowledge proofs to enable:
+ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with public budget enforcement**.
 
-| Feature | How It Works |
-|---------|--------------|
-| **Private Salaries** | Encrypted records only recipients can decrypt |
-| **Budget Enforcement** | ZK proof verifies `sum(salaries) ≤ budget` |
-| **Selective Disclosure** | Admin can share total spent with auditors |
-| **Public Verifiability** | Budget ceiling is on-chain and auditable |
+---
+
+## 👁️ Privacy Meter: Who Sees What?
+
+| Data | 🌐 Public Observer | 📋 Auditor | 🔐 Admin |
+|------|:------------------:|:----------:|:--------:|
+| Budget Ceiling | ✅ Visible | ✅ Visible | ✅ Visible |
+| Total Spent | ❌ Hidden | ✅ Verified | ✅ Visible |
+| Individual Salaries | ❌ Hidden | ❌ Hidden | ✅ Visible |
+| Recipient Addresses | ❌ Hidden | ❌ Hidden | ✅ Visible |
+| Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible |
+| Budget Compliance | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven |
+
+> **Key Insight**: Auditors verify totals without seeing individual salaries. Public observers only see the budget limit and ZK proof validity.
+
+---
+
+## 🖼️ Auditor Portal Demo
+
+![Auditor Portal - Decrypted Report](docs/screenshots/auditor-portal.png)
+
+*The Auditor Portal shows how compliance officers receive verified spending totals via selective disclosure—without seeing individual employee salaries.*
+
+---
+
+## 🔄 Payment Lifecycle
+
+```mermaid
+flowchart LR
+    A[🔐 Admin] -->|issue_salary| B[⚡ ZK Proof]
+    B -->|verify| C{Budget Check}
+    C -->|pass| D[📦 SalaryRecord]
+    C -->|fail| E[❌ Rejected]
+    D -->|encrypted| F[👤 Recipient]
+    
+    subgraph On-Chain
+        C
+        G[📊 Mapping: payroll_budgets]
+    end
+    
+    subgraph Private Records
+        D
+        F
+    end
+    
+    B -.->|read budget| G
+```
 
 ---
 
@@ -38,14 +79,15 @@ cd zk_payroll
 # Build
 leo build
 
-# Run demo (initialize with 1000 credit budget)
+# Run demo
 leo run initialize_payroll 1000u64 1field <AUDITOR_ADDRESS>
+```
 
-# Issue private salary of 500 credits
-leo run issue_salary [ADMIN_CAP] [SPENT_RECORD] [TICKET] 500u64 1field
+### One-Command Verify
 
-# Generate audit report
-leo run generate_audit_report [ADMIN_CAP] [SPENT_RECORD] 1738181000u32
+```bash
+# Run the full test suite
+chmod +x test.sh && ./test.sh
 ```
 
 ---
@@ -54,38 +96,60 @@ leo run generate_audit_report [ADMIN_CAP] [SPENT_RECORD] 1738181000u32
 
 ```
 zk_payroll/
-├── src/
-│   └── main.leo          # Core smart contract
+├── src/main.leo          # Core contract (230 lines)
 ├── demo/                  # Interactive web demo
 │   ├── index.html
 │   ├── style.css
 │   └── demo.js
 ├── docs/
 │   ├── ARCHITECTURE.md   # Technical deep-dive
-│   └── TESTING.md        # Test commands & results
+│   ├── TESTING.md        # Test commands
+│   └── screenshots/      # Demo screenshots
+├── test.sh               # One-command verify
 └── README.md
 ```
 
 ---
 
-## 🔒 Privacy Guarantees
+## 🛡️ Security Model
 
-| Data | Visibility |
-|------|------------|
-| Individual salaries | 🔴 Private (encrypted) |
-| Recipient addresses | 🔴 Private (encrypted) |
-| Payment timing | 🔴 Private (encrypted) |
-| Budget ceiling | 🟢 Public (on-chain) |
-| Budget compliance | 🟢 Public (ZK-proven) |
+| Attack Vector | Mitigation |
+|---------------|------------|
+| Fake budget input | Read from on-chain mapping |
+| Stolen AdminCap | `self.caller == owner` check |
+| Address leakage | RecipientTicket pattern |
+| Cross-payroll replay | Payroll ID consistency |
 
 ---
 
-## 🛡️ Security Features
+## ⚖️ Compliance & Audit Trail
 
-1. **On-Chain Budget** - Budget read from mapping, not user input
-2. **Caller Binding** - `self.caller == admin_cap.owner` check
-3. **Recipient Tickets** - Prevents address leakage via ticket pattern
-4. **Payroll ID Consistency** - Prevents cross-payroll attacks
+ZK Payroll enables **regulatory compliance without sacrificing contributor privacy**:
+
+### Selective Disclosure
+- Admin generates `AuditReport` for authorized auditors
+- Auditors verify `total_spent ≤ budget` without individual salaries
+- Report includes immutable `timestamp` for audit trail
+
+### Immutable Timestamp
+```
+AuditReport {
+  owner: auditor_address,
+  total_spent: 750u64,        // Verified total
+  payroll_id: 1field,
+  timestamp: 1738181000u32    // Immutable audit trail
+}
+```
+
+---
+
+## ⚠️ Known Limitations
+
+| Limitation | Details |
+|------------|---------|
+| Program name | Must be ≥10 characters to avoid namespace fees |
+| Local finalize | `leo run` shows transition outputs but finalize assertions only execute on-chain |
+| Record chaining | Each transition consumes & recreates records (state-channel pattern) |
 
 ---
 
@@ -96,16 +160,7 @@ zk_payroll/
 | Records | 5 (AdminCap, SpentRecord, RecipientTicket, SalaryRecord, AuditReport) |
 | Transitions | 4 |
 | Program Size | 3.06 KB |
-
----
-
-## 🎮 Live Demo
-
-Open `demo/index.html` in your browser for an interactive demonstration:
-- **Public View** - What blockchain observers see
-- **Admin View** - Encrypted salary records with decrypt toggle
-- **Auditor Portal** - Selective disclosure demonstration
-- **ZK Enforcement** - Budget constraint simulation
+| Statements | 66 |
 
 ---
 
