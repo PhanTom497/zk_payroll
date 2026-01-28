@@ -1,5 +1,5 @@
 
-program zk_payroll.aleo {
+program baba_zk_payroll.aleo {
 
     // ========================================================================
     // RECORDS (Private State - Encrypted on-chain)
@@ -58,6 +58,17 @@ program zk_payroll.aleo {
     // ========================================================================
 
     mapping payroll_budgets: field => u64;
+
+    // ========================================================================
+    // CONSTRUCTOR (Required for deployment)
+    // ========================================================================
+
+    /// deploy_program: Required for testnet deployment
+    /// This transition is marked as the constructor in the Aleo program
+    transition deploy_program() {
+        // No-op constructor
+        assert(true);
+    }
 
     // ========================================================================
     // TRANSITIONS
