@@ -1,0 +1,24 @@
+# Leo/Aleo build artifacts
+build/
+outputs/
+*.prover
+*.verifier
+
+# Environment and secrets
+.env
+.env.local
+*.pem
+*private_key*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if using demo)
+node_modules/

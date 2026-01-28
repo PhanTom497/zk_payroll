@@ -1,0 +1,930 @@
+/* ZK Payroll Demo - Wave-2 Styles */
+
+:root {
+    --bg-dark: #0a0a0f;
+    --bg-card: #12121a;
+    --bg-lighter: #1a1a25;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-red: #ef4444;
+    --accent-yellow: #f59e0b;
+    --accent-purple: #8b5cf6;
+    --accent-gold: #fbbf24;
+    --text-primary: #ffffff;
+    --text-secondary: #a0aec0;
+    --text-muted: #4a5568;
+    --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-auditor: linear-gradient(135deg, #8b5cf6 0%, #d97706 100%);
+    --border-subtle: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.logo-icon {
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.logo h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: var(--gradient-main);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.tagline {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Tab Navigation */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--bg-card);
+    padding: 0.5rem;
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.tab.active {
+    background: var(--gradient-main);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.tab[data-tab="auditor"].active {
+    background: var(--gradient-auditor);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+}
+
+/* Panels */
+.panel {
+    display: none;
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid var(--border-subtle);
+    animation: fadeIn 0.3s ease;
+}
+
+.panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.panel-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Auditor Header */
+.auditor-header h2 {
+    background: var(--gradient-auditor);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Badges */
+.badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.public {
+    background: rgba(107, 114, 128, 0.3);
+    color: #9ca3af;
+}
+
+.badge.private {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--accent-blue);
+}
+
+.badge.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--accent-yellow);
+}
+
+.badge.auditor {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(251, 191, 36, 0.3));
+    color: var(--accent-gold);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* Budget Display */
+.budget-display {
+    text-align: center;
+    padding: 2rem;
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.budget-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.budget-amount {
+    font-size: 3rem;
+    font-weight: 700;
+    background: var(--gradient-main);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.budget-amount .unit {
+    font-size: 1.25rem;
+    opacity: 0.7;
+}
+
+/* Progress Section */
+.progress-section {
+    margin-bottom: 1.5rem;
+}
+
+.progress-header,
+.progress-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.progress-header {
+    margin-bottom: 0.5rem;
+}
+
+.progress-footer {
+    margin-top: 0.5rem;
+}
+
+.progress-value {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.progress-bar {
+    height: 12px;
+    background: var(--bg-lighter);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-main);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+/* Info Cards */
+.info-card {
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    border-left: 3px solid var(--accent-blue);
+}
+
+.info-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.info-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.info-card.success {
+    border-left-color: var(--accent-green);
+}
+
+/* Auditor Info Card */
+.auditor-info {
+    border-left-color: var(--accent-purple);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(251, 191, 36, 0.05));
+}
+
+.auditor-info h3 {
+    color: var(--accent-purple);
+}
+
+/* Warning Card */
+.warning-card {
+    border-left-color: var(--accent-yellow);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.warning-card h3 {
+    color: var(--accent-yellow);
+}
+
+/* Hidden List (encrypted items) */
+.hidden-list {
+    list-style: none;
+    padding: 0;
+}
+
+.hidden-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.encrypted {
+    font-family: monospace;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.explainer {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+/* Decrypt Toggle */
+.decrypt-toggle {
+    margin-bottom: 1.5rem;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+}
+
+.toggle-label input {
+    display: none;
+}
+
+.toggle-slider {
+    width: 48px;
+    height: 24px;
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+.toggle-label input:checked+.toggle-slider {
+    background: var(--accent-green);
+}
+
+.toggle-label input:checked+.toggle-slider::after {
+    transform: translateX(24px);
+}
+
+.toggle-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Salary Table */
+.salary-table {
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.table-header,
+.table-footer {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    padding: 1rem 1.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.table-footer {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.salary-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.9rem;
+}
+
+.salary-row:last-child {
+    border-bottom: none;
+}
+
+.encrypted-field {
+    font-family: monospace;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+.decrypted .encrypted-field {
+    color: var(--text-primary);
+}
+
+.status.paid {
+    color: var(--accent-green);
+}
+
+.total-amount {
+    font-weight: 600;
+}
+
+/* ==========================================
+   AUDITOR PORTAL STYLES
+   ========================================== */
+
+.report-inbox {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(0, 0, 0, 0.2));
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.report-inbox h3 {
+    color: var(--accent-purple);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Audit Report Card */
+.audit-report-card {
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    min-height: 250px;
+}
+
+/* Privacy Shield Overlay */
+.privacy-shield {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(217, 119, 6, 0.1));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+    z-index: 10;
+}
+
+.privacy-shield.decrypted {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.shield-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: shieldPulse 2s infinite;
+}
+
+@keyframes shieldPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.ciphertext {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.ciphertext code {
+    display: block;
+    opacity: 0.7;
+}
+
+.shield-text {
+    color: var(--accent-purple);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Decrypted Report */
+.decrypted-report {
+    padding: 1.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s;
+}
+
+.decrypted-report.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.decrypted-report.hidden {
+    display: block;
+    opacity: 0;
+}
+
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.report-icon {
+    font-size: 1.5rem;
+}
+
+.report-header h4 {
+    font-size: 1.1rem;
+    background: var(--gradient-auditor);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.report-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.report-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.report-field.highlight {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(251, 191, 36, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.report-field.success-field {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.field-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.field-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.field-value.large {
+    font-size: 1.25rem;
+    color: var(--accent-gold);
+}
+
+.field-value.verified {
+    color: var(--accent-green);
+    font-size: 0.85rem;
+}
+
+.field-value.timestamp {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.report-footer {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+}
+
+.zk-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+    color: var(--accent-green);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Decrypt Button */
+.decrypt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 1rem;
+    padding: 1rem 2rem;
+    background: var(--gradient-auditor);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.decrypt-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.decrypt-btn:active {
+    transform: translateY(0);
+}
+
+.decrypt-btn.decrypted {
+    background: var(--gradient-success);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.key-icon {
+    font-size: 1.2rem;
+    animation: keyWiggle 2s infinite;
+}
+
+@keyframes keyWiggle {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-5deg);
+    }
+
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+/* Enforcement Demo */
+.enforcement-demo {
+    margin-bottom: 1.5rem;
+}
+
+.current-state {
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.state-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.state-row .label {
+    color: var(--text-secondary);
+}
+
+.state-row .value.highlight {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.payment-input {
+    margin-bottom: 1.5rem;
+}
+
+.payment-input label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.input-row input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: var(--bg-lighter);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.input-row input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.input-row .unit {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.btn-attempt {
+    padding: 0.75rem 1.5rem;
+    background: var(--gradient-main);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-attempt:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Result Box */
+.result-box {
+    background: var(--bg-lighter);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 2px solid var(--accent-red);
+    animation: slideIn 0.4s ease;
+}
+
+.result-box.hidden {
+    display: none;
+}
+
+.result-box.success {
+    border-color: var(--accent-green);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+}
+
+.result-box h3 {
+    margin-bottom: 1rem;
+}
+
+.result-box.success h3 {
+    color: var(--accent-green);
+}
+
+.result-details {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.detail-row.error {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+.detail-row.success {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.zk-note {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.tech-badges {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.tech-badge {
+    padding: 0.35rem 0.75rem;
+    background: var(--bg-lighter);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.footer p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Responsiveness */
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .logo h1 {
+        font-size: 1.75rem;
+    }
+
+    .budget-amount {
+        font-size: 2.25rem;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab {
+        width: 100%;
+    }
+
+    .panel {
+        padding: 1.25rem;
+    }
+
+    .salary-row,
+    .table-header,
+    .table-footer {
+        grid-template-columns: 1.5fr 1fr 0.75fr;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .input-row {
+        flex-wrap: wrap;
+    }
+
+    .input-row input {
+        width: 100%;
+    }
+}

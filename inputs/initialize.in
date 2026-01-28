@@ -1,0 +1,12 @@
+// Test Scenario: Initialize DAO payroll with 1000 credit budget
+// 
+// EXPECTED BEHAVIOR:
+// - Creates AdminCap record for caller (DAO admin)
+// - Creates SpentRecord with total_spent = 0
+// - Stores budget_ceiling = 1000 in public mapping
+//
+// COMMAND: leo run initialize_payroll 1000u64 1field
+
+[initialize_payroll]
+budget_ceiling: u64 = 1000u64;
+payroll_id: field = 1field;

@@ -1,0 +1,33 @@
+// Test Scenario: Issue 350 credit salary to Bob
+//
+// PREREQUISITE: 
+// - Pay Alice first (get updated SpentRecord with total_spent=400)
+// - Create ticket for Bob (get RecipientTicket)
+//
+// EXPECTED BEHAVIOR:
+// - Verifies all security checks
+// - Creates SalaryRecord(350 credits) owned by Bob
+// - Updates SpentRecord: total_spent = 400 + 350 = 750
+// - Finalize verifies: 750 <= 1000 budget ✓
+//
+// PRIVACY:
+// - salary_amount (350) remains encrypted
+// - Bob's address only in record ownership
+// - Observer cannot learn that Alice got 400 or Bob got 350
+
+[issue_salary]
+admin_cap: AdminCap = AdminCap {
+    owner: aleo1admin...,  // Replace with actual admin address
+    payroll_id: 1field
+};
+spent_record: SpentRecord = SpentRecord {
+    owner: aleo1admin...,  // Replace with actual admin address
+    total_spent: 400u64,   // Updated after paying Alice
+    payroll_id: 1field
+};
+recipient_ticket: RecipientTicket = RecipientTicket {
+    owner: aleo1bob...,    // Replace with Bob's address
+    payroll_id: 1field
+};
+salary_amount: u64 = 350u64;
+payment_id: field = 101field;

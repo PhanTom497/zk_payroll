@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK Payroll - Privacy-Preserving DAO Payments</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🔐</span>
+                <h1>ZK Payroll</h1>
+            </div>
+            <p class="tagline">Privacy-Preserving DAO Payments on Aleo</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="public">
+                <span class="tab-icon">🌐</span>
+                Public View
+            </button>
+            <button class="tab" data-tab="admin">
+                <span class="tab-icon">🔐</span>
+                Admin View
+            </button>
+            <button class="tab" data-tab="auditor">
+                <span class="tab-icon">📋</span>
+                Auditor Portal
+            </button>
+            <button class="tab" data-tab="enforce">
+                <span class="tab-icon">⚡</span>
+                ZK Enforcement
+            </button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+            <!-- Public View -->
+            <section id="public" class="panel active">
+                <div class="panel-header">
+                    <h2>What Blockchain Observers See</h2>
+                    <span class="badge public">PUBLIC DATA</span>
+                </div>
+
+                <div class="budget-display">
+                    <div class="budget-label">DAO Payroll Budget</div>
+                    <div class="budget-amount">1,000 <span class="unit">credits</span></div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span>Budget Utilization</span>
+                        <span class="progress-value">75%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%"></div>
+                    </div>
+                    <div class="progress-footer">
+                        <span>750 used</span>
+                        <span>250 remaining</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>🔒 What's Hidden?</h3>
+                    <ul class="hidden-list">
+                        <li><span class="encrypted">████████</span> Individual salaries</li>
+                        <li><span class="encrypted">████████</span> Recipient addresses</li>
+                        <li><span class="encrypted">████████</span> Payment timing</li>
+                        <li><span class="encrypted">████████</span> Number of contributors</li>
+                    </ul>
+                </div>
+
+                <p class="explainer">
+                    <strong>This is all observers can see.</strong> The ZK proof verifies that
+                    sum(salaries) ≤ budget without revealing any individual amounts.
+                </p>
+            </section>
+
+            <!-- Admin View -->
+            <section id="admin" class="panel">
+                <div class="panel-header">
+                    <h2>DAO Admin Dashboard</h2>
+                    <span class="badge private">PRIVATE DATA</span>
+                </div>
+
+                <div class="decrypt-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="decryptToggle">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">Decrypt Records</span>
+                    </label>
+                </div>
+
+                <div class="salary-table">
+                    <div class="table-header">
+                        <span>Contributor</span>
+                        <span>Amount</span>
+                        <span>Status</span>
+                    </div>
+
+                    <div class="salary-row">
+                        <span class="contributor encrypted-field">████████████████</span>
+                        <span class="amount encrypted-field">████</span>
+                        <span class="status paid">✅ Paid</span>
+                    </div>
+
+                    <div class="salary-row">
+                        <span class="contributor encrypted-field">████████████████</span>
+                        <span class="amount encrypted-field">████</span>
+                        <span class="status paid">✅ Paid</span>
+                    </div>
+
+                    <div class="table-footer">
+                        <span>Total Spent</span>
+                        <span class="total-amount encrypted-field">████</span>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="info-card success">
+                    <h3>🔐 Privacy Guarantee</h3>
+                    <p>Even with admin access, salaries are stored as encrypted records.
+                        Only the recipient can decrypt their own payment.</p>
+                </div>
+            </section>
+
+            <!-- Auditor Portal (NEW WAVE-2) -->
+            <section id="auditor" class="panel">
+                <div class="panel-header auditor-header">
+                    <h2>Compliance Auditor Portal</h2>
+                    <span class="badge auditor">SELECTIVE DISCLOSURE</span>
+                </div>
+
+                <!-- Educational Tooltip -->
+                <div class="info-card auditor-info">
+                    <h3>🔑 How This Works</h3>
+                    <p>This report was generated privately by the Admin. Only the Auditor's private key can reveal this
+                        total. <strong>Individual employee names and salary amounts remain hidden</strong> from the
+                        Auditor to ensure contributor privacy.</p>
+                </div>
+
+                <!-- Report Inbox -->
+                <div class="report-inbox">
+                    <h3>📥 Report Inbox</h3>
+
+                    <div class="audit-report-card" id="auditReportCard">
+                        <!-- Privacy Shield Overlay -->
+                        <div class="privacy-shield" id="privacyShield">
+                            <div class="shield-icon">🛡️</div>
+                            <div class="ciphertext">
+                                <code>0x7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d...</code>
+                                <code>a1b2c3d4e5f6789012345678abcdef00...</code>
+                                <code>████████████████████████████████</code>
+                            </div>
+                            <p class="shield-text">Encrypted AuditReport Record</p>
+                        </div>
+
+                        <!-- Decrypted Content (hidden initially) -->
+                        <div class="decrypted-report hidden" id="decryptedReport">
+                            <div class="report-header">
+                                <span class="report-icon">📊</span>
+                                <h4>Payroll Audit Report</h4>
+                            </div>
+
+                            <div class="report-fields">
+                                <div class="report-field">
+                                    <span class="field-label">Payroll ID</span>
+                                    <span class="field-value">#1</span>
+                                </div>
+                                <div class="report-field highlight">
+                                    <span class="field-label">Total Spent to Date</span>
+                                    <span class="field-value large">750 Credits</span>
+                                </div>
+                                <div class="report-field">
+                                    <span class="field-label">Budget Ceiling</span>
+                                    <span class="field-value">1,000 Credits</span>
+                                </div>
+                                <div class="report-field success-field">
+                                    <span class="field-label">Verification Status</span>
+                                    <span class="field-value verified">✅ ZK Proof Verified against On-Chain
+                                        Budget</span>
+                                </div>
+                                <div class="report-field">
+                                    <span class="field-label">Report Timestamp</span>
+                                    <span class="field-value timestamp">Jan 28, 2026 - 10:45:31 UTC</span>
+                                </div>
+                            </div>
+
+                            <div class="report-footer">
+                                <span class="zk-badge">🔒 Zero-Knowledge Verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Decrypt Button -->
+                    <button class="decrypt-btn" id="decryptReportBtn">
+                        <span class="key-icon">🔑</span>
+                        Decrypt with Auditor Key
+                    </button>
+                </div>
+
+                <!-- What Auditor Cannot See -->
+                <div class="info-card warning-card">
+                    <h3>⚠️ What You Cannot See</h3>
+                    <ul class="hidden-list">
+                        <li><span class="encrypted">████████</span> Individual salary amounts</li>
+                        <li><span class="encrypted">████████</span> Employee addresses</li>
+                        <li><span class="encrypted">████████</span> Payment breakdown</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- ZK Enforcement -->
+            <section id="enforce" class="panel">
+                <div class="panel-header">
+                    <h2>ZK Budget Enforcement</h2>
+                    <span class="badge warning">LIVE DEMO</span>
+                </div>
+
+                <div class="enforcement-demo">
+                    <div class="current-state">
+                        <div class="state-row">
+                            <span class="label">Current Spent:</span>
+                            <span class="value">750 credits</span>
+                        </div>
+                        <div class="state-row">
+                            <span class="label">Budget Limit:</span>
+                            <span class="value">1,000 credits</span>
+                        </div>
+                        <div class="state-row">
+                            <span class="label">Available:</span>
+                            <span class="value highlight">250 credits</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-input">
+                        <label>Attempt Payment:</label>
+                        <div class="input-row">
+                            <input type="number" id="paymentAmount" value="300" min="1" max="1000">
+                            <span class="unit">credits</span>
+                            <button id="attemptPayment" class="btn-attempt">Execute</button>
+                        </div>
+                    </div>
+
+                    <div id="resultBox" class="result-box hidden">
+                        <div class="result-icon">❌</div>
+                        <h3>Transaction Rejected</h3>
+                        <div class="result-details">
+                            <div class="detail-row">
+                                <span>Attempted:</span>
+                                <span id="attemptedAmount">+300 credits</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Would Total:</span>
+                                <span id="wouldTotal">1,050 credits</span>
+                            </div>
+                            <div class="detail-row error">
+                                <span>Constraint:</span>
+                                <span id="constraint">1,050 > 1,000 ❌</span>
+                            </div>
+                        </div>
+                        <p class="zk-note">
+                            "ZK proof rejected: budget exceeded.<br>
+                            <strong>Individual salaries remain hidden.</strong>"
+                        </p>
+                    </div>
+
+                    <div id="successBox" class="result-box success hidden">
+                        <div class="result-icon">✅</div>
+                        <h3>Transaction Approved</h3>
+                        <div class="result-details">
+                            <div class="detail-row">
+                                <span>Payment:</span>
+                                <span id="successAmount">+200 credits</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>New Total:</span>
+                                <span id="newTotal">950 credits</span>
+                            </div>
+                            <div class="detail-row success">
+                                <span>Constraint:</span>
+                                <span id="successConstraint">950 ≤ 1,000 ✅</span>
+                            </div>
+                        </div>
+                        <p class="zk-note">
+                            "ZK proof verified: budget respected.<br>
+                            <strong>Payment amount stays private.</strong>"
+                        </p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>⚡ How ZK Enforcement Works</h3>
+                    <p>The constraint <code>total_spent + new_salary ≤ budget</code> is verified
+                        by a zero-knowledge proof. The verifier learns only pass/fail, never the actual amounts.</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="tech-badges">
+                <span class="tech-badge">Leo</span>
+                <span class="tech-badge">Aleo</span>
+                <span class="tech-badge">ZK Proofs</span>
+            </div>
+            <p>Wave-2 Submission • Privacy Buildathon 2025</p>
+        </footer>
+    </div>
+
+    <script src="demo.js"></script>
+</body>
+
+</html>
