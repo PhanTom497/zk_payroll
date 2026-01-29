@@ -141,17 +141,7 @@ AuditReport {
 }
 ```
 
----
 
-## ⚠️ Known Limitations
-
-| Limitation | Details |
-|------------|---------|
-| Program name | Must be ≥10 characters to avoid namespace fees |
-| Local finalize | `leo run` shows transition outputs but finalize assertions only execute on-chain |
-| Record chaining | Each transition consumes & recreates records (state-channel pattern) |
-
----
 
 ## 📊 Contract Stats
 
