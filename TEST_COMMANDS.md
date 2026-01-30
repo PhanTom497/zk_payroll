@@ -26,7 +26,7 @@ leo deploy \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 1000000 \
+  --priority-fees 1000000 \
   --broadcast
 ```
 
@@ -43,11 +43,11 @@ Create the payroll instance and set the budget.
 leo execute initialize_payroll \
   1000u64 \
   1field \
-  aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px \
+  <YOUR_WALLET_ADDRESS> \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 100000 \
+  --priority-fees 100000 \
   --broadcast
 ```
 
@@ -59,6 +59,8 @@ leo execute initialize_payroll \
 **Save Output:**
 Copy the `AdminCap` and `SpentRecord` records from the output. You will need them for the next steps.
 
+> **Tip:** You can find these JSON strings in your terminal output under the "Outputs" section of the command you just ran.
+
 ---
 
 ## 🎟️ 4. Create Recipient Ticket
@@ -69,11 +71,11 @@ Generate a private ticket for an employee to receive a salary.
 ```bash
 leo execute create_recipient_ticket \
   "{ ... ADMIN_CAP_RECORD ... }" \
-  aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px \
+  <EMPLOYEE_ADDRESS> \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 100000 \
+  --priority-fees 100000 \
   --broadcast
 ```
 
@@ -98,7 +100,7 @@ leo execute issue_salary \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 100000 \
+  --priority-fees 100000 \
   --broadcast
 ```
 
@@ -122,7 +124,7 @@ leo execute issue_salary \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 100000 \
+  --priority-fees 100000 \
   --broadcast
 ```
 
@@ -146,7 +148,7 @@ leo execute generate_audit_report \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
-  --priority-fee 100000 \
+  --priority-fees 100000 \
   --broadcast
 ```
 
