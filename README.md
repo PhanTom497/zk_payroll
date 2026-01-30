@@ -21,6 +21,23 @@ ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with p
 
 ---
 
+## ⛓️ On-Chain Verification
+
+**Live Aleo Testnet Proofs** (Judges check here):
+
+| Type | Transaction ID | Status |
+|------|----------------|--------|
+| **Deployment** | [`at1swvsjd...`](https://testnet.explorer.provable.com/transaction/at1swvsjd7weuku62jhgpaya3twlwtqalq65wg7zlfy9y9t4uqpsugqpn3kmg) | ✅ Accepted |
+| **Execution** | [`at1qengyj...`](https://testnet.explorer.provable.com/transaction/at1qengyjkrdlkrtqdvljr9hl7a6qu8uzaa0yxkmljh6zqwhf9zuyxs3jwg74) | ✅ Accepted |
+
+### Deployment Proof
+![Deployment Proof](assets/deploy_proof.png)
+
+### Execution Proof
+![Execution Proof](assets/execution_proof.png)
+
+---
+
 ## 👁️ Privacy Meter: Who Sees What?
 
 | Data | 🌐 Public Observer | 📋 Auditor | 🔐 Admin |

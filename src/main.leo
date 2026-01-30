@@ -8,21 +8,21 @@ program baba_zk_payroll.aleo {
     /// AdminCap: Authorization capability for DAO payroll administrator
     /// 
     /// PRIVACY: Admin and auditor addresses are ONLY stored here (encrypted).
-    /// WAVE-2: Added auditor field for selective disclosure to compliance officers.
+    ///  Added auditor field for selective disclosure to compliance officers.
     record AdminCap {
         owner: address,      // Admin who controls this payroll
         payroll_id: field,   // Links to specific payroll instance
-        auditor: address,    // WAVE-2: Authorized auditor who can receive reports
+        auditor: address,    //  Authorized auditor who can receive reports
     }
 
     /// SpentRecord: Tracks cumulative spent amount (state-channel pattern)
     ///
-    /// WAVE-2: Added auditor field to maintain auditor reference across payments.
+    ///  Added auditor field to maintain auditor reference across payments.
     record SpentRecord {
         owner: address,      // Admin who owns this tracker
         total_spent: u64,    // Cumulative amount spent (PRIVATE)
         payroll_id: field,   // Links to specific payroll instance
-        auditor: address,    // WAVE-2: Auditor reference for report generation
+        auditor: address,    //  Auditor reference for report generation
     }
 
     /// RecipientTicket: Private wrapper for recipient address
@@ -39,7 +39,7 @@ program baba_zk_payroll.aleo {
         payroll_id: field,   // Links to payroll instance (PRIVATE)
     }
 
-    /// AuditReport: WAVE-2 - Private spending summary for compliance auditor
+    /// AuditReport:- Private spending summary for compliance auditor
     ///
     /// PURPOSE: Allows DAO admin to "push" a private spending summary to an auditor
     /// without revealing individual SalaryRecords or making total_spent public.
@@ -58,16 +58,14 @@ program baba_zk_payroll.aleo {
     // ========================================================================
 
     mapping payroll_budgets: field => u64;
-
+// ========================================================================
+    // CONSTRUCTOR (ARC-0006 Compliance)
     // ========================================================================
-    // CONSTRUCTOR (Required for deployment)
-    // ========================================================================
 
-    /// deploy_program: Required for testnet deployment
-    /// This transition is marked as the constructor in the Aleo program
-    transition deploy_program() {
-        // No-op constructor
-        assert(true);
+    /// constructor: Only the specified admin can upgrade this program.
+    @admin(address="aleo1esd4g8fzj9ygcsspfzuhfz59nmslhwg86n7pyh0q2pzhdkvq2uxqq4jxvr")
+    async constructor() {
+        // Initialization logic for the program's lifecycle
     }
 
     // ========================================================================
@@ -76,18 +74,18 @@ program baba_zk_payroll.aleo {
 
     /// initialize_payroll: Create a new DAO payroll with public budget
     ///
-    /// WAVE-2: Now accepts auditor address as private input
+    ///  Now accepts auditor address as private input
     async transition initialize_payroll(
         public budget_ceiling: u64,
         payroll_id: field,
-        private auditor: address  // WAVE-2: Auditor for selective disclosure
+        private auditor: address  //  Auditor for selective disclosure
     ) -> (AdminCap, SpentRecord, Future) {
         
         // Create admin capability with auditor reference
         let admin_cap: AdminCap = AdminCap {
             owner: self.caller,
             payroll_id: payroll_id,
-            auditor: auditor,        // WAVE-2: Store auditor
+            auditor: auditor,        //  Store auditor
         };
 
         // Create initial spent tracker with auditor reference
@@ -95,7 +93,7 @@ program baba_zk_payroll.aleo {
             owner: self.caller,
             total_spent: 0u64,
             payroll_id: payroll_id,
-            auditor: auditor,        // WAVE-2: Store auditor
+            auditor: auditor,        //  Store auditor
         };
 
         let f: Future = finalize_initialize_payroll(payroll_id, budget_ceiling);
@@ -121,7 +119,7 @@ program baba_zk_payroll.aleo {
         let new_admin_cap: AdminCap = AdminCap {
             owner: admin_cap.owner,
             payroll_id: admin_cap.payroll_id,
-            auditor: admin_cap.auditor,  // WAVE-2: Preserve auditor
+            auditor: admin_cap.auditor,  //  Preserve auditor
         };
 
         let ticket: RecipientTicket = RecipientTicket {
@@ -134,7 +132,7 @@ program baba_zk_payroll.aleo {
 
     /// issue_salary: Execute a private salary payment to a contributor
     ///
-    /// WAVE-2: Maintains auditor field when recreating SpentRecord
+    ///  Maintains auditor field when recreating SpentRecord
     async transition issue_salary(
         admin_cap: AdminCap,
         spent_record: SpentRecord,
@@ -154,7 +152,7 @@ program baba_zk_payroll.aleo {
         let new_admin_cap: AdminCap = AdminCap {
             owner: admin_cap.owner,
             payroll_id: admin_cap.payroll_id,
-            auditor: admin_cap.auditor,  // WAVE-2: Preserve auditor
+            auditor: admin_cap.auditor,  //  Preserve auditor
         };
 
         // Create updated spent record with auditor preserved
@@ -162,7 +160,7 @@ program baba_zk_payroll.aleo {
             owner: admin_cap.owner,
             total_spent: new_total_spent,
             payroll_id: admin_cap.payroll_id,
-            auditor: spent_record.auditor,  // WAVE-2: Preserve auditor
+            auditor: spent_record.auditor,  //  Preserve auditor
         };
 
         let salary_record: SalaryRecord = SalaryRecord {
@@ -185,7 +183,7 @@ program baba_zk_payroll.aleo {
     }
 
     // ========================================================================
-    // WAVE-2: SELECTIVE DISCLOSURE
+    //  SELECTIVE DISCLOSURE
     // ========================================================================
 
     /// generate_audit_report: Push private spending summary to auditor
