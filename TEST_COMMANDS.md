@@ -1,116 +1,161 @@
-# ============================================================================
-# ZK PAYROLL - STEP-BY-STEP TEST COMMANDS
-# ============================================================================
-# Run these commands SEQUENTIALLY in the zk_payroll directory.
-# Each step depends on outputs from previous steps.
-# ============================================================================
+# Testnet Deployment & Execution Commands
 
-# SETUP: Define test addresses
-# Replace these with your actual test addresses from `leo account new`
-ADMIN="aleo1..."  # Your admin address
-ALICE="aleo1..."  # Contributor 1
-BOB="aleo1..."    # Contributor 2
-CHARLIE="aleo1..." # Contributor 3 (for failure test)
+Follow these steps to deploy and interact with the **ZK Payroll** smart contract on the Aleo Testnet.
 
-# ============================================================================
-# TEST 1: Initialize Payroll (budget = 1000)
-# ============================================================================
-# VERIFY: AdminCap and SpentRecord are created
-#         payroll_budgets mapping contains 1000
+---
 
-leo run initialize_payroll 1000u64 1field
+## 🚀 1. Prerequisites
 
-# EXPECTED OUTPUT:
-# - AdminCap { owner: <ADMIN>, payroll_id: 1field }
-# - SpentRecord { owner: <ADMIN>, total_spent: 0u64, payroll_id: 1field }
-# - Future for finalize (stores budget in mapping)
+- **Leo Wallet**: Install the browser extension and fund it with ~10 credits from [faucet.aleo.org](https://faucet.aleo.org).
+- **Export Private Key**: Get your private key from the wallet settings.
+- **Environment Setup**:
 
-# ============================================================================
-# TEST 2a: Create Recipient Ticket for Alice
-# ============================================================================
-# Replace <ADMIN_CAP> with actual AdminCap output from Test 1
+```bash
+export PRIVATE_KEY="APrivateKey1zkp..."
+export ENDPOINT="https://api.explorer.provable.com/v1"
+```
 
-leo run create_recipient_ticket \
-  "{ owner: aleo1..., payroll_id: 1field }" \
-  aleo1alice...
+---
 
-# ============================================================================
-# TEST 2b: Pay Alice 400 credits
-# ============================================================================
-# VERIFY: Transaction succeeds
-#         new_total_spent = 400 (400 <= 1000)
-# Replace records with actual outputs from previous steps
+## 📦 2. Deploy Contract
 
-leo run issue_salary \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-  "{ owner: aleo1admin..., total_spent: 0u64, payroll_id: 1field }" \
-  "{ owner: aleo1alice..., payroll_id: 1field }" \
-  400u64 \
-  100field
+Deploy the program to the testnet. This costs approximately **7-8 credits**.
 
-# EXPECTED: ✅ SUCCESS
-# OUTPUT: SpentRecord with total_spent: 400u64
+```bash
+leo deploy \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 1000000 \
+  --broadcast
+```
 
-# ============================================================================
-# TEST 3a: Create Recipient Ticket for Bob
-# ============================================================================
+> **Note**: If you see a `500` error, retry the command. Testnet can be congested.
 
-leo run create_recipient_ticket \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-  aleo1bob...
+---
 
-# ============================================================================
-# TEST 3b: Pay Bob 350 credits
-# ============================================================================
-# VERIFY: Transaction succeeds
-#         new_total_spent = 750 (750 <= 1000)
+## ⚙️ 3. Initialize Payroll
 
-leo run issue_salary \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-  "{ owner: aleo1admin..., total_spent: 400u64, payroll_id: 1field }" \
-  "{ owner: aleo1bob..., payroll_id: 1field }" \
-  350u64 \
-  101field
+Create the payroll instance and set the budget.
 
-# EXPECTED: ✅ SUCCESS
-# OUTPUT: SpentRecord with total_spent: 750u64
+**Command:**
+```bash
+leo execute initialize_payroll \
+  1000u64 \
+  1field \
+  aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 100000 \
+  --broadcast
+```
 
-# ============================================================================
-# TEST 4a: Create Recipient Ticket for Charlie
-# ============================================================================
+**Parameters:**
+- `1000u64`: Budget ceiling
+- `1field`: Unique Payroll ID
+- `aleo1...`: Auditor address (for selective disclosure)
 
-leo run create_recipient_ticket \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-  aleo1charlie...
+**Save Output:**
+Copy the `AdminCap` and `SpentRecord` records from the output. You will need them for the next steps.
 
-# ============================================================================
-# TEST 4b: Pay Charlie 300 credits (MUST FAIL)
-# ============================================================================
-# VERIFY: Transaction FAILS in finalize
-#         new_total_spent would be 1050 (1050 > 1000)
+---
 
-leo run issue_salary \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-  "{ owner: aleo1admin..., total_spent: 750u64, payroll_id: 1field }" \
-  "{ owner: aleo1charlie..., payroll_id: 1field }" \
-  300u64 \
-  102field
+## 🎟️ 4. Create Recipient Ticket
 
-# EXPECTED: ❌ FAIL
-# ERROR: "assertion failed" in finalize_issue_salary
-#        because 1050 > 1000
+Generate a private ticket for an employee to receive a salary.
 
-# ============================================================================
-# ALTERNATIVE TEST 4b: Pay Charlie 250 credits (should succeed)
-# ============================================================================
-# If you want to verify the boundary works:
+**Command:**
+```bash
+leo execute create_recipient_ticket \
+  "{ ... ADMIN_CAP_RECORD ... }" \
+  aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 100000 \
+  --broadcast
+```
 
-leo run issue_salary \
-  "{ owner: aleo1admin..., payroll_id: 1field }" \
-[text](build)  "{ owner: aleo1admin..., total_spent: 750u64, payroll_id: 1field }" \
-  "{ owner: aleo1charlie..., payroll_id: 1field }" \
-  250u64 \
-  102field
+**Parameters:**
+- `"{ ... }"`: Your `AdminCap` record from Step 3
+- `aleo1...`: Employee's wallet address
 
-# EXPECTED: ✅ SUCCESS
-# OUTPUT: SpentRecord with total_spent: 1000u64 (exactly at limit)
+---
+
+## 💸 5. Issue Salary (Success Case)
+
+Pay a salary within the budget (e.g., 500u64).
+
+**Command:**
+```bash
+leo execute issue_salary \
+  "{ ... ADMIN_CAP_RECORD ... }" \
+  "{ ... SPENT_RECORD ... }" \
+  "{ ... RECIPIENT_TICKET ... }" \
+  500u64 \
+  101field \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 100000 \
+  --broadcast
+```
+
+**Verification:**
+The transaction will be **Accepted**. The `SpentRecord` will update to `500u64`, and a `SalaryRecord` will be created for the employee.
+
+---
+
+## 🚫 6. Issue Salary (Rejection Case)
+
+Attempt to pay more than the remaining budget (e.g., 600u64 when only 500u64 remains, or > 1000u64 total).
+
+**Command:**
+```bash
+leo execute issue_salary \
+  "{ ... ADMIN_CAP_RECORD ... }" \
+  "{ ... SPENT_RECORD ... }" \
+  "{ ... RECIPIENT_TICKET ... }" \
+  1050u64 \
+  102field \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 100000 \
+  --broadcast
+```
+
+**Verification:**
+The transaction will be **Rejected** on-chain.
+- The constraint `assert(new_total_spent <= budget_ceiling)` will fail during finalization.
+- You can verify the "Rejected" status in the block explorer.
+
+---
+
+## 📋 7. Generate Audit Report
+
+Prove solvency to an auditor without revealing individual salaries.
+
+**Command:**
+```bash
+leo execute generate_audit_report \
+  "{ ... ADMIN_CAP_RECORD ... }" \
+  "{ ... SPENT_RECORD ... }" \
+  1738181000u32 \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fee 100000 \
+  --broadcast
+```
+
+**Result:**
+An encrypted `AuditReport` record is created, owned specifically by the auditor address.
+
+---
+
+## 🔍 Verification Tools
+
+- **Block Explorer**: [explorer.provable.com](https://explorer.provable.com/?network=testnet)
+- **Decrypt Records**: Use `leo decrypt` or the **Leo Wallet** "Records" tab to view your encrypted record data.

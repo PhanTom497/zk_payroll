@@ -2,6 +2,9 @@
 
 **Privacy-Preserving DAO Payments on Aleo**
 
+> **ZK Payroll solves the "Compliance-Privacy Paradox" by enabling DAO administrators to prove budget solvency to auditors without ever revealing individual contributor data.**
+> **Built on Aleo for total privacy and public verifiability.**
+
 [![Aleo](https://img.shields.io/badge/Built%20on-Aleo-blue)](https://aleo.org)
 [![Leo](https://img.shields.io/badge/Language-Leo-purple)](https://leo-lang.org)
 [![Wave](https://img.shields.io/badge/Buildathon-Wave%201-green)](https://aleo.org)
@@ -17,7 +20,7 @@ Public blockchains expose all transaction data. For DAO payroll:
 
 ## 💡 Solution
 
-ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with public budget enforcement**.
+ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with public budget enforcement**, ensuring both contributor privacy and organizational transparency.
 
 ---
 
@@ -42,12 +45,14 @@ ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with p
 
 | Data | 🌐 Public Observer | 📋 Auditor | 🔐 Admin |
 |------|:------------------:|:----------:|:--------:|
-| Budget Ceiling | ✅ Visible | ✅ Visible | ✅ Visible |
-| Total Spent | ❌ Hidden | ✅ Verified | ✅ Visible |
-| Individual Salaries | ❌ Hidden | ❌ Hidden | ✅ Visible |
-| Recipient Addresses | ❌ Hidden | ❌ Hidden | ✅ Visible |
-| Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible |
+| Budget Ceiling | ✅ Visible | ✅ Visible | ✅ Visible* |
+| Total Spent | ❌ Hidden | ✅ Verified | ✅ Visible* |
+| Individual Salaries | ❌ Hidden | ❌ Hidden | ✅ Visible* |
+| Recipient Addresses | ❌ Hidden | ❌ Hidden | ✅ Visible* |
+| Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible* |
 | Budget Compliance | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven |
+
+> * *Admin visibility is limited to local history; once a SalaryRecord is issued, only the recipient can decrypt and spend it.*
 
 > **Key Insight**: Auditors verify totals without seeing individual salaries. Public observers only see the budget limit and ZK proof validity.
 
@@ -113,7 +118,7 @@ chmod +x test.sh && ./test.sh
 
 ```
 zk_payroll/
-├── src/main.leo          # Core contract (230 lines)
+├── [src/main.leo](./src/main.leo)   # Core contract (66 statements)
 ├── demo/                  # Interactive web demo
 │   ├── index.html
 │   ├── style.css
@@ -168,6 +173,7 @@ AuditReport {
 | Transitions | 4 |
 | Program Size | 3.06 KB |
 | Statements | 66 |
+| **Standards** | ✅ **ARC-0006 Compliant** (Async Constructors) |
 
 ---
 

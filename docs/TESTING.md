@@ -1,78 +1,107 @@
 # Testing Guide
 
+This guide details how to verify the **ZK Payroll** smart contract on the Aleo Testnet.
+
 ## Quick Test
 
+Run the automated test suite to verify core functionality in one command:
+
 ```bash
-cd zk_payroll
-leo build
-leo run initialize_payroll 1000u64 1field aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px
+chmod +x test.sh && ./test.sh
 ```
 
 ---
 
-## Full Test Flow
+## Full Verification Flow
 
-### 1. Initialize Payroll
+### 1. Initialize Payroll & Budget
 
+**Purpose:** Set up a new payroll instance with a strict budget ceiling.
+
+**Command:**
 ```bash
-leo run initialize_payroll 1000u64 1field <AUDITOR_ADDRESS>
+leo execute initialize_payroll 1000u64 1field <AUDITOR_ADDRESS> --network testnet ...
 ```
 
-**Expected:** AdminCap + SpentRecord with `auditor` field, `total_spent: 0`
+**Outcome:**
+- **On-chain State:** `payroll_budgets[1field] = 1000u64`
+- **Private Records:** `AdminCap` and `SpentRecord` created (total_spent: 0)
 
 ---
 
-### 2. Create Recipient Ticket
+### 2. Recipient Authentication
 
+**Purpose:** Issue a private ticket to an employee so they can receive funds.
+
+**Command:**
 ```bash
-leo run create_recipient_ticket "[ADMIN_CAP]" <RECIPIENT_ADDRESS>
+leo execute create_recipient_ticket "[ADMIN_CAP]" <EMPLOYEE_ADDRESS> --network testnet ...
 ```
 
-**Expected:** New AdminCap + RecipientTicket
+**Outcome:**
+- **Private Record:** `RecipientTicket` created, owned by the employee.
 
 ---
 
-### 3. Issue Salary
+### 3. Salary Payment (Success Case)
 
+**Purpose:** Pay an employee within the available budget.
+
+**Scenario:** Budget: 1000, Current Spent: 0, Pay Amount: 500.
+
+**Command:**
 ```bash
-leo run issue_salary "[ADMIN_CAP]" "[SPENT_RECORD]" "[TICKET]" 500u64 101field
+leo execute issue_salary "[ADMIN_CAP]" "[SPENT_RECORD]" "[TICKET]" 500u64 101field --network testnet ...
 ```
 
-**Expected:** 
-- SpentRecord with `total_spent: 500`
-- SalaryRecord with `amount: 500`
-- Finalize args: `[1field, 500u64]`
+**Outcome:**
+- **Transaction Status:** `Accepted` on-chain.
+- **Private Records:**
+  - `SpentRecord` updated: `total_spent = 500u64`
+  - `SalaryRecord` created for employee: `amount = 500u64`
 
 ---
 
-### 4. Generate Audit Report
+### 4. Over-Budget Rejection (Failure Case)
 
+**Purpose:** Verify that payments exceeding the budget are rejected by the network.
+
+**Scenario:** Budget: 1000, Current Spent: 500, Pay Amount: 600.
+**Total:** 500 + 600 = 1100 > 1000.
+
+**Command:**
 ```bash
-leo run generate_audit_report "[ADMIN_CAP]" "[SPENT_RECORD]" 1738181000u32
+leo execute issue_salary ... 600u64 ...
 ```
 
-**Expected:** AuditReport with `owner: auditor`, `total_spent: 500`
+**Outcome:**
+- **Transaction Status:** `Rejected` on-chain.
+- **Reason:** `finalize` assertion failed: `1100u64 <= 1000u64` is false.
 
 ---
 
-### 5. Budget Enforcement Test
+### 5. Audit Report Generation
 
-Attempt payment that exceeds budget:
+**Purpose:** Prove total spending to an auditor without revealing individual salaries.
 
+**Command:**
 ```bash
-leo run issue_salary ... 600u64 ...  # When already at 500/1000
+leo execute generate_audit_report "[ADMIN_CAP]" "[SPENT_RECORD]" <TIMESTAMP> --network testnet ...
 ```
 
-**Expected:** Finalize args show `1100u64 > 1000` = rejected on-chain
+**Outcome:**
+- **Private Record:** `AuditReport` created, owned by the auditor.
+- **Content:** Contains `total_spent` and can be decrypted only by the auditor.
 
 ---
 
 ## Test Results Summary
 
-| Test | Status |
-|------|--------|
-| Build | ✅ 66 statements, 3.06 KB |
-| Initialize | ✅ Auditor field present |
-| Pay | ✅ SpentRecord updates |
-| Audit | ✅ Report owned by auditor |
-| Budget Limit | ✅ Finalize rejects over-budget |
+| Test Case | Expected Result | Status |
+|-----------|-----------------|--------|
+| **Deployment** | Contract deployed to testnet | ✅ PASS |
+| **Initialize** | Budget mapping set on-chain | ✅ PASS |
+| **Ticket Creation** | Recipient receives ticket | ✅ PASS |
+| **Valid Payment** | Salary issued, spent updated | ✅ PASS |
+| **Invalid Payment** | Transaction rejected | ✅ PASS |
+| **Audit Report** | Auditor receives report | ✅ PASS |
