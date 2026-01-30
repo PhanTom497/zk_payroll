@@ -175,11 +175,10 @@ AuditReport {
 
 | Wave | Feature | Status |
 |------|---------|--------|
-| 1 | Core ZK Payroll + Selective Disclosure | ✅ Complete |
-| 2 | Testnet Deployment | 🔜 Next |
-| 3 | Multi-sig Admin | Planned |
-| 4 | Recurring Payments | Planned |
-| 5+ | Token Integration | Planned |
+| 1 | Core ZK Payroll + Selective Disclosure + Testnet Deployment | ✅ Complete |
+| 2 | Multi-sig Admin | Planned |
+| 3 | Recurring Payments | Planned |
+| 4+ | Token Integration | Planned |
 
 ---
 
@@ -189,4 +188,4 @@ MIT
 
 ---
 
-**Built for Aleo Privacy Buildathon 2025** 🏆
+**Built for Aleo Privacy Buildathon 2026** 🏆
