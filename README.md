@@ -187,6 +187,8 @@ AuditReport {
 | 4+ | Token Integration | Planned |
 
 ---
+Aleo wallet for grant distribution :- aleo1luatvgqmdt0j662lpgh0tf3l07tkjeq6rrr6c7qzzwnmtjwvy5ps4mk6kr
+---
 
 ## 📄 License
 
