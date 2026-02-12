@@ -24,7 +24,8 @@ export default function AdminPage() {
             // 1. Fetch Admin's SpentRecord (Total Spent Tracker)
             const records = await requestRecordPlaintexts(PROGRAM_ID)
             const spentRecord = records.filter((rec: any) =>
-                !rec.spent && rec.data && rec.data.total_spent !== undefined
+                !rec.spent &&
+                rec.recordName === 'SpentRecord' // Best check if available
             ).pop() // Get the latest one
 
             if (!spentRecord) {
