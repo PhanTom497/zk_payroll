@@ -1,0 +1,21 @@
+[initialize_payroll]
+budget_ceiling: u64 = 1000u64;
+payroll_id: field = 1field;
+threshold: u64 = 2u64;
+admin1: address = aleo1rhgdu77hgykd9xgr08g28dlnlmwy07veljg54457v55n60r8c5s83a696;
+admin2: address = aleo1q56xwucee45w6f2zwzhx9askc2evz9lhxc3rlwym2cu4y67w2sxq4ggplc;
+admin3: address = aleo1s0hc0xtpmpma9gtyps023d4mr4l0wfufkdmuhak8f3fsuh7g7v9snv2t4c;
+auditor: address = aleo1dcm8zcart6z5tm2fzl95fj0cxtrxztquz00egkq9xpxafgjg4gpsgf5vgv;
+
+[generate_audit_report]
+spent_record: SpentRecord = {
+    owner: aleo1rhgdu77hgykd9xgr08g28dlnlmwy07veljg54457v55n60r8c5s83a696.private,
+    total_spent: 0u64.private,
+    payroll_id: 1field.private,
+    auditor: aleo1dcm8zcart6z5tm2fzl95fj0cxtrxztquz00egkq9xpxafgjg4gpsgf5vgv.private,
+    recipient_count: 0u32.private,
+    _nonce: 0group.public
+};
+timestamp: u32 = 100u32;
+pay_period_hash: field = 12345field;
+merkle_root: field = 67890field;

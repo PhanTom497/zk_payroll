@@ -1,0 +1,35 @@
+⚠️ No network specified, defaulting to 'testnet'.
+⚠️ No endpoint specified, defaulting to 'https://api.explorer.provable.com/v1'.
+       Leo     139 statements before dead code elimination.
+       Leo     139 statements after dead code elimination.
+       Leo     The program checksum is: '[36u8, 158u8, 233u8, 123u8, 110u8, 12u8, 96u8, 90u8, 182u8, 232u8, 235u8, 234u8, 114u8, 210u8, 248u8, 98u8, 250u8, 165u8, 29u8, 23u8, 72u8, 234u8, 126u8, 71u8, 75u8, 50u8, 30u8, 246u8, 109u8, 188u8, 59u8, 121u8]'.
+       Leo     Program size: 6.23 KB / 97.66 KB
+       Leo ✅ Compiled 'baba_zk_payroll.aleo' into Aleo instructions.
+⚠️ No network specified, defaulting to 'testnet'.
+
+➕Adding programs to the VM in the following order:
+  - baba_zk_payroll.aleo (local)
+
+➡️  Outputs
+
+ • {
+  owner: aleo1e77nmmxlw3s9ss7r7k8wevnmjz9e37dxxsxchvxhg56gs4vl9vzqzcl07s.private,
+  total_spent: 0u64.private,
+  payroll_id: 1field.private,
+  auditor: aleo1dcm8zcart6z5tm2fzl95fj0cxtrxztquz00egkq9xpxafgjg4gpsgf5vgv.private,
+  recipient_count: 0u32.private,
+  _nonce: 3702303720035987978522375389682625284140547619873889286807235484388220456921group.public,
+  _version: 1u8.public
+}
+ • {
+  program_id: baba_zk_payroll.aleo,
+  function_name: initialize_payroll,
+  arguments: [
+    1field,
+    1000u64,
+    2u64,
+    aleo1e77nmmxlw3s9ss7r7k8wevnmjz9e37dxxsxchvxhg56gs4vl9vzqzcl07s,
+    aleo1q56xwucee45w6f2zwzhx9askc2evz9lhxc3rlwym2cu4y67w2sxq4ggplc,
+    aleo1s0hc0xtpmpma9gtyps023d4mr4l0wfufkdmuhak8f3fsuh7g7v9snv2t4c
+  ]
+}

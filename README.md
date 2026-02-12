@@ -114,12 +114,29 @@ chmod +x test.sh && ./test.sh
 
 ---
 
+
+## 💻 Frontend (Web App)
+
+A production-grade Next.js application is located in the `web/` directory.
+
+### Quick Start
+1.  `cd web`
+2.  `npm install`
+3.  `npm run dev`
+
+Features:
+*   **Admin Dashboard**: Manage payroll, issuance, and multi-sig operations.
+*   **Employee Portal**: View and decrypt pay stubs privacy-preservingly.
+*   **Wallet Adapter**: Connects with Leo Wallet.
+
 ## 📁 Project Structure
 
 ```
 zk_payroll/
 ├── [src/main.leo](./src/main.leo)   # Core contract (66 statements)
-├── demo/                  # Interactive web demo
+├── web/                   # Next.js dApp (React + Wallet Adapter)
+├── demo/                  # Legacy static demo
+
 │   ├── index.html
 │   ├── style.css
 │   └── demo.js

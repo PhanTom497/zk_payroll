@@ -1,28 +1,26 @@
-
-program baba_zk_payroll.aleo {
+program baba_zk_payroll_v3.aleo {
 
     // ========================================================================
-    // RECORDS (Private State - Encrypted on-chain)
+    // STRUCTURES
     // ========================================================================
 
-    /// AdminCap: Authorization capability for DAO payroll administrator
-    /// 
-    /// PRIVACY: Admin and auditor addresses are ONLY stored here (encrypted).
-    ///  Added auditor field for selective disclosure to compliance officers.
-    record AdminCap {
-        owner: address,      // Admin who controls this payroll
-        payroll_id: field,   // Links to specific payroll instance
-        auditor: address,    //  Authorized auditor who can receive reports
+    struct Signatures {
+        sig1: signature,
+        sig2: signature,
+        sig3: signature,
     }
 
+    // ========================================================================
+    // RECORDS
+    // ========================================================================
+
     /// SpentRecord: Tracks cumulative spent amount (state-channel pattern)
-    ///
-    ///  Added auditor field to maintain auditor reference across payments.
     record SpentRecord {
-        owner: address,      // Admin who owns this tracker
+        owner: address,      // Admin who owns this tracker (usually the first admin)
         total_spent: u64,    // Cumulative amount spent (PRIVATE)
         payroll_id: field,   // Links to specific payroll instance
-        auditor: address,    //  Auditor reference for report generation
+        auditor: address,    // Auditor reference for report generation
+        recipient_count: u32, // Number of private payments made
     }
 
     /// RecipientTicket: Private wrapper for recipient address
@@ -39,208 +37,223 @@ program baba_zk_payroll.aleo {
         payroll_id: field,   // Links to payroll instance (PRIVATE)
     }
 
-    /// AuditReport:- Private spending summary for compliance auditor
-    ///
-    /// PURPOSE: Allows DAO admin to "push" a private spending summary to an auditor
-    /// without revealing individual SalaryRecords or making total_spent public.
-    ///
-    /// PRIVACY: Only the auditor can decrypt this record.
-    /// The blockchain explorer sees nothing about the amount.
+    /// AuditReport: Private spending summary for compliance auditor
     record AuditReport {
         owner: address,      // The auditor who receives this report
         total_spent: u64,    // Private total revealed ONLY to auditor
         payroll_id: field,   // Links to payroll instance
         timestamp: u32,      // When the report was generated
+        // Enhanced Auditor Metadata
+        recipient_count: u32, // Verified count of recipients
+        pay_period_hash: field, // Commitment to pay period range
+        merkle_root: field,   // Commitment to recipient set
     }
 
     // ========================================================================
-    // MAPPINGS (Public State - Visible on-chain)
+    // MAPPINGS (Public State)
     // ========================================================================
 
+    // Stores the payroll budget ceiling
     mapping payroll_budgets: field => u64;
-// ========================================================================
-    // CONSTRUCTOR (ARC-0006 Compliance)
-    // ========================================================================
 
-    /// constructor: Only the specified admin can upgrade this program.
-    @admin(address="aleo1esd4g8fzj9ygcsspfzuhfz59nmslhwg86n7pyh0q2pzhdkvq2uxqq4jxvr")
-    async constructor() {
-        // Initialization logic for the program's lifecycle
-    }
+    // Stores the M-of-N threshold for a payroll
+    mapping multisig_threshold: field => u64;
+
+    // Stores the admin members
+    mapping admin_1: field => address;
+    mapping admin_2: field => address;
+    mapping admin_3: field => address;
 
     // ========================================================================
     // TRANSITIONS
     // ========================================================================
 
-    /// initialize_payroll: Create a new DAO payroll with public budget
-    ///
-    ///  Now accepts auditor address as private input
+    /// initialize_payroll: Create a new DAO payroll with M-of-N admins
     async transition initialize_payroll(
         public budget_ceiling: u64,
-        payroll_id: field,
-        private auditor: address  //  Auditor for selective disclosure
-    ) -> (AdminCap, SpentRecord, Future) {
+        public payroll_id: field,
+        public threshold: u64,
+        public admin1: address,
+        public admin2: address,
+        public admin3: address,
+        private auditor: address
+    ) -> (SpentRecord, Future) {
         
-        // Create admin capability with auditor reference
-        let admin_cap: AdminCap = AdminCap {
-            owner: self.caller,
-            payroll_id: payroll_id,
-            auditor: auditor,        //  Store auditor
-        };
-
-        // Create initial spent tracker with auditor reference
         let spent_record: SpentRecord = SpentRecord {
-            owner: self.caller,
+            owner: admin1,
             total_spent: 0u64,
             payroll_id: payroll_id,
-            auditor: auditor,        //  Store auditor
+            auditor: auditor,
+            recipient_count: 0u32,
         };
 
-        let f: Future = finalize_initialize_payroll(payroll_id, budget_ceiling);
-        return (admin_cap, spent_record, f);
+        let f: Future = finalize_initialize_payroll(payroll_id, budget_ceiling, threshold, admin1, admin2, admin3);
+        return (spent_record, f);
     }
 
     async function finalize_initialize_payroll(
         payroll_id: field,
-        budget_ceiling: u64
+        budget_ceiling: u64,
+        threshold: u64,
+        a1: address,
+        a2: address,
+        a3: address
     ) {
         Mapping::set(payroll_budgets, payroll_id, budget_ceiling);
+        Mapping::set(multisig_threshold, payroll_id, threshold);
+        Mapping::set(admin_1, payroll_id, a1);
+        Mapping::set(admin_2, payroll_id, a2);
+        Mapping::set(admin_3, payroll_id, a3);
     }
 
-    /// create_recipient_ticket: Admin creates a ticket for a salary recipient
-    transition create_recipient_ticket(
-        admin_cap: AdminCap,
-        recipient: address
-    ) -> (AdminCap, RecipientTicket) {
+    /// create_recipient_ticket: Admins create a ticket for a salary recipient
+    async transition create_recipient_ticket(
+        public payroll_id: field,
+        public recipient: address,
+        public signatures: Signatures,
+        public signers: [address; 3] 
+    ) -> (RecipientTicket, Future) {
         
-        assert_eq(self.caller, admin_cap.owner);
-
-        // Recreate admin capability with auditor preserved
-        let new_admin_cap: AdminCap = AdminCap {
-            owner: admin_cap.owner,
-            payroll_id: admin_cap.payroll_id,
-            auditor: admin_cap.auditor,  //  Preserve auditor
-        };
-
         let ticket: RecipientTicket = RecipientTicket {
             owner: recipient,
-            payroll_id: admin_cap.payroll_id,
+            payroll_id: payroll_id,
         };
 
-        return (new_admin_cap, ticket);
+        let f: Future = finalize_create_ticket(payroll_id, signatures, signers, recipient);
+        return (ticket, f);
     }
 
-    /// issue_salary: Execute a private salary payment to a contributor
-    ///
-    ///  Maintains auditor field when recreating SpentRecord
+    async function finalize_create_ticket(
+        payroll_id: field,
+        sigs: Signatures,
+        signers: [address; 3], 
+        recipient: address
+    ) {
+        let threshold: u64 = Mapping::get(multisig_threshold, payroll_id);
+        let real_admin1: address = Mapping::get(admin_1, payroll_id);
+        let real_admin2: address = Mapping::get(admin_2, payroll_id);
+        let real_admin3: address = Mapping::get(admin_3, payroll_id);
+
+        // Check Sig 1
+        let is_signer1_valid: bool = (signers[0u8] == real_admin1 || signers[0u8] == real_admin2 || signers[0u8] == real_admin3);
+        let check1: u64 = (is_signer1_valid && sigs.sig1.verify(signers[0u8], recipient)) ? 1u64 : 0u64;
+
+        // Check Sig 2
+        let is_signer2_valid: bool = (signers[1u8] == real_admin1 || signers[1u8] == real_admin2 || signers[1u8] == real_admin3);
+        let is_unique2: bool = (signers[1u8] != signers[0u8]);
+        let check2: u64 = (is_signer2_valid && is_unique2 && sigs.sig2.verify(signers[1u8], recipient)) ? 1u64 : 0u64;
+
+        // Check Sig 3
+        let is_signer3_valid: bool = (signers[2u8] == real_admin1 || signers[2u8] == real_admin2 || signers[2u8] == real_admin3);
+        let is_unique3: bool = (signers[2u8] != signers[0u8] && signers[2u8] != signers[1u8]);
+        let check3: u64 = (is_signer3_valid && is_unique3 && sigs.sig3.verify(signers[2u8], recipient)) ? 1u64 : 0u64;
+
+        assert(check1 + check2 + check3 >= threshold);
+    }
+
+    /// issue_salary: Execute a private salary payment with Multi-Sig
     async transition issue_salary(
-        admin_cap: AdminCap,
         spent_record: SpentRecord,
         recipient_ticket: RecipientTicket,
-        private salary_amount: u64,
-        private payment_id: field
-    ) -> (AdminCap, SpentRecord, SalaryRecord, Future) {
+        public salary_amount: u64,
+        public payment_id: field,
+        public signatures: Signatures, 
+        public signers: [address; 3]
+    ) -> (SpentRecord, SalaryRecord, Future) {
 
-        // Security checks
-        assert_eq(self.caller, admin_cap.owner);
-        assert_eq(admin_cap.payroll_id, spent_record.payroll_id);
-        assert_eq(admin_cap.payroll_id, recipient_ticket.payroll_id);
+        assert_eq(spent_record.payroll_id, recipient_ticket.payroll_id);
 
         let new_total_spent: u64 = spent_record.total_spent + salary_amount;
+        let msg_hash: field = BHP256::hash_to_field(payment_id); 
 
-        // Recreate admin capability with auditor preserved
-        let new_admin_cap: AdminCap = AdminCap {
-            owner: admin_cap.owner,
-            payroll_id: admin_cap.payroll_id,
-            auditor: admin_cap.auditor,  //  Preserve auditor
-        };
-
-        // Create updated spent record with auditor preserved
         let new_spent_record: SpentRecord = SpentRecord {
-            owner: admin_cap.owner,
+            owner: spent_record.owner, 
             total_spent: new_total_spent,
-            payroll_id: admin_cap.payroll_id,
-            auditor: spent_record.auditor,  //  Preserve auditor
+            payroll_id: spent_record.payroll_id,
+            auditor: spent_record.auditor,
+            recipient_count: spent_record.recipient_count + 1u32,
         };
 
         let salary_record: SalaryRecord = SalaryRecord {
             owner: recipient_ticket.owner,
             amount: salary_amount,
             payment_id: payment_id,
-            payroll_id: admin_cap.payroll_id,
+            payroll_id: spent_record.payroll_id,
         };
 
-        let f: Future = finalize_issue_salary(admin_cap.payroll_id, new_total_spent);
-        return (new_admin_cap, new_spent_record, salary_record, f);
+        let f: Future = finalize_issue_salary(spent_record.payroll_id, new_total_spent, signatures, signers, msg_hash);
+        return (new_spent_record, salary_record, f);
     }
 
     async function finalize_issue_salary(
         payroll_id: field,
-        new_total_spent: u64
+        new_total_spent: u64,
+        sigs: Signatures,
+        signers: [address; 3],
+        msg: field
     ) {
+        // 1. Check Budget
         let budget_ceiling: u64 = Mapping::get(payroll_budgets, payroll_id);
         assert(new_total_spent <= budget_ceiling);
+
+        // 2. Verify Multi-Sig
+        let threshold: u64 = Mapping::get(multisig_threshold, payroll_id);
+        let real_admin1: address = Mapping::get(admin_1, payroll_id);
+        let real_admin2: address = Mapping::get(admin_2, payroll_id);
+        let real_admin3: address = Mapping::get(admin_3, payroll_id);
+
+        // Check Sig 1
+        let is_signer1_valid: bool = (signers[0u8] == real_admin1 || signers[0u8] == real_admin2 || signers[0u8] == real_admin3);
+        let check1: u64 = (is_signer1_valid && sigs.sig1.verify(signers[0u8], msg)) ? 1u64 : 0u64;
+
+        // Check Sig 2
+        let is_signer2_valid: bool = (signers[1u8] == real_admin1 || signers[1u8] == real_admin2 || signers[1u8] == real_admin3);
+        let is_unique2: bool = (signers[1u8] != signers[0u8]);
+        let check2: u64 = (is_signer2_valid && is_unique2 && sigs.sig2.verify(signers[1u8], msg)) ? 1u64 : 0u64;
+
+        // Check Sig 3
+        let is_signer3_valid: bool = (signers[2u8] == real_admin1 || signers[2u8] == real_admin2 || signers[2u8] == real_admin3);
+        let is_unique3: bool = (signers[2u8] != signers[0u8] && signers[2u8] != signers[1u8]);
+        let check3: u64 = (is_signer3_valid && is_unique3 && sigs.sig3.verify(signers[2u8], msg)) ? 1u64 : 0u64;
+
+        assert(check1 + check2 + check3 >= threshold);
     }
 
-    // ========================================================================
-    //  SELECTIVE DISCLOSURE
-    // ========================================================================
-
     /// generate_audit_report: Push private spending summary to auditor
-    ///
-    /// PURPOSE: Allows DAO admin to proactively share total_spent with
-    /// an authorized auditor WITHOUT revealing individual salaries or
-    /// making the total public on the blockchain.
-    ///
-    /// INPUTS:
-    /// - admin_cap: Proves caller is the authorized admin
-    /// - spent_record: Contains the private total_spent to disclose
-    /// - timestamp: When the report is generated (for audit trail)
-    ///
-    /// OUTPUTS:
-    /// - AdminCap: Returned to admin (consumed and recreated)
-    /// - SpentRecord: Returned to admin (consumed and recreated)
-    /// - AuditReport: Owned by auditor, contains private total_spent
-    ///
-    /// PRIVACY: Only the auditor can decrypt the AuditReport.
-    /// Blockchain observers see nothing about the spending amount.
+    /// generate_audit_report: Push private spending summary to auditor
     transition generate_audit_report(
-        admin_cap: AdminCap,
         spent_record: SpentRecord,
-        timestamp: u32
-    ) -> (AdminCap, SpentRecord, AuditReport) {
+        timestamp: u32,
+        public pay_period_hash: field,
+        public merkle_root: field
+    ) -> (SpentRecord, AuditReport) {
         
-        // Security: Only the admin can generate reports
-        assert_eq(self.caller, admin_cap.owner);
-        
-        // Consistency: Records must belong to same payroll
-        assert_eq(admin_cap.payroll_id, spent_record.payroll_id);
-
-        // Recreate admin capability (consumed on use)
-        let new_admin_cap: AdminCap = AdminCap {
-            owner: admin_cap.owner,
-            payroll_id: admin_cap.payroll_id,
-            auditor: admin_cap.auditor,
-        };
-
-        // Recreate spent record (consumed on use)
         let new_spent_record: SpentRecord = SpentRecord {
             owner: spent_record.owner,
             total_spent: spent_record.total_spent,
             payroll_id: spent_record.payroll_id,
             auditor: spent_record.auditor,
+            recipient_count: spent_record.recipient_count,
         };
 
-        // Create audit report OWNED BY THE AUDITOR
-        // This is the selective disclosure: auditor receives total_spent
-        // without seeing individual SalaryRecords
         let report: AuditReport = AuditReport {
-            owner: admin_cap.auditor,        // Auditor owns this record
-            total_spent: spent_record.total_spent,  // Private total disclosed
-            payroll_id: admin_cap.payroll_id,
+            owner: spent_record.auditor,
+            total_spent: spent_record.total_spent,
+            payroll_id: spent_record.payroll_id,
             timestamp: timestamp,
+            recipient_count: spent_record.recipient_count,
+            pay_period_hash: pay_period_hash,
+            merkle_root: merkle_root,
         };
 
-        return (new_admin_cap, new_spent_record, report);
+        return (new_spent_record, report);
     }
+
+
+
+
+
+    // Constructor
+    @noupgrade
+    async constructor() {}
 }
