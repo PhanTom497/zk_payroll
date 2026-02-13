@@ -1,7 +1,7 @@
 import { Transaction, WalletAdapterNetwork } from '@demox-labs/aleo-wallet-adapter-base';
 
 export const NETWORK_URL = 'https://api.explorer.provable.com/v1';
-export const PROGRAM_ID = 'baba_zk_payroll_v3.aleo'; // Replace with deployed ID
+export const PROGRAM_ID = 'baba_zk_payroll_v4.aleo'; // Replace with deployed ID
 
 export async function fetchMappingValue(mappingName: string, key: string): Promise<string | null> {
     try {
@@ -13,6 +13,18 @@ export async function fetchMappingValue(mappingName: string, key: string): Promi
     } catch (e) {
         console.error(`Error fetching mapping ${mappingName}:`, e);
         return null;
+    }
+}
+
+export async function fetchBlockHeight(): Promise<number> {
+    try {
+        const response = await fetch(`${NETWORK_URL}/testnet/latest/height`, { cache: 'no-store' }); // Disable cache
+        if (!response.ok) return 0;
+        const height = await response.json();
+        return height;
+    } catch (e) {
+        console.error("Error fetching height:", e);
+        return 0;
     }
 }
 

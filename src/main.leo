@@ -1,4 +1,4 @@
-program baba_zk_payroll_v3.aleo {
+program baba_zk_payroll_v4.aleo {
 
     // ========================================================================
     // STRUCTURES
@@ -29,12 +29,112 @@ program baba_zk_payroll_v3.aleo {
         payroll_id: field,   // Links to specific payroll instance
     }
 
+    /// SalaryCertificate: Right to claim recurring salary
+    record SalaryCertificate {
+        owner: address,
+        amount: u64,
+        start_height: u32,
+        interval: u32,
+        claim_count: u32,
+        payroll_id: field,
+    }
+
     /// SalaryRecord: Encrypted salary payment delivered to contributor
     record SalaryRecord {
         owner: address,      // Recipient of the salary (PRIVATE)
         amount: u64,         // Salary amount in credits (PRIVATE)
         payment_id: field,   // Unique payment identifier (PRIVATE)
         payroll_id: field,   // Links to payroll instance (PRIVATE)
+    }
+
+    // ... existing AuditReport ...
+
+    // ========================================================================
+    // PULL PAYMENT TRANSITIONS (Wave 3)
+    // ========================================================================
+
+    /// fund_payroll: Admin deposits public funds into the program to back claims
+    async transition fund_payroll(
+        public amount: u64,
+        public payroll_id: field
+    ) -> Future {
+        // Transfer 'amount' from caller to the program's public balance
+        // In valid Leo, this is done via credits.aleo/transfer_public_to_private or similar,
+        // but here we simulate by just asserting the caller *can* transfer.
+        // For the demo, we assume the program's balance is managed via `credits.aleo`.
+        // We return a future to update the budget mapping if we want to track it there.
+        return finalize_fund_payroll(payroll_id, amount);
+    }
+
+    async function finalize_fund_payroll(payroll_id: field, amount: u64) {
+        // Increment the budget ceiling to reflect added funds?
+        // Or simply rely on the credits.aleo balance.
+        // For this implementation, we'll update the tracked budget.
+        let current_budget: u64 = Mapping::get_or_use(payroll_budgets, payroll_id, 0u64);
+        Mapping::set(payroll_budgets, payroll_id, current_budget + amount);
+    }
+
+    /// issue_limit: Admin issues a SalaryCertificate (Right to Claim)
+    async transition issue_limit(
+        public payroll_id: field,
+        private recipient: address,
+        public amount: u64,
+        public start_height: u32,
+        public interval: u32
+    ) -> (SalaryCertificate, Future) {
+        let certificate: SalaryCertificate = SalaryCertificate {
+            owner: recipient,
+            amount: amount,
+            start_height: start_height,
+            interval: interval,
+            claim_count: 0u32,
+            payroll_id: payroll_id,
+        };
+        
+        // Return future to maintain consistency pattern
+        return (certificate, finalize_issue_limit());
+    }
+
+    async function finalize_issue_limit() {}
+
+    /// claim_salary: Employee claims their due salary
+    async transition claim_salary(
+        certificate: SalaryCertificate
+    ) -> (SalaryCertificate, SalaryRecord, Future) {
+        // 1. Calculate claimable height
+        let claimable_height: u32 = certificate.start_height + (certificate.claim_count * certificate.interval);
+        
+        // 2. Logic check (enforced in verify or finalize, but we do standard strict check here)
+        // Note: In Leo, block.height is only available in finalize.
+        
+        // 3. Create updated certificate
+        let updated_certificate: SalaryCertificate = SalaryCertificate {
+            owner: certificate.owner,
+            amount: certificate.amount,
+            start_height: certificate.start_height,
+            interval: certificate.interval,
+            claim_count: certificate.claim_count + 1u32,
+            payroll_id: certificate.payroll_id,
+        };
+
+        // 4. Create the payment record
+        let salary_record: SalaryRecord = SalaryRecord {
+            owner: certificate.owner,
+            amount: certificate.amount,
+            payment_id: 999field, // Placeholder for claim ID
+            payroll_id: certificate.payroll_id,
+        };
+
+        return (updated_certificate, salary_record, finalize_claim_salary(certificate.amount, claimable_height));
+    }
+
+    async function finalize_claim_salary(amount: u64, claimable_height: u32) {
+        // 1. Verify Time Lock
+        assert(block.height >= claimable_height);
+
+        // 2. Deduct from program budget (if we are tracking it)
+        // In a real app, this would also call credits.aleo/transfer_public_to_private
+        // to move funds from the program's address to the user.
     }
 
     /// AuditReport: Private spending summary for compliance auditor

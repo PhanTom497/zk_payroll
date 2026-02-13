@@ -27,7 +27,7 @@ export const AleoWalletProvider = ({
         <WalletProvider
             wallets={wallets}
             decryptPermission={DecryptPermission.OnChainHistory}
-            network={"testnetbeta" as WalletAdapterNetwork}
+            network={WalletAdapterNetwork.TestnetBeta}
             autoConnect
         >
             {children}

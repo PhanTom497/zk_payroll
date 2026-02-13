@@ -1,99 +1,199 @@
 'use client'
 
 import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchBlockHeight, requestTransaction, PROGRAM_ID } from '../../lib/zk-utils'
+import { EmployeeClaimComponent } from '../../components/EmployeeClaimComponent'
 
-interface PayStub {
-    id: string;
-    amount: string;
-    date: string;
-    status: 'Claimed' | 'Unclaimed';
+interface SalaryCertificate {
+    id: string
+    amount: string
+    start_height: number
+    interval: number
+    claim_count: number
+    payroll_id: string
+    _record: string // The raw record string for transaction input
+}
+
+interface SalaryRecord {
+    id: string
+    amount: string
+    payment_id: string
+    payroll_id: string
 }
 
 export default function EmployeePage() {
-    const { wallet, publicKey } = useWallet()
-    const [payHistory, setPayHistory] = useState<PayStub[]>([])
+    const { wallet, publicKey, requestRecordPlaintexts } = useWallet()
+    const [certificates, setCertificates] = useState<SalaryCertificate[]>([])
+    const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]) // New state
     const [isScanning, setIsScanning] = useState(false)
+    const [currentHeight, setCurrentHeight] = useState<number>(0)
+    const [loadingClaim, setLoadingClaim] = useState(false)
 
-    // Mock function to simulate scanning for records
-    const scanRecords = () => {
+    // ... (useEffect for height remains same) ...
+    // Fetch block height on mount and interval
+    useEffect(() => {
+        const updateHeight = async () => {
+            const h = await fetchBlockHeight()
+            if (h > 0) setCurrentHeight(h)
+        }
+        updateHeight()
+        const interval = setInterval(updateHeight, 10000) // Update every 10s
+        return () => clearInterval(interval)
+    }, [])
+
+    const scanRecords = async () => {
+        if (!publicKey || !requestRecordPlaintexts) return
         setIsScanning(true)
-        setTimeout(() => {
-            setPayHistory([
-                { id: 'pay_123', amount: '500u64', date: '2023-10-01', status: 'Claimed' },
-                { id: 'pay_456', amount: '500u64', date: '2023-11-01', status: 'Unclaimed' }
-            ])
+        console.log("Scanning with PROGRAM_ID:", PROGRAM_ID);
+        try {
+            const records = await requestRecordPlaintexts(PROGRAM_ID)
+
+            // Scan Certificates
+            const certs: SalaryCertificate[] = records
+                .filter((rec: any) => !rec.spent && rec.recordName === 'SalaryCertificate')
+                .map((rec: any) => ({
+                    id: rec.serialNumber || 'unknown',
+                    amount: rec.data.amount,
+                    start_height: parseInt(rec.data.start_height.replace('u32', '')),
+                    interval: parseInt(rec.data.interval.replace('u32', '')),
+                    claim_count: parseInt(rec.data.claim_count.replace('u32', '')),
+                    payroll_id: rec.data.payroll_id,
+                    _record: rec.plaintext
+                }))
+            setCertificates(certs)
+
+            // Scan Salary Payments (Proofs)
+            const payments: SalaryRecord[] = records
+                .filter((rec: any) => rec.recordName === 'SalaryRecord')
+                .map((rec: any) => ({
+                    id: rec.serialNumber || 'unknown',
+                    amount: rec.data.amount,
+                    payment_id: rec.data.payment_id,
+                    payroll_id: rec.data.payroll_id
+                }))
+            setSalaryRecords(payments)
+
+        } catch (e) {
+            console.error("Error scanning records:", e)
+        } finally {
             setIsScanning(false)
-        }, 2000)
+        }
+    }
+
+    const handleClaim = async (recordPlaintext: string) => {
+        if (!publicKey || !wallet) return
+        setLoadingClaim(true)
+        try {
+            await requestTransaction(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                'claim_salary',
+                [recordPlaintext],
+                500000 // Fee (0.5 credits)
+            )
+            alert("Claim transaction submitted! Please wait for a few minutes, then click 'Scan' again to see your new payment record.")
+        } catch (e: any) {
+            console.error("Error claiming salary:", e)
+            alert("Failed to claim salary. Details: " + e.message)
+        } finally {
+            setLoadingClaim(false)
+        }
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-24">
+        <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
             <h1 className="text-4xl font-bold mb-8">Employee Portal</h1>
 
             <div className="w-full max-w-5xl">
                 {/* Wallet Connection Status */}
-                <div className="mb-8 p-6 bg-gray-100 dark:bg-zinc-800 rounded-lg">
-                    <h2 className="text-2xl font-semibold mb-4">My Wallet</h2>
-                    {publicKey ? (
-                        <div className="text-green-500 break-all">
-                            Connected: {publicKey}
-                        </div>
-                    ) : (
-                        <div className="text-yellow-500">Not Connected - Please Connect Wallet</div>
-                    )}
+                <div className="mb-8 p-6 bg-gray-800 rounded-lg flex justify-between items-center border border-gray-700">
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-2">My Wallet</h2>
+                        {publicKey ? (
+                            <div className="text-green-500 font-mono break-all">{publicKey}</div>
+                        ) : (
+                            <div className="text-yellow-500">Not Connected</div>
+                        )}
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-400">Current Block Height</p>
+                        <p className="text-2xl font-mono font-bold text-white">{currentHeight > 0 ? currentHeight : 'Syncing...'}</p>
+                    </div>
                 </div>
 
-                {/* Dashboard Content (Only if connected) */}
+                {/* Dashboard Content */}
                 {publicKey && (
-                    <div className="p-6 border border-gray-300 rounded-lg">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold">My Pay Stubs</h2>
-                            <button
-                                onClick={scanRecords}
-                                disabled={isScanning}
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {isScanning ? 'Decrypting Records...' : 'Scan & Decrypt'}
-                            </button>
+                    <div className="space-y-8">
+
+                        {/* Certificates Section */}
+                        <div className="p-6 border border-gray-700 bg-gray-800/50 rounded-lg">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold">My Salary Certificates</h2>
+                                <button
+                                    onClick={scanRecords}
+                                    disabled={isScanning}
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
+                                >
+                                    {isScanning ? 'Decrypting...' : 'Scan for Certificates'}
+                                </button>
+                            </div>
+
+                            {certificates.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {certificates.map((cert, idx) => (
+                                        <EmployeeClaimComponent
+                                            key={idx}
+                                            certificate={cert}
+                                            currentBlockHeight={currentHeight}
+                                            onClaim={handleClaim}
+                                            loading={loadingClaim}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 bg-gray-800/30 rounded-lg border-2 border-dashed border-gray-700">
+                                    <p className="text-gray-400 text-lg mb-2">No active salary certificates found.</p>
+                                    <p className="text-gray-500 text-sm">Click "Scan" to check the blockchain for your records.</p>
+                                </div>
+                            )}
                         </div>
 
-                        {payHistory.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full text-left">
-                                    <thead className="bg-gray-100 dark:bg-zinc-800">
-                                        <tr>
-                                            <th className="p-3">Date</th>
-                                            <th className="p-3">Amount</th>
-                                            <th className="p-3">Status</th>
-                                            <th className="p-3">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {payHistory.map((pay) => (
-                                            <tr key={pay.id} className="border-b dark:border-zinc-700">
-                                                <td className="p-3">{pay.date}</td>
-                                                <td className="p-3 font-mono">{pay.amount}</td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-1 rounded text-xs ${pay.status === 'Claimed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {pay.status}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3">
-                                                    <button className="text-blue-500 hover:underline">
-                                                        View Proof
-                                                    </button>
-                                                </td>
+                        {/* Payments Received Section */}
+                        <div className="p-6 border border-gray-700 bg-gray-800/50 rounded-lg">
+                            <h2 className="text-xl font-bold mb-4">Payment History (Salary Records)</h2>
+                            {salaryRecords.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-left text-sm text-gray-300">
+                                        <thead className="bg-gray-700 text-gray-100 uppercase font-medium">
+                                            <tr>
+                                                <th className="px-4 py-3">Amount</th>
+                                                <th className="px-4 py-3">Payment ID</th>
+                                                <th className="px-4 py-3">Payroll ID</th>
+                                                <th className="px-4 py-3 text-right">Status</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 text-gray-500">
-                                {isScanning ? 'Searching blockchain for records owned by you...' : 'No payment records found yet. Click Scan to check.'}
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-700">
+                                            {salaryRecords.map((rec, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-700/50 transition">
+                                                    <td className="px-4 py-3 font-mono text-green-400">{rec.amount}</td>
+                                                    <td className="px-4 py-3 font-mono text-xs">{rec.payment_id}</td>
+                                                    <td className="px-4 py-3 font-mono text-xs">{rec.payroll_id}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">
+                                                            Received
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 italic">No salary payments found yet.</p>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

@@ -1,8 +1,8 @@
 'use client'
 
 import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
-import { useState } from 'react'
-import { requestTransaction, PROGRAM_ID } from '@/lib/zk-utils'
+import { useState, useEffect } from 'react'
+import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue } from '@/lib/zk-utils'
 
 export default function AdminPage() {
     const { wallet, publicKey, requestRecordPlaintexts } = useWallet()
@@ -10,11 +10,95 @@ export default function AdminPage() {
     const [periodHash, setPeriodHash] = useState('')
     const [merkleRoot, setMerkleRoot] = useState('')
     const [isTransacting, setIsTransacting] = useState(false)
+    const [currentHeight, setCurrentHeight] = useState<number>(0)
 
-    // Mock function to simulate fetching public state
-    const fetchState = () => {
-        // In real app: JSON query to Aleo Node
-        setTimeout(() => setBudget('1000u64'), 1000)
+    // Form States
+    const [fundAmount, setFundAmount] = useState('')
+    const [issueRecipient, setIssueRecipient] = useState('')
+    const [issueAmount, setIssueAmount] = useState('')
+    const [issueStart, setIssueStart] = useState('')
+    const [issueInterval, setIssueInterval] = useState('100')
+
+    // Fetch public state from chain
+    const fetchState = async () => {
+        setBudget('Loading...')
+        try {
+            // Fetch payroll_budgets for ID 1field
+            const budgetVal = await fetchMappingValue('payroll_budgets', '1field')
+            if (budgetVal) {
+                setBudget(budgetVal) // Value usually comes as "1500u64" string from JSON
+            } else {
+                setBudget('0u64')
+            }
+        } catch (e) {
+            console.error("Error fetching state:", e)
+            setBudget('Error')
+        }
+    }
+
+    // Update block height
+    useEffect(() => {
+        const updateHeight = async () => {
+            const h = await fetchBlockHeight()
+            if (h > 0) {
+                setCurrentHeight(h)
+                if (!issueStart) setIssueStart((h + 10).toString()) // Suggest start in 10 blocks
+            }
+        }
+        updateHeight()
+        const interval = setInterval(updateHeight, 10000)
+        return () => clearInterval(interval)
+    }, [])
+
+    const handleFundPayroll = async () => {
+        if (!publicKey || !fundAmount) return
+        setIsTransacting(true)
+        try {
+            const txId = await requestTransaction(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                'fund_payroll',
+                [fundAmount + 'u64', '1field'], // public amount, public payroll_id
+                300_000
+            )
+            alert("Funding Transaction sent! ID: " + txId)
+        } catch (err: any) {
+            console.error(err)
+            alert("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
+    const handleIssueCertificate = async () => {
+        if (!publicKey || !issueRecipient || !issueAmount) return
+        setIsTransacting(true)
+        try {
+            // transition issue_limit(payroll_id, recipient, amount, start_height, interval)
+            const inputs = [
+                '1field',                   // payroll_id (public)
+                issueRecipient,             // recipient (private)
+                issueAmount + 'u64',        // amount (public)
+                issueStart + 'u32',         // start_height (public)
+                issueInterval + 'u32'       // interval (public)
+            ]
+
+            const txId = await requestTransaction(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                'issue_limit',
+                inputs,
+                300_000
+            )
+            alert("Certificate Issued! Transaction ID: " + txId)
+        } catch (err: any) {
+            console.error(err)
+            alert("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
     }
 
     const handleGenerateReport = async () => {
@@ -50,7 +134,7 @@ export default function AdminPage() {
                 PROGRAM_ID,
                 'generate_audit_report',
                 inputs,
-                300_000 // 0.3 credit fee (Aleo fees are in microcredits? No, typically gate. check adapter docs. 3_000_000 is 3 credits. 300_000 is 0.3)
+                300_000 // 0.3 credit fee
             )
 
             alert("Transaction sent! ID: " + txId)
@@ -68,15 +152,21 @@ export default function AdminPage() {
 
             <div className="w-full max-w-5xl">
                 {/* Wallet Connection Status */}
-                <div className="mb-8 p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm">
-                    <h2 className="text-2xl font-semibold mb-4">Wallet Status</h2>
-                    {publicKey ? (
-                        <div className="text-green-500 break-all font-mono">
-                            Connected: {publicKey}
-                        </div>
-                    ) : (
-                        <div className="text-yellow-500">Not Connected</div>
-                    )}
+                <div className="mb-8 p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-2">Wallet Status</h2>
+                        {publicKey ? (
+                            <div className="text-green-500 break-all font-mono">
+                                Connected: {publicKey}
+                            </div>
+                        ) : (
+                            <div className="text-yellow-500">Not Connected</div>
+                        )}
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-500">Block Height</p>
+                        <p className="text-2xl font-mono font-bold">{currentHeight || 'Syncing...'}</p>
+                    </div>
                 </div>
 
                 {/* Dashboard Content (Only if connected) */}
@@ -94,31 +184,84 @@ export default function AdminPage() {
                             >
                                 Refresh State
                             </button>
+
+                            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-zinc-700">
+                                <h3 className="font-semibold mb-2">Fund Payroll Budget</h3>
+                                <p className="text-sm text-gray-500 mb-2">Deposit public credits to back employee claims.</p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        placeholder="Amount (e.g. 50000)"
+                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                        value={fundAmount}
+                                        onChange={(e) => setFundAmount(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={handleFundPayroll}
+                                        disabled={isTransacting}
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                        Fund
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Actions */}
                         <div className="p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
-                            <h2 className="text-xl font-bold mb-4">Actions</h2>
+                            <h2 className="text-xl font-bold mb-4">Management Actions</h2>
 
-                            <div className="mb-4">
-                                <h3 className="font-semibold mb-2">Issue Salary</h3>
+                            {/* Issue Certificate Section */}
+                            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-zinc-700">
+                                <h3 className="font-semibold mb-2">Issue Salary Certificate</h3>
+                                <p className="text-xs text-gray-500 mb-4">Grant an employee the right to claim recurring salary.</p>
+
                                 <input
                                     type="text"
-                                    placeholder="Recipient Address"
-                                    className="w-full p-2 mb-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                    placeholder="Employee Address (aleo1...)"
+                                    className="w-full p-2 mb-2 border rounded dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
+                                    value={issueRecipient}
+                                    onChange={(e) => setIssueRecipient(e.target.value)}
                                 />
-                                <input
-                                    type="number"
-                                    placeholder="Amount"
-                                    className="w-full p-2 mb-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                />
-                                <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
-                                    Sign & Issue
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                    <input
+                                        type="number"
+                                        placeholder="Amount per Claim"
+                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                        value={issueAmount}
+                                        onChange={(e) => setIssueAmount(e.target.value)}
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Interval (Blocks)"
+                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                        value={issueInterval}
+                                        onChange={(e) => setIssueInterval(e.target.value)}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="text-xs text-gray-500">Start Block Height</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Start Block"
+                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                        value={issueStart}
+                                        onChange={(e) => setIssueStart(e.target.value)}
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={handleIssueCertificate}
+                                    disabled={isTransacting}
+                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                    Issue Certificate
                                 </button>
                             </div>
 
-                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-zinc-700">
-                                <h3 className="font-semibold mb-2">Compliance</h3>
+                            {/* Compliance Section */}
+                            <div>
+                                <h3 className="font-semibold mb-2">Auditor Compliance</h3>
                                 <div className="space-y-2 mb-4">
                                     <input
                                         type="text"
@@ -140,73 +283,7 @@ export default function AdminPage() {
                                     disabled={isTransacting}
                                     className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
                                 >
-                                    {isTransacting ? 'Processing...' : 'Generate Audit Report'}
-                                </button>
-                            </div>
-
-                            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-zinc-700">
-                                <h3 className="font-semibold mb-2">Initialize New Payroll</h3>
-                                <button
-                                    onClick={async () => {
-                                        if (!publicKey || !requestRecordPlaintexts) return
-                                        setIsTransacting(true)
-                                        try {
-                                            // Demo: Initialize with current user as Admin 1 (others need to be distinct)
-                                            // logic: initialize_payroll(budget, id, threshold, a1, a2, a3, auditor)
-                                            const inputs = [
-                                                '1000000u64', // Budget
-                                                '1field',     // Payroll ID (Demo)
-                                                '1u64',       // Threshold (1-of-3 for demo simplicity if contract allows, else needs 3)
-                                                publicKey,    // Admin 1
-                                                'aleo1...',   // Admin 2 (Placeholder)
-                                                'aleo1...',   // Admin 3 (Placeholder)
-                                                publicKey     // Auditor (Self for demo)
-                                            ]
-                                            // Note: Contract requires distinct admins for tickets, but initialize might allow repeats?
-                                            // Contract: finalize_initialize_payroll sets mappings. 
-                                            // create_ticket checks duplicates. 
-                                            // So for initialize we can just pass dummy addresses.
-
-                                            // For a real demo, we should prompt or use distinct test accounts.
-                                            // Here we alert the user this is a demo stub.
-
-                                            console.log("Deploy New Clicked");
-                                            if (!publicKey) {
-                                                alert("Please connect wallet first!");
-                                                return;
-                                            }
-                                            console.log("Public Key:", publicKey);
-
-                                            const realInputs = [
-                                                '1000000u64',
-                                                '1field',
-                                                '1u64',
-                                                publicKey, // Admin 1
-                                                publicKey, // Admin 2 (Placeholder)
-                                                publicKey, // Admin 3 (Placeholder)
-                                                publicKey  // Auditor (Self for demo)
-                                            ];
-                                            console.log("Inputs:", realInputs);
-                                            const txId = await requestTransaction(
-                                                wallet?.adapter!,
-                                                publicKey,
-                                                PROGRAM_ID,
-                                                'initialize_payroll',
-                                                realInputs,
-                                                300_000
-                                            )
-                                            alert("Initialization sent! ID: " + txId)
-                                        } catch (e: any) {
-                                            console.error(e)
-                                            alert("Error: " + e.message)
-                                        } finally {
-                                            setIsTransacting(false)
-                                        }
-                                    }}
-                                    disabled={isTransacting}
-                                    className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition disabled:opacity-50"
-                                >
-                                    Deploy New (Demo)
+                                    Generate Audit Report
                                 </button>
                             </div>
                         </div>
