@@ -124,23 +124,29 @@ export default function EmployeePage() {
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
-            <h1 className="text-4xl font-bold mb-8">Employee Portal</h1>
+        <main className="flex min-h-screen flex-col items-center p-24 relative overflow-hidden text-gray-100">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white opacity-[0.02] blur-[150px] rounded-full pointer-events-none" />
 
-            <div className="w-full max-w-5xl">
+            <h1 className="text-4xl font-bold mb-8 z-10 tracking-tight">Employee Portal</h1>
+
+            <div className="w-full max-w-6xl z-10">
                 {/* Wallet Connection Status */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg flex justify-between items-center border border-gray-700">
+                <div className="mb-8 glass-card flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-semibold mb-2">My Wallet</h2>
+                        <h2 className="text-xl font-semibold mb-2 text-gray-200">My Wallet</h2>
                         {publicKey ? (
-                            <div className="text-green-500 font-mono break-all">{publicKey}</div>
+                            <div className="flex items-center gap-2 text-green-400 font-mono">
+                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                                Connected: {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
+                            </div>
                         ) : (
                             <div className="text-yellow-500">Not Connected</div>
                         )}
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-400">Current Block Height</p>
-                        <p className="text-2xl font-mono font-bold text-white">{currentHeight > 0 ? currentHeight : 'Syncing...'}</p>
+                        <p className="text-sm text-gray-500">Block Height</p>
+                        <p className="text-2xl font-mono font-bold text-white">{currentHeight || 'Syncing...'}</p>
                     </div>
                 </div>
 
@@ -148,21 +154,24 @@ export default function EmployeePage() {
                 {publicKey && (
                     <div className="space-y-8">
 
-                        {/* Certificates Section */}
-                        <div className="p-6 border border-gray-700 bg-gray-800/50 rounded-lg">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold">My Salary Certificates</h2>
+                        {/* Certificates (Salary Rights) Section */}
+                        <div className="glass-card">
+                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-glass-border">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Salary Rights (Paychecks)</h2>
+                                    <p className="text-sm text-gray-400">Your authorized salary streams.</p>
+                                </div>
                                 <button
                                     onClick={scanRecords}
                                     disabled={isScanning}
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
+                                    className="px-6 py-2 bg-white text-black rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                                 >
-                                    {isScanning ? 'Decrypting...' : 'Scan for Certificates'}
+                                    {isScanning ? 'Decrypting...' : 'Check for Paychecks'}
                                 </button>
                             </div>
 
                             {certificates.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {certificates.map((cert, idx) => (
                                         <EmployeeClaimComponent
                                             key={idx}
@@ -174,36 +183,41 @@ export default function EmployeePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-12 bg-gray-800/30 rounded-lg border-2 border-dashed border-gray-700">
-                                    <p className="text-gray-400 text-lg mb-2">No active salary certificates found.</p>
-                                    <p className="text-gray-500 text-sm">Click &quot;Scan&quot; to check the blockchain for your records.</p>
+                                <div className="text-center py-16 bg-white/5 rounded-xl border border-white/5 border-dashed">
+                                    <div className="inline-block p-4 rounded-full bg-white/5 mb-4 text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-gray-300 text-lg mb-2">No active salary rights found.</p>
+                                    <p className="text-gray-500 text-sm max-w-md mx-auto">Click &quot;Check for Paychecks&quot; to decrypt your private records from the blockchain.</p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Payments Received Section */}
-                        <div className="p-6 border border-gray-700 bg-gray-800/50 rounded-lg">
-                            <h2 className="text-xl font-bold mb-4">Payment History (Salary Records)</h2>
+                        {/* Withdraw History */}
+                        <div className="glass-card">
+                            <h2 className="text-xl font-bold mb-6 text-white">Withdrawal History</h2>
                             {salaryRecords.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full text-left text-sm text-gray-300">
-                                        <thead className="bg-gray-700 text-gray-100 uppercase font-medium">
+                                        <thead className="bg-white/5 text-gray-100 uppercase font-medium text-xs tracking-wider">
                                             <tr>
-                                                <th className="px-4 py-3">Amount</th>
-                                                <th className="px-4 py-3">Payment ID</th>
-                                                <th className="px-4 py-3">Payroll ID</th>
-                                                <th className="px-4 py-3 text-right">Status</th>
+                                                <th className="px-4 py-4 rounded-tl-lg">Amount</th>
+                                                <th className="px-4 py-4">Payment ID</th>
+                                                <th className="px-4 py-4">Payroll ID</th>
+                                                <th className="px-4 py-4 text-right rounded-tr-lg">Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-700">
+                                        <tbody className="divide-y divide-white/10">
                                             {salaryRecords.map((rec, idx) => (
-                                                <tr key={idx} className="hover:bg-gray-700/50 transition">
-                                                    <td className="px-4 py-3 font-mono text-green-400">{rec.amount}</td>
-                                                    <td className="px-4 py-3 font-mono text-xs">{rec.payment_id}</td>
-                                                    <td className="px-4 py-3 font-mono text-xs">{rec.payroll_id}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">
-                                                            Received
+                                                <tr key={idx} className="hover:bg-white/5 transition">
+                                                    <td className="px-4 py-4 font-mono font-bold text-white">{rec.amount}</td>
+                                                    <td className="px-4 py-4 font-mono text-xs text-gray-500">{rec.payment_id}</td>
+                                                    <td className="px-4 py-4 font-mono text-xs text-gray-500">{rec.payroll_id}</td>
+                                                    <td className="px-4 py-4 text-right">
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-green-500/20 text-green-300 border border-green-500/20">
+                                                            Withdrawn
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -212,7 +226,7 @@ export default function EmployeePage() {
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-gray-500 italic">No salary payments found yet.</p>
+                                <p className="text-gray-500 italic py-4">No withdrawal history available.</p>
                             )}
                         </div>
                     </div>

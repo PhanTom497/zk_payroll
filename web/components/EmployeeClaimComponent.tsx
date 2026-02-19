@@ -45,46 +45,46 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
     }, [blocksLeft, currentBlockHeight])
 
     return (
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-start mb-4">
+        <div className="glass-card flex flex-col h-full bg-white/5 border border-white/10">
+            <div className="flex justify-between items-start mb-6">
                 <div>
-                    <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-2">
-                        Salary Certificate
+                    <span className="inline-block px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider bg-white/10 text-white mb-2 border border-white/5">
+                        Salary Right
                     </span>
-                    <h3 className="text-xl font-bold font-mono">{displayAmount} Credits</h3>
+                    <h3 className="text-2xl font-bold font-mono text-white">{displayAmount} <span className="text-sm font-sans font-normal text-gray-400">Credits</span></h3>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm text-gray-500">Next Claim</p>
-                    <p className={`font-mono font-bold ${canClaim ? 'text-green-500' : 'text-orange-500'}`}>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Next Withdrawal</p>
+                    <p className={`font-mono font-bold ${canClaim ? 'text-green-400' : 'text-orange-400'}`}>
                         {canClaim ? 'NOW' : `Block ${nextClaimHeight}`}
                     </p>
                 </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
-                <div className="flex justify-between text-sm mb-2">
+            <div className="bg-black/20 rounded-lg p-4 mb-6 space-y-2 border border-white/5">
+                <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Current Block</span>
-                    <span className="font-mono">{currentBlockHeight > 0 ? currentBlockHeight : 'Loading...'}</span>
-                </div>
-                <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-500">Wait Time</span>
-                    <span className="font-mono">{timeRemaining}</span>
+                    <span className="font-mono text-gray-300">{currentBlockHeight > 0 ? currentBlockHeight : 'Syncing...'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Claims So Far</span>
-                    <span className="font-mono">{certificate.claim_count}</span>
+                    <span className="text-gray-500">Wait Time</span>
+                    <span className="font-mono text-gray-300">{timeRemaining}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Withdrawals So Far</span>
+                    <span className="font-mono text-gray-300">{certificate.claim_count}</span>
                 </div>
             </div>
 
             <button
                 onClick={() => onClaim(certificate._record)}
                 disabled={!canClaim || loading}
-                className={`w-full py-3 rounded-lg font-bold transition-all ${canClaim
-                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
-                        : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
+                className={`w-full py-3 rounded-lg font-bold transition-all border mt-auto ${canClaim
+                    ? 'bg-white text-black hover:bg-gray-200 border-transparent shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                    : 'bg-transparent text-gray-600 border-gray-800 cursor-not-allowed'
                     }`}
             >
-                {loading ? 'Processing...' : canClaim ? 'Claim Salary' : `Wait ${blocksLeft} Blocks`}
+                {loading ? 'Processing...' : canClaim ? 'Withdraw Funds' : `Locked (${blocksLeft} Blocks)`}
             </button>
         </div>
     )

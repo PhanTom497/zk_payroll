@@ -18,10 +18,12 @@ export const WalletConnectButton = () => {
         return (
             <button
                 onClick={() => disconnect()}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center gap-2 font-mono text-sm"
+                className="group flex items-center gap-3 px-4 py-2 bg-glass border border-glass-border rounded-full hover:bg-glass-hover transition-all duration-300 backdrop-blur-md"
             >
-                {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
-                <span className="ml-2 text-xs opacity-75">(Disconnect)</span>
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+                <span className="font-mono text-sm text-gray-200 group-hover:text-white transition-colors">
+                    {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
+                </span>
             </button>
         )
     }
@@ -30,7 +32,7 @@ export const WalletConnectButton = () => {
         <button
             onClick={handleConnect}
             disabled={connecting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 font-bold"
+            className="glass-button bg-white text-black px-6 py-2 rounded-full font-semibold hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {connecting ? 'Connecting...' : 'Connect Wallet'}
         </button>

@@ -14,12 +14,26 @@ export default function AdminPage() {
     const [isTransacting, setIsTransacting] = useState(false)
     const [currentHeight, setCurrentHeight] = useState<number>(0)
 
+    // Tab State
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'deposit' | 'authorize' | 'batch' | 'compliance'>('dashboard')
+
+    // Helper to clean Aleo values
+    const cleanValue = (val: string) => val.replace(/u64|u32|field|\.private/g, '')
+
     // Form States
     const [fundAmount, setFundAmount] = useState('')
     const [issueRecipient, setIssueRecipient] = useState('')
     const [issueAmount, setIssueAmount] = useState('')
     const [issueStart, setIssueStart] = useState('')
     const [issueInterval, setIssueInterval] = useState('100')
+
+    // Initialization State
+    const [isInitialized, setIsInitialized] = useState<boolean | null>(null) // null = check pending
+    const [initBudget, setInitBudget] = useState('1000000')
+    const [initThreshold, setInitThreshold] = useState('2')
+    const [admin2, setAdmin2] = useState('')
+    const [admin3, setAdmin3] = useState('')
+    const [auditorAddr, setAuditorAddr] = useState('')
 
     // Bulk Issue States
     const [baseSalary, setBaseSalary] = useState('1000')
@@ -80,20 +94,66 @@ export default function AdminPage() {
 
     // Fetch public state from chain
     const fetchState = async () => {
-        setBudget('Loading...')
+        // Silent refresh, don't show loading text unless budget is completely unset
+        if (!budget) setBudget('Loading...')
         try {
-            // Fetch payroll_budgets for ID 1field
+            // Check if initialized by fetching budget mapping
             const budgetVal = await fetchMappingValue('payroll_budgets', '1field')
             if (budgetVal) {
-                setBudget(budgetVal) // Value usually comes as "1500u64" string from JSON
+                setBudget(budgetVal)
+                setIsInitialized(true)
             } else {
                 setBudget('0u64')
+                // Double check with another mapping to confirm uninitialized vs just 0 balance
+                const thresholdVal = await fetchMappingValue('multisig_threshold', '1field')
+                if (thresholdVal) {
+                    setIsInitialized(true)
+                } else {
+                    setIsInitialized(false)
+                }
             }
         } catch (e) {
             console.error("Error fetching state:", e)
-            setBudget('Error')
+            setIsInitialized(false)
         }
     }
+
+    const handleInitializePayroll = async () => {
+        if (!publicKey || !admin2 || !admin3 || !auditorAddr) {
+            alert("Please fill all fields (Admins & Auditor)")
+            return
+        }
+        setIsTransacting(true)
+        try {
+            const txId = await requestTransaction(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                'initialize_payroll',
+                [
+                    initBudget + 'u64', // budget_ceiling
+                    '1field',           // payroll_id
+                    initThreshold + 'u64', // threshold
+                    publicKey,          // admin1 (self)
+                    admin2,             // admin2
+                    admin3,             // admin3
+                    auditorAddr         // auditor
+                ],
+                300_000
+            )
+            alert("Initialization Started! TX ID: " + txId)
+        } catch (err: any) {
+            console.error(err)
+            alert("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
+    // Initial Fetch on mount (Manual refresh mode)
+    useEffect(() => {
+        fetchState()
+    }, [])
 
     // Update block height
     useEffect(() => {
@@ -123,6 +183,7 @@ export default function AdminPage() {
                 300_000
             )
             alert("Funding Transaction sent! ID: " + txId)
+            fetchState() // Update state immediately after
         } catch (err: any) {
             console.error(err)
             alert("Error: " + err.message)
@@ -379,251 +440,458 @@ export default function AdminPage() {
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-24 bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100">
-            <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+        <main className="flex min-h-screen bg-black text-gray-100 font-sans">
+            {/* Background Decor */}
+            <div className="fixed top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black -z-10" />
+            <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-white opacity-[0.02] blur-[150px] rounded-full pointer-events-none -z-10" />
 
-            <div className="w-full max-w-5xl">
-                {/* Wallet Connection Status */}
-                <div className="mb-8 p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-semibold mb-2">Wallet Status</h2>
-                        {publicKey ? (
-                            <div className="text-green-500 break-all font-mono">
-                                Connected: {publicKey}
-                            </div>
-                        ) : (
-                            <div className="text-yellow-500">Not Connected</div>
-                        )}
-                    </div>
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500">Block Height</p>
-                        <p className="text-2xl font-mono font-bold">{currentHeight || 'Syncing...'}</p>
-                    </div>
+            {/* Sidebar Navigation */}
+            <aside className="w-64 border-r border-white/10 flex flex-col h-screen fixed top-0 left-0 bg-black/40 backdrop-blur-xl">
+                <div className="p-6 border-b border-white/5">
+                    <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <div className="w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
+                        ZK Admin
+                    </h1>
                 </div>
 
-                {/* Dashboard Content (Only if connected) */}
-                {publicKey && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <nav className="flex-1 p-4 space-y-2">
+                    {[
+                        { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                        { id: 'deposit', label: 'Deposit Fund', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+                        { id: 'authorize', label: 'Authorize Payroll', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                        { id: 'batch', label: 'Batch Run', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+                        { id: 'compliance', label: 'Compliance & Audit', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+                    ].map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id as any)}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === item.id
+                                ? 'bg-white text-black shadow-lg shadow-white/10'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                }`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                            </svg>
+                            {item.label}
+                        </button>
+                    ))}
+                </nav>
 
-                        {/* Payroll State */}
-                        <div className="p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
-                            <h2 className="text-xl font-bold mb-4">Payroll State</h2>
-                            <p>Referenced Payroll ID: <span className="font-mono">1field</span></p>
-                            <p>Current Budget: <span className="font-mono">{budget}</span></p>
-                            <button
-                                onClick={fetchState}
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                            >
-                                Refresh State
-                            </button>
+                <div className="p-6 border-t border-white/5">
+                    <p className="text-xs text-gray-500 uppercase mb-2">Network Status</p>
+                    <div className="flex justify-between items-center bg-white/5 rounded px-3 py-2">
+                        <span className="text-xs text-gray-400">Height</span>
+                        <span className="text-sm font-mono font-bold text-white">{currentHeight || '...'}</span>
+                    </div>
+                </div>
+            </aside>
 
-                            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-zinc-700">
-                                <h3 className="font-semibold mb-2">Fund Payroll Budget</h3>
-                                <p className="text-sm text-gray-500 mb-2">Deposit public credits to back employee claims.</p>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="number"
-                                        placeholder="Amount (e.g. 50000)"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={fundAmount}
-                                        onChange={(e) => setFundAmount(e.target.value)}
-                                    />
-                                    <button
-                                        onClick={handleFundPayroll}
-                                        disabled={isTransacting}
-                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                                    >
-                                        Fund
-                                    </button>
+            {/* Main Content Area */}
+            <div className="ml-64 flex-1 p-12 overflow-y-auto h-screen">
+                <div className="max-w-5xl mx-auto">
+
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-12">
+                        <h2 className="text-3xl font-bold tracking-tight text-white capitalize">
+                            {activeTab.replace(/([A-Z])/g, ' $1').trim()}
+                        </h2>
+                        {publicKey ? (
+                            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] animate-pulse"></div>
+                                <span className="text-sm font-mono text-gray-300">{publicKey.slice(0, 6)}...{publicKey.slice(-4)}</span>
+                            </div>
+                        ) : (
+                            <div className="text-yellow-500 text-sm font-bold bg-yellow-500/10 px-4 py-2 rounded-full border border-yellow-500/20">Wallet Disconnected</div>
+                        )}
+                    </div>
+
+                    {/* Content Views */}
+                    {!publicKey ? (
+                        <div className="glass-card flex flex-col items-center justify-center p-20 text-center">
+                            <p className="text-gray-400 text-lg mb-4">Please connect your wallet to access the Admin Portal.</p>
+                        </div>
+                    ) : isInitialized === false ? (
+                        <div className="glass-card max-w-2xl mx-auto border-yellow-500/30">
+                            <div className="flex items-start gap-4 mb-6">
+                                <div className="p-3 bg-yellow-500/10 rounded-lg text-yellow-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">System Not Initialized</h3>
+                                    <p className="text-gray-400 text-sm mt-1">
+                                        This payroll instance (ID 1) has not been set up on-chain yet.
+                                        You must initialize it to create the <b>SpentRecord</b> required for compliance proofs.
+                                    </p>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="p-6 bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
-                            <h2 className="text-xl font-bold mb-4">Management Actions</h2>
-
-                            {/* Issue Certificate Section */}
-                            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-zinc-700">
-                                <h3 className="font-semibold mb-2">Issue Salary Certificate</h3>
-                                <p className="text-xs text-gray-500 mb-4">Grant an employee the right to claim recurring salary.</p>
-
-                                <input
-                                    type="text"
-                                    placeholder="Employee Address (aleo1...)"
-                                    className="w-full p-2 mb-2 border rounded dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
-                                    value={issueRecipient}
-                                    onChange={(e) => setIssueRecipient(e.target.value)}
-                                />
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <input
-                                        type="number"
-                                        placeholder="Amount per Claim"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={issueAmount}
-                                        onChange={(e) => setIssueAmount(e.target.value)}
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="Interval (Blocks)"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={issueInterval}
-                                        onChange={(e) => setIssueInterval(e.target.value)}
-                                    />
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Budget Ceiling</label>
+                                        <input type="number" value={initBudget} onChange={e => setInitBudget(e.target.value)} className="glass-input w-full" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Multi-Sig Threshold</label>
+                                        <input type="number" value={initThreshold} onChange={e => setInitThreshold(e.target.value)} className="glass-input w-full" />
+                                    </div>
                                 </div>
-                                <div className="mb-4">
-                                    <label className="text-xs text-gray-500">Start Block Height</label>
-                                    <input
-                                        type="number"
-                                        placeholder="Start Block"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={issueStart}
-                                        onChange={(e) => setIssueStart(e.target.value)}
-                                    />
+
+                                <div>
+                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Admin 2 Address</label>
+                                    <input type="text" placeholder="aleo1..." value={admin2} onChange={e => setAdmin2(e.target.value)} className="glass-input w-full font-mono text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Admin 3 Address</label>
+                                    <input type="text" placeholder="aleo1..." value={admin3} onChange={e => setAdmin3(e.target.value)} className="glass-input w-full font-mono text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Auditor Address (For Reports)</label>
+                                    <input type="text" placeholder="aleo1..." value={auditorAddr} onChange={e => setAuditorAddr(e.target.value)} className="glass-input w-full font-mono text-sm" />
                                 </div>
 
                                 <button
-                                    onClick={handleIssueCertificate}
+                                    onClick={handleInitializePayroll}
                                     disabled={isTransacting}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
+                                    className="w-full py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)] mt-4"
                                 >
-                                    Issue Certificate
+                                    {isTransacting ? 'Initializing...' : 'Initialize System'}
                                 </button>
                             </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Dashboard Stats View */}
+                            {activeTab === 'dashboard' && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="glass-card p-6 bg-gradient-to-br from-white/5 to-transparent relative group">
+                                            <button
+                                                onClick={fetchState}
+                                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                                                title="Refresh Balance"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                            </button>
+                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Liquidity Pool</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <h3 className="text-4xl font-bold font-mono text-white">{cleanValue(budget)}</h3>
+                                                <span className="text-sm text-gray-500">credits</span>
+                                            </div>
+                                            <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                                                On-Chain Balance
+                                            </div>
+                                        </div>
 
-                            {/* Bulk Issue Section */}
-                            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-zinc-700">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-semibold">Bulk Issue (Batch Processing)</h3>
-                                    {/* Template Loader */}
-                                    {Object.keys(templates).length > 0 && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">Load Template:</span>
+                                        <div className="glass-card p-6">
+                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Payroll ID</p>
+                                            <h3 className="text-4xl font-bold font-mono text-white">1</h3>
+                                            <p className="mt-4 text-xs text-gray-500">Global identifier for this payroll instance.</p>
+                                        </div>
+
+                                        <div className="glass-card p-6 hover:bg-white/5 transition cursor-pointer" onClick={() => setActiveTab('authorize')}>
+                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Quick Action</p>
+                                            <h3 className="text-xl font-bold text-white mb-2">Issue New Salary</h3>
+                                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card p-8 mt-8">
+                                        <h3 className="text-xl font-bold text-white mb-4">System Overview</h3>
+                                        <div className="h-48 bg-white/5 rounded-lg flex items-center justify-center border border-white/5">
+                                            <p className="text-gray-500 text-sm">[Chart Placeholder: Spending History]</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Deposit Tab */}
+                            {activeTab === 'deposit' && (
+                                <div className="glass-card max-w-xl">
+                                    <h3 className="font-semibold mb-2 text-gray-200">Deposit Liquidity</h3>
+                                    <p className="text-sm text-gray-500 mb-6">Add public credits to the payroll pool. This balance is viewable by auditors.</p>
+
+                                    <div className="p-4 bg-black/30 rounded-lg mb-6 border border-white/5 flex justify-between items-center">
+                                        <span className="text-gray-400 text-sm">Current Balance</span>
+                                        <span className="font-mono text-xl font-bold text-white">{cleanValue(budget)}</span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Amount to Deposit</label>
+                                            <input
+                                                type="number"
+                                                placeholder="e.g. 50000"
+                                                className="glass-input w-full"
+                                                value={fundAmount}
+                                                onChange={(e) => setFundAmount(e.target.value)}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleFundPayroll}
+                                            disabled={isTransacting}
+                                            className="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                                        >
+                                            {isTransacting ? 'Processing...' : 'Confirm Deposit'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Authorize Payroll Tab */}
+                            {activeTab === 'authorize' && (
+                                <div className="glass-card max-w-xl">
+                                    <p className="text-sm text-gray-500 mb-6">Issue a salary rights record to a specific employee address.</p>
+
+                                    <div className="space-y-5">
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Employee Address</label>
+                                            <input
+                                                type="text"
+                                                placeholder="aleo1..."
+                                                className="glass-input w-full font-mono text-sm"
+                                                value={issueRecipient}
+                                                onChange={(e) => setIssueRecipient(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-gray-500 ml-1 mb-1 block">Salary Amount</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Credits"
+                                                    className="glass-input w-full"
+                                                    value={issueAmount}
+                                                    onChange={(e) => setIssueAmount(e.target.value)}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500 ml-1 mb-1 block">Interval</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Blocks"
+                                                    className="glass-input w-full"
+                                                    value={issueInterval}
+                                                    onChange={(e) => setIssueInterval(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Start Block Height</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Block Height"
+                                                className="glass-input w-full"
+                                                value={issueStart}
+                                                onChange={(e) => setIssueStart(e.target.value)}
+                                            />
+                                            <p className="text-[10px] text-gray-500 mt-1 ml-1">Current Height: {currentHeight}</p>
+                                        </div>
+
+                                        <button
+                                            onClick={handleIssueCertificate}
+                                            disabled={isTransacting}
+                                            className="w-full py-3 bg-white text-black font-bold rounded-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50 mt-4"
+                                        >
+                                            Authorize Payroll
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Batch Payroll Tab */}
+                            {activeTab === 'batch' && (
+                                <div className="glass-card max-w-2xl">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <p className="text-sm text-gray-500">Run payroll for multiple employees at once.</p>
+                                        {/* Template Loader */}
+                                        {Object.keys(templates).length > 0 && (
                                             <select
-                                                className="p-1 text-sm border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                                className="bg-black/50 border border-white/10 text-xs rounded p-2 text-gray-300 outline-none focus:border-white transition-colors"
                                                 onChange={(e) => handleLoadTemplate(e.target.value)}
                                                 value={selectedTemplate}
                                             >
-                                                <option value="">Select...</option>
+                                                <option value="">Load Template...</option>
                                                 {Object.keys(templates).map(name => (
                                                     <option key={name} value={name}>{name}</option>
                                                 ))}
                                             </select>
-                                            {selectedTemplate && (
-                                                <button
-                                                    onClick={() => handleDeleteTemplate(selectedTemplate)}
-                                                    className="text-red-500 text-xs hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Base Salary</label>
+                                            <input
+                                                type="number"
+                                                className="glass-input w-full"
+                                                value={baseSalary}
+                                                onChange={(e) => setBaseSalary(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Interval</label>
+                                            <input
+                                                type="number"
+                                                className="glass-input w-full"
+                                                value={bulkInterval}
+                                                onChange={(e) => setBulkInterval(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Recipients (Address, Role)</label>
+                                        <textarea
+                                            placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
+                                            className="glass-input w-full h-32 font-mono text-xs"
+                                            value={bulkRecipients}
+                                            onChange={(e) => setBulkRecipients(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {batchStatus && (
+                                        <div className="mb-4 p-3 bg-white/5 border border-white/10 rounded text-xs font-mono text-gray-300 fade-in">
+                                            {batchStatus}
                                         </div>
                                     )}
-                                </div>
-                                <p className="text-xs text-gray-500 mb-4">Issue multiple certificates at once. Roles: Junior (1x), Senior (1.5x), Executive (2x).</p>
 
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <div>
-                                        <label className="text-xs text-gray-500">Base Salary</label>
+                                    <div className="flex gap-4 mb-6">
+                                        <button
+                                            onClick={handleBulkIssue}
+                                            disabled={isTransacting}
+                                            className="flex-1 py-3 border border-gray-600 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition disabled:opacity-50 font-medium"
+                                        >
+                                            Legacy Batch
+                                        </button>
+                                        <button
+                                            onClick={handlePrivacyBatch}
+                                            disabled={isTransacting}
+                                            className="flex-1 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition disabled:opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                                        >
+                                            Private Batch Run (3x)
+                                        </button>
+                                    </div>
+
+                                    {/* Save Template */}
+                                    <div className="flex gap-3 items-center pt-4 border-t border-glass-border">
                                         <input
-                                            type="number"
-                                            className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                            value={baseSalary}
-                                            onChange={(e) => setBaseSalary(e.target.value)}
+                                            type="text"
+                                            placeholder="Template Name"
+                                            className="glass-input flex-1 py-2 text-sm"
+                                            value={newTemplateName}
+                                            onChange={(e) => setNewTemplateName(e.target.value)}
                                         />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs text-gray-500">Interval (Blocks)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                            value={bulkInterval}
-                                            onChange={(e) => setBulkInterval(e.target.value)}
-                                        />
+                                        <button
+                                            onClick={handleSaveTemplate}
+                                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition"
+                                        >
+                                            Save Template
+                                        </button>
                                     </div>
                                 </div>
+                            )}
 
-                                <div className="mb-2">
-                                    <label className="text-xs text-gray-500">Recipients (Format: address, role)</label>
-                                    <textarea
-                                        placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
-                                        className="w-full p-2 h-24 border rounded dark:bg-zinc-700 dark:border-zinc-600 font-mono text-xs"
-                                        value={bulkRecipients}
-                                        onChange={(e) => setBulkRecipients(e.target.value)}
-                                    />
-                                </div>
+                            {/* Compliance & Audit Tab */}
+                            {activeTab === 'compliance' && (
+                                <div className="glass-card max-w-xl">
+                                    <h3 className="font-semibold mb-4 text-gray-300">Generate Compliance Proof</h3>
+                                    <p className="text-sm text-gray-500 mb-6">Create a Zero-Knowledge proof of total spending and recipient count without revealing individual salaries.</p>
 
-                                {batchStatus && (
-                                    <div className="mb-4 p-2 bg-gray-100 dark:bg-zinc-900 rounded text-xs font-mono">
-                                        {batchStatus}
+                                    <div className="space-y-4 mb-6">
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Pay Period Hash (Optional)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Field Element"
+                                                className="glass-input w-full text-sm"
+                                                value={periodHash}
+                                                onChange={(e) => setPeriodHash(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Merkle Root (Optional)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Field Element"
+                                                className="glass-input w-full text-sm"
+                                                value={merkleRoot}
+                                                onChange={(e) => setMerkleRoot(e.target.value)}
+                                            />
+                                        </div>
                                     </div>
-                                )}
-
-                                <div className="flex gap-2 mb-4">
                                     <button
-                                        onClick={handleBulkIssue}
+                                        onClick={handleGenerateReport}
                                         disabled={isTransacting}
-                                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition disabled:opacity-50"
+                                        className="w-full py-3 border border-purple-500/50 text-purple-300 rounded-lg hover:bg-purple-900/20 transition disabled:opacity-50 font-bold tracking-wide"
                                     >
-                                        {isTransacting ? 'Processing...' : 'Process Batch (Legacy)'}
+                                        Generate Compliance Proof
                                     </button>
-                                    <button
-                                        onClick={handlePrivacyBatch}
-                                        disabled={isTransacting}
-                                        className="flex-1 px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition disabled:opacity-50 border border-gray-600"
-                                    >
-                                        {isTransacting ? 'Processing...' : 'Privacy Batch (3x)'}
-                                    </button>
-                                </div>
 
-                                {/* Save Template */}
-                                <div className="flex gap-2 items-center pt-4 border-t border-gray-100 dark:border-zinc-800">
-                                    <input
-                                        type="text"
-                                        placeholder="Template Name (e.g. Monthly Devs)"
-                                        className="flex-1 p-2 text-xs border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={newTemplateName}
-                                        onChange={(e) => setNewTemplateName(e.target.value)}
-                                    />
-                                    <button
-                                        onClick={handleSaveTemplate}
-                                        className="px-3 py-2 bg-gray-200 dark:bg-zinc-700 text-xs rounded hover:bg-gray-300 dark:hover:bg-zinc-600 transition"
-                                    >
-                                        Save Template
-                                    </button>
-                                </div>
-                            </div>
+                                    {/* Advanced Initialization Option */}
+                                    <div className="mt-12 pt-8 border-t border-white/5">
+                                        <h4 className="text-sm font-semibold text-gray-400 mb-2">Advanced: System Initialization</h4>
+                                        <p className="text-xs text-gray-600 mb-4">
+                                            If you are seeing "No active SpentRecord" errors, you may need to re-initialize your admin connection to the payroll instance.
+                                        </p>
 
-                            {/* Compliance Section */}
-                            <div>
-                                <h3 className="font-semibold mb-2">Auditor Compliance</h3>
-                                <div className="space-y-2 mb-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Pay Period Hash (Field)"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={periodHash}
-                                        onChange={(e) => setPeriodHash(e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Merkle Root (Field)"
-                                        className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
-                                        value={merkleRoot}
-                                        onChange={(e) => setMerkleRoot(e.target.value)}
-                                    />
+                                        <details className="group">
+                                            <summary className="text-xs text-yellow-500 cursor-pointer hover:text-yellow-400 transition mb-2">
+                                                Show Initialization Form
+                                            </summary>
+                                            <div className="space-y-3 p-4 bg-yellow-900/10 rounded border border-yellow-500/10 mt-2">
+                                                <input
+                                                    type="number"
+                                                    placeholder="Budget (e.g. 1000000)"
+                                                    className="glass-input w-full text-xs"
+                                                    value={initBudget}
+                                                    onChange={(e) => setInitBudget(e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Admin 2 Address"
+                                                    className="glass-input w-full text-xs"
+                                                    value={admin2}
+                                                    onChange={(e) => setAdmin2(e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Admin 3 Address"
+                                                    className="glass-input w-full text-xs"
+                                                    value={admin3}
+                                                    onChange={(e) => setAdmin3(e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Auditor Address"
+                                                    className="glass-input w-full text-xs"
+                                                    value={auditorAddr}
+                                                    onChange={(e) => setAuditorAddr(e.target.value)}
+                                                />
+                                                <button
+                                                    onClick={handleInitializePayroll}
+                                                    disabled={isTransacting}
+                                                    className="w-full py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 text-xs rounded transition"
+                                                >
+                                                    Force Initialize
+                                                </button>
+                                            </div>
+                                        </details>
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={handleGenerateReport}
-                                    disabled={isTransacting}
-                                    className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
-                                >
-                                    Generate Audit Report
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
         </main>
     )

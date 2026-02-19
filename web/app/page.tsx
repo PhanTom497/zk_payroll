@@ -1,61 +1,64 @@
+import Link from 'next/link'
 import { WalletConnectButton } from '@/components/WalletConnectButton'
 
 export default function Home() {
     return (
-        <main className="flex min-h-screen flex-col items-center justify-between p-24">
-            <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-                <h1 className="text-4xl font-bold">ZK Payroll</h1>
-                <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
+        <main className="flex min-h-screen flex-col items-center justify-center p-24 relative overflow-hidden">
+            {/* Background Decor */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white opacity-[0.03] blur-[120px] rounded-full pointer-events-none" />
+
+            <div className="z-10 w-full max-w-5xl flex flex-col items-center text-center">
+                {/* Header / Nav */}
+                <div className="absolute top-8 right-8">
                     <WalletConnectButton />
                 </div>
+
+                {/* Hero Section */}
+                <h1 className="text-6xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-500">
+                    ZK Payroll
+                </h1>
+                <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mb-16 font-light">
+                    Private, verifiable, and autonomous salary payments on Aleo.
+                </p>
+
+                {/* Navigation Cards */}
+                <div className="grid md:grid-cols-3 gap-6 w-full px-4">
+
+                    <Link href="/admin" className="group">
+                        <div className="glass-card h-full flex flex-col items-start text-left hover:bg-glass-hover transition-all duration-300 border-l-4 border-l-transparent hover:border-l-white">
+                            <h2 className="text-2xl font-semibold mb-3 group-hover:text-white transition-colors">
+                                Admin Portal <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">-&gt;</span>
+                            </h2>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors">
+                                Manage liquidity pools, authorize payroll, and batch issue salaries privately.
+                            </p>
+                        </div>
+                    </Link>
+
+                    <Link href="/employee" className="group">
+                        <div className="glass-card h-full flex flex-col items-start text-left hover:bg-glass-hover transition-all duration-300 border-l-4 border-l-transparent hover:border-l-white">
+                            <h2 className="text-2xl font-semibold mb-3 group-hover:text-white transition-colors">
+                                Employee Portal <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">-&gt;</span>
+                            </h2>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors">
+                                View your active paychecks, decrypt your records, and withdraw funds securely.
+                            </p>
+                        </div>
+                    </Link>
+
+                    <Link href="/auditor" className="group">
+                        <div className="glass-card h-full flex flex-col items-start text-left hover:bg-glass-hover transition-all duration-300 border-l-4 border-l-transparent hover:border-l-white">
+                            <h2 className="text-2xl font-semibold mb-3 group-hover:text-white transition-colors">
+                                Auditor Portal <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">-&gt;</span>
+                            </h2>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors">
+                                Verify solvency, audit public spending, and ensure compliance without compromising privacy.
+                            </p>
+                        </div>
+                    </Link>
+
+                </div>
             </div>
-
-            <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-2 lg:text-left">
-                <a
-                    href="/admin"
-                    className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                >
-                    <h2 className={`mb-3 text-2xl font-semibold`}>
-                        Admin Portal{' '}
-                        <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                            -&gt;
-                        </span>
-                    </h2>
-                    <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                        Manage budget, issue salaries, and view reports.
-                    </p>
-                </a>
-
-                <a
-                    href="/employee"
-                    className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                >
-                    <h2 className={`mb-3 text-2xl font-semibold`}>
-                        Employee Portal{' '}
-                        <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                            -&gt;
-                        </span>
-                    </h2>
-                    <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                        View paystubs, decrypt records, and verify payments.
-                    </p>
-                </a>
-
-                <a
-                    href="/auditor"
-                    className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                >
-                    <h2 className={`mb-3 text-2xl font-semibold`}>
-                        Auditor Portal{' '}
-                        <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                            -&gt;
-                        </span>
-                    </h2>
-                    <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                        Verify compliance, check recipient counts, and audit spending.
-                    </p>
-                </a>
-            </div>
-        </main >
+        </main>
     )
 }
