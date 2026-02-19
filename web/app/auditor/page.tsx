@@ -2,28 +2,44 @@
 
 import { useState } from 'react'
 import { WalletConnectButton } from '@/components/WalletConnectButton'
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
-import { PROGRAM_ID } from '@/lib/zk-utils'
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
+import { PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
 
 export default function AuditorDashboard() {
-    const { publicKey, requestRecordPlaintexts } = useWallet()
+    const { wallet, address, requestRecords } = useWallet()
+    const publicKey = address; // Alias for compatibility
+
     const [reports, setReports] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
     const fetchReports = async () => {
-        if (!publicKey || !requestRecordPlaintexts) return
+        if (!publicKey || !requestRecords) return
         setLoading(true)
         setError('')
-        setError('')
         try {
-            const records = await requestRecordPlaintexts(PROGRAM_ID)
+            // true = request decrypted records
+            const records = await requestRecords(PROGRAM_ID, true)
 
             // Filter for AuditReport records
-            const auditReports = records.filter((rec: any) =>
-                // Checks if the record data contains 'timestamp' which is unique to AuditReport
-                rec.data && rec.data.timestamp !== undefined
-            )
+            const auditReports = (records as any[])
+                .map((rec: any) => {
+                    const timestamp = getRecordField(rec, 'timestamp');
+                    // If no timestamp, it's likely not an AuditReport (or decryption failed)
+                    if (!timestamp) return null;
+
+                    return {
+                        data: {
+                            timestamp: timestamp,
+                            payroll_id: getRecordField(rec, 'payroll_id') || '',
+                            total_spent: getRecordField(rec, 'total_spent') || '0u64',
+                            recipient_count: getRecordField(rec, 'recipient_count') || '0u32',
+                            pay_period_hash: getRecordField(rec, 'pay_period_hash') || '',
+                            merkle_root: getRecordField(rec, 'merkle_root') || ''
+                        }
+                    };
+                })
+                .filter((rec: any) => rec !== null);
 
             setReports(auditReports)
         } catch (err: any) {

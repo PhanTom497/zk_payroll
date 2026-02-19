@@ -1,8 +1,8 @@
 'use client'
 
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
-import { fetchBlockHeight, requestTransaction, PROGRAM_ID } from '../../lib/zk-utils'
+import { fetchBlockHeight, requestTransaction, PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
 import { EmployeeClaimComponent } from '../../components/EmployeeClaimComponent'
 
 interface SalaryCertificate {
@@ -23,14 +23,15 @@ interface SalaryRecord {
 }
 
 export default function EmployeePage() {
-    const { wallet, publicKey, requestRecordPlaintexts } = useWallet()
+    const { wallet, address, requestRecords } = useWallet()
+    const publicKey = address; // Alias for compatibility
+
     const [certificates, setCertificates] = useState<SalaryCertificate[]>([])
     const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]) // New state
     const [isScanning, setIsScanning] = useState(false)
     const [currentHeight, setCurrentHeight] = useState<number>(0)
     const [loadingClaim, setLoadingClaim] = useState(false)
 
-    // ... (useEffect for height remains same) ...
     // Fetch block height on mount and interval
     useEffect(() => {
         const updateHeight = async () => {
@@ -43,39 +44,59 @@ export default function EmployeePage() {
     }, [])
 
     const scanRecords = async () => {
-        if (!publicKey || !requestRecordPlaintexts) return
+        if (!publicKey || !requestRecords) return
         setIsScanning(true)
         console.log("Scanning with PROGRAM_ID:", PROGRAM_ID);
         try {
-            const records = await requestRecordPlaintexts(PROGRAM_ID)
+            // true = request decryped records (requires view key permission userside or auto-decrypt)
+            const records = await requestRecords(PROGRAM_ID, true)
+            console.log("DEBUG: Raw Records from Wallet:", JSON.stringify(records, null, 2));
 
             // Scan Certificates
-            const certs: SalaryCertificate[] = records
+            const certs: SalaryCertificate[] = (records as any[])
                 .filter((rec: any) => !rec.spent && rec.recordName === 'SalaryCertificate')
-                .map((rec: any) => ({
-                    id: rec.serialNumber || 'unknown',
-                    amount: rec.data.amount,
-                    start_height: parseInt(rec.data.start_height.replace('u32', '')),
-                    interval: parseInt(rec.data.interval.replace('u32', '')),
-                    claim_count: parseInt(rec.data.claim_count.replace('u32', '')),
-                    payroll_id: rec.data.payroll_id,
-                    _record: rec.plaintext
-                }))
+                .map((rec: any) => {
+                    console.log("DEBUG: Processing Record:", rec);
+                    console.log("DEBUG: Plaintext:", rec.plaintext);
+
+                    const amountRaw = getRecordField(rec, 'amount');
+                    const startHeightRaw = getRecordField(rec, 'start_height');
+                    const intervalRaw = getRecordField(rec, 'interval');
+                    const claimCountRaw = getRecordField(rec, 'claim_count');
+                    const payrollIdRaw = getRecordField(rec, 'payroll_id');
+
+                    return {
+                        id: rec.serialNumber || 'unknown',
+                        amount: amountRaw || '0u64', // Fallback to 0u64 to prevent undefined
+                        start_height: startHeightRaw ? parseInt(startHeightRaw.replace('u32', '')) : 0,
+                        interval: intervalRaw ? parseInt(intervalRaw.replace('u32', '')) : 0,
+                        claim_count: claimCountRaw ? parseInt(claimCountRaw.replace('u32', '')) : 0,
+                        payroll_id: payrollIdRaw || 'unknown',
+                        _record: rec.recordPlaintext || rec.plaintext
+                    };
+                })
             setCertificates(certs)
 
             // Scan Salary Payments (Proofs)
-            const payments: SalaryRecord[] = records
+            const payments: SalaryRecord[] = (records as any[])
                 .filter((rec: any) => rec.recordName === 'SalaryRecord')
-                .map((rec: any) => ({
-                    id: rec.serialNumber || 'unknown',
-                    amount: rec.data.amount,
-                    payment_id: rec.data.payment_id,
-                    payroll_id: rec.data.payroll_id
-                }))
+                .map((rec: any) => {
+                    const amountRaw = getRecordField(rec, 'amount');
+                    const paymentIdRaw = getRecordField(rec, 'payment_id');
+                    const payrollIdRaw = getRecordField(rec, 'payroll_id');
+
+                    return {
+                        id: rec.serialNumber || 'unknown',
+                        amount: amountRaw || '0u64', // Fallback
+                        payment_id: paymentIdRaw || 'unknown',
+                        payroll_id: payrollIdRaw || 'unknown'
+                    };
+                })
             setSalaryRecords(payments)
 
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error scanning records:", e)
+            alert("Error scanning records: " + e.message)
         } finally {
             setIsScanning(false)
         }
@@ -155,7 +176,7 @@ export default function EmployeePage() {
                             ) : (
                                 <div className="text-center py-12 bg-gray-800/30 rounded-lg border-2 border-dashed border-gray-700">
                                     <p className="text-gray-400 text-lg mb-2">No active salary certificates found.</p>
-                                    <p className="text-gray-500 text-sm">Click "Scan" to check the blockchain for your records.</p>
+                                    <p className="text-gray-500 text-sm">Click &quot;Scan&quot; to check the blockchain for your records.</p>
                                 </div>
                             )}
                         </div>

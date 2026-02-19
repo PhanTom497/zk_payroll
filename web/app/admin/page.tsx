@@ -1,11 +1,13 @@
 'use client'
 
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
-import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue } from '@/lib/zk-utils'
+import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, batchProcessTransactions, BatchTransactionItem } from '@/lib/zk-utils'
 
 export default function AdminPage() {
-    const { wallet, publicKey, requestRecordPlaintexts } = useWallet()
+    const { wallet, address, requestRecords } = useWallet()
+    const publicKey = address; // Alias for compatibility with existing code
+
     const [budget, setBudget] = useState<string>('Loading...')
     const [periodHash, setPeriodHash] = useState('')
     const [merkleRoot, setMerkleRoot] = useState('')
@@ -18,6 +20,63 @@ export default function AdminPage() {
     const [issueAmount, setIssueAmount] = useState('')
     const [issueStart, setIssueStart] = useState('')
     const [issueInterval, setIssueInterval] = useState('100')
+
+    // Bulk Issue States
+    const [baseSalary, setBaseSalary] = useState('1000')
+    const [bulkInterval, setBulkInterval] = useState('15')
+    const [bulkRecipients, setBulkRecipients] = useState('')
+    const [batchStatus, setBatchStatus] = useState('')
+
+    // Templates State
+    const [templates, setTemplates] = useState<Record<string, { baseSalary: string, interval: string, recipients: string }>>({})
+    const [selectedTemplate, setSelectedTemplate] = useState('')
+    const [newTemplateName, setNewTemplateName] = useState('')
+
+    // Load templates on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('payroll_templates')
+        if (saved) {
+            try {
+                setTemplates(JSON.parse(saved))
+            } catch (e) {
+                console.error("Failed to parse templates", e)
+            }
+        }
+    }, [])
+
+    const handleSaveTemplate = () => {
+        if (!newTemplateName) return alert("Please enter a template name")
+        const newTemplates = {
+            ...templates,
+            [newTemplateName]: {
+                baseSalary,
+                interval: bulkInterval,
+                recipients: bulkRecipients
+            }
+        }
+        setTemplates(newTemplates)
+        localStorage.setItem('payroll_templates', JSON.stringify(newTemplates))
+        setNewTemplateName('')
+        alert(`Template "${newTemplateName}" saved!`)
+    }
+
+    const handleLoadTemplate = (name: string) => {
+        const t = templates[name]
+        if (t) {
+            setBaseSalary(t.baseSalary)
+            setBulkInterval(t.interval)
+            setBulkRecipients(t.recipients)
+            setSelectedTemplate(name)
+        }
+    }
+
+    const handleDeleteTemplate = (name: string) => {
+        const newTemplates = { ...templates }
+        delete newTemplates[name]
+        setTemplates(newTemplates)
+        localStorage.setItem('payroll_templates', JSON.stringify(newTemplates))
+        if (selectedTemplate === name) setSelectedTemplate('')
+    }
 
     // Fetch public state from chain
     const fetchState = async () => {
@@ -48,6 +107,7 @@ export default function AdminPage() {
         updateHeight()
         const interval = setInterval(updateHeight, 10000)
         return () => clearInterval(interval)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleFundPayroll = async () => {
@@ -101,13 +161,185 @@ export default function AdminPage() {
         }
     }
 
+    const handleBulkIssue = async () => {
+        if (!publicKey || !bulkRecipients) return
+        setIsTransacting(true)
+        setBatchStatus('Preparing batch...')
+
+        try {
+            const regex = /(aleo1[a-z0-9]{58})\s*,\s*([a-zA-Z]+)/gi
+            const items: BatchTransactionItem[] = []
+
+            let match;
+            let i = 0;
+            while ((match = regex.exec(bulkRecipients)) !== null) {
+                const addr = match[1]
+                const roleStr = match[2]
+
+                const roles: Record<string, number> = {
+                    'junior': 1.0,
+                    'senior': 1.5,
+                    'executive': 2.0
+                }
+
+                const role = roleStr?.toLowerCase() || 'junior'
+                const multiplier = roles[role] || 1.0
+                const base = parseInt(baseSalary) || 0
+                const amount = Math.floor(base * multiplier)
+
+                // transition issue_limit(payroll_id, recipient, amount, start_height, interval)
+                // We'll use current height + 10 for start
+                const startH = currentHeight > 0 ? currentHeight + 10 : 0
+
+                items.push({
+                    id: `batch-${i}`,
+                    description: `Issuing to ${addr.slice(0, 6)}... (${role})`,
+                    functionName: 'issue_limit',
+                    inputs: [
+                        '1field',              // payroll_id
+                        addr,                  // recipient
+                        amount + 'u64',        // amount
+                        startH + 'u32',        // start_height
+                        bulkInterval + 'u32'   // interval
+                    ],
+                    fee: 300_000 // 0.3 credits per tx
+                })
+                i++;
+            }
+
+            if (items.length === 0) {
+                if (bulkRecipients.trim().length > 0) {
+                    console.warn("Text found but no regex matches. Check format.")
+                    alert("No valid 'address, role' pairs found. Please check format.")
+                    setBatchStatus("Error: Invalid format")
+                    setIsTransacting(false)
+                    return
+                }
+            }
+
+            const result = await batchProcessTransactions(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                items,
+                (idx, total, status) => {
+                    setBatchStatus(`[${idx}/${total}] ${status}`)
+                }
+            )
+
+            let msg = `Batch Complete.\nSuccess: ${result.success.length}\nFailed: ${result.failed.length}`
+            if (result.failed.length > 0) {
+                msg += `\nFirst Error: ${result.failed[0].error}`
+            }
+            alert(msg)
+            setBatchStatus(msg)
+
+        } catch (err: any) {
+            console.error(err)
+            setBatchStatus("Error: " + err.message)
+            alert("Batch Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
+    const handlePrivacyBatch = async () => {
+        if (!publicKey || !bulkRecipients) return
+        setIsTransacting(true)
+        setBatchStatus('Preparing privacy batch...')
+
+        try {
+            const regex = /(aleo1[a-z0-9]{58})\s*,\s*([a-zA-Z]+)/gi
+            const allRecipients: { addr: string, amount: string, role: string }[] = []
+
+            let match;
+            while ((match = regex.exec(bulkRecipients)) !== null) {
+                const addr = match[1]
+                const roleStr = match[2]
+
+                const roles: Record<string, number> = { 'junior': 1.0, 'senior': 1.5, 'executive': 2.0 }
+                const role = roleStr?.toLowerCase() || 'junior'
+                const multiplier = roles[role] || 1.0
+                const base = parseInt(baseSalary) || 0
+                const amount = Math.floor(base * multiplier)
+
+                allRecipients.push({ addr, amount: amount + 'u64', role })
+            }
+
+            if (allRecipients.length === 0) {
+                alert("No valid recipients found.")
+                setIsTransacting(false)
+                return
+            }
+
+            const items: BatchTransactionItem[] = []
+            // Chunk into 3s
+            for (let i = 0; i < allRecipients.length; i += 3) {
+                const chunk = allRecipients.slice(i, i + 3)
+
+                const startH = currentHeight > 0 ? currentHeight + 10 : 0
+
+                if (chunk.length === 3) {
+                    // Use Privacy Batch
+                    items.push({
+                        id: `privacy-batch-${i / 3}`,
+                        description: `Privacy Batch (3) - ${chunk.map(r => r.role).join(', ')}`,
+                        functionName: 'issue_limit_batch_3',
+                        inputs: [
+                            '1field',              // payroll_id
+                            chunk[0].addr, chunk[0].amount, startH + 'u32', bulkInterval + 'u32',
+                            chunk[1].addr, chunk[1].amount, startH + 'u32', bulkInterval + 'u32',
+                            chunk[2].addr, chunk[2].amount, startH + 'u32', bulkInterval + 'u32'
+                        ],
+                        fee: 500_000 // Higher fee for complex batch (0.5 credits)
+                    })
+                } else {
+                    // Fallback for remainders (< 3)
+                    chunk.forEach((r, idx) => {
+                        items.push({
+                            id: `remainder-${i + idx}`,
+                            description: `Issuing to ${r.addr.slice(0, 6)}... (${r.role})`,
+                            functionName: 'issue_limit',
+                            inputs: [
+                                '1field', r.addr, r.amount, startH + 'u32', bulkInterval + 'u32'
+                            ],
+                            fee: 300_000
+                        })
+                    })
+                }
+            }
+
+            const result = await batchProcessTransactions(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                items,
+                (idx, total, status) => setBatchStatus(`[${idx}/${total}] ${status}`)
+            )
+
+            let msg = `Batch Complete.\nSuccess: ${result.success.length}\nFailed: ${result.failed.length}`
+            if (result.failed.length > 0) {
+                msg += `\nFirst Error: ${result.failed[0].error}`
+            }
+            alert(msg)
+            setBatchStatus(msg)
+
+        } catch (err: any) {
+            console.error(err)
+            alert("Error: " + err.message)
+            setBatchStatus("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
     const handleGenerateReport = async () => {
-        if (!publicKey || !requestRecordPlaintexts) return
+        if (!publicKey || !requestRecords) return
         setIsTransacting(true)
         try {
             // 1. Fetch Admin's SpentRecord (Total Spent Tracker)
-            const records = await requestRecordPlaintexts(PROGRAM_ID)
-            const spentRecord = records.filter((rec: any) =>
+            const records = await requestRecords(PROGRAM_ID, true)
+            const spentRecord = (records as any[]).filter((rec: any) =>
                 !rec.spent &&
                 rec.recordName === 'SpentRecord' // Best check if available
             ).pop() // Get the latest one
@@ -257,6 +489,109 @@ export default function AdminPage() {
                                 >
                                     Issue Certificate
                                 </button>
+                            </div>
+
+                            {/* Bulk Issue Section */}
+                            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-zinc-700">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-semibold">Bulk Issue (Batch Processing)</h3>
+                                    {/* Template Loader */}
+                                    {Object.keys(templates).length > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">Load Template:</span>
+                                            <select
+                                                className="p-1 text-sm border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                                onChange={(e) => handleLoadTemplate(e.target.value)}
+                                                value={selectedTemplate}
+                                            >
+                                                <option value="">Select...</option>
+                                                {Object.keys(templates).map(name => (
+                                                    <option key={name} value={name}>{name}</option>
+                                                ))}
+                                            </select>
+                                            {selectedTemplate && (
+                                                <button
+                                                    onClick={() => handleDeleteTemplate(selectedTemplate)}
+                                                    className="text-red-500 text-xs hover:underline"
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-4">Issue multiple certificates at once. Roles: Junior (1x), Senior (1.5x), Executive (2x).</p>
+
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                    <div>
+                                        <label className="text-xs text-gray-500">Base Salary</label>
+                                        <input
+                                            type="number"
+                                            className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                            value={baseSalary}
+                                            onChange={(e) => setBaseSalary(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">Interval (Blocks)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full p-2 border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                            value={bulkInterval}
+                                            onChange={(e) => setBulkInterval(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mb-2">
+                                    <label className="text-xs text-gray-500">Recipients (Format: address, role)</label>
+                                    <textarea
+                                        placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
+                                        className="w-full p-2 h-24 border rounded dark:bg-zinc-700 dark:border-zinc-600 font-mono text-xs"
+                                        value={bulkRecipients}
+                                        onChange={(e) => setBulkRecipients(e.target.value)}
+                                    />
+                                </div>
+
+                                {batchStatus && (
+                                    <div className="mb-4 p-2 bg-gray-100 dark:bg-zinc-900 rounded text-xs font-mono">
+                                        {batchStatus}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        onClick={handleBulkIssue}
+                                        disabled={isTransacting}
+                                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition disabled:opacity-50"
+                                    >
+                                        {isTransacting ? 'Processing...' : 'Process Batch (Legacy)'}
+                                    </button>
+                                    <button
+                                        onClick={handlePrivacyBatch}
+                                        disabled={isTransacting}
+                                        className="flex-1 px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition disabled:opacity-50 border border-gray-600"
+                                    >
+                                        {isTransacting ? 'Processing...' : 'Privacy Batch (3x)'}
+                                    </button>
+                                </div>
+
+                                {/* Save Template */}
+                                <div className="flex gap-2 items-center pt-4 border-t border-gray-100 dark:border-zinc-800">
+                                    <input
+                                        type="text"
+                                        placeholder="Template Name (e.g. Monthly Devs)"
+                                        className="flex-1 p-2 text-xs border rounded dark:bg-zinc-700 dark:border-zinc-600"
+                                        value={newTemplateName}
+                                        onChange={(e) => setNewTemplateName(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={handleSaveTemplate}
+                                        className="px-3 py-2 bg-gray-200 dark:bg-zinc-700 text-xs rounded hover:bg-gray-300 dark:hover:bg-zinc-600 transition"
+                                    >
+                                        Save Template
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Compliance Section */}

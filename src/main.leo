@@ -1,4 +1,4 @@
-program baba_zk_payroll_v4.aleo {
+program baba_zk_payroll_v6.aleo {
 
     // ========================================================================
     // STRUCTURES
@@ -92,10 +92,67 @@ program baba_zk_payroll_v4.aleo {
         };
         
         // Return future to maintain consistency pattern
-        return (certificate, finalize_issue_limit());
+        return (certificate, finalize_issue_limit(payroll_id, amount));
     }
 
-    async function finalize_issue_limit() {}
+    async function finalize_issue_limit(payroll_id: field, amount: u64) {
+        let current_budget: u64 = Mapping::get(payroll_budgets, payroll_id);
+        Mapping::set(payroll_budgets, payroll_id, current_budget - amount);
+    }
+
+    /// issue_limit_batch_3: Issue 3 certificates in one go, masking individual amounts in finalize
+    async transition issue_limit_batch_3(
+        public payroll_id: field,
+        private recipient1: address,
+        private amount1: u64,
+        public start1: u32,
+        public interval1: u32,
+        private recipient2: address,
+        private amount2: u64,
+        public start2: u32,
+        public interval2: u32,
+        private recipient3: address,
+        private amount3: u64,
+        public start3: u32,
+        public interval3: u32
+    ) -> (SalaryCertificate, SalaryCertificate, SalaryCertificate, Future) {
+        let c1: SalaryCertificate = SalaryCertificate {
+            owner: recipient1,
+            amount: amount1,
+            start_height: start1,
+            interval: interval1,
+            claim_count: 0u32,
+            payroll_id: payroll_id,
+        };
+        let c2: SalaryCertificate = SalaryCertificate {
+            owner: recipient2,
+            amount: amount2,
+            start_height: start2,
+            interval: interval2,
+            claim_count: 0u32,
+            payroll_id: payroll_id,
+        };
+        let c3: SalaryCertificate = SalaryCertificate {
+            owner: recipient3,
+            amount: amount3,
+            start_height: start3,
+            interval: interval3,
+            claim_count: 0u32,
+            payroll_id: payroll_id,
+        };
+
+        let total_deduction: u64 = amount1 + amount2 + amount3;
+
+        return (c1, c2, c3, finalize_issue_limit_batch_3(payroll_id, total_deduction));
+    }
+
+    async function finalize_issue_limit_batch_3(
+        payroll_id: field,
+        total_deduction: u64
+    ) {
+        let current_budget: u64 = Mapping::get(payroll_budgets, payroll_id);
+        Mapping::set(payroll_budgets, payroll_id, current_budget - total_deduction);
+    }
 
     /// claim_salary: Employee claims their due salary
     async transition claim_salary(
@@ -125,10 +182,10 @@ program baba_zk_payroll_v4.aleo {
             payroll_id: certificate.payroll_id,
         };
 
-        return (updated_certificate, salary_record, finalize_claim_salary(certificate.amount, claimable_height));
+        return (updated_certificate, salary_record, finalize_claim_salary(claimable_height));
     }
 
-    async function finalize_claim_salary(amount: u64, claimable_height: u32) {
+    async function finalize_claim_salary(claimable_height: u32) {
         // 1. Verify Time Lock
         assert(block.height >= claimable_height);
 

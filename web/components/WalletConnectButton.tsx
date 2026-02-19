@@ -1,31 +1,17 @@
 'use client'
 
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
-import { WalletAdapterNetwork, DecryptPermission } from '@demox-labs/aleo-wallet-adapter-base'
-import { LeoWalletAdapter } from '@demox-labs/aleo-wallet-adapter-leo'
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
+import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui'
+import { Network } from '@provablehq/aleo-types'
+import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css'
 
 export const WalletConnectButton = () => {
-    const { wallets, select, wallet, publicKey, connect, disconnect, connecting } = useWallet()
+    const { wallet, address, disconnect, connecting } = useWallet()
+    const { setVisible } = useWalletModal()
+    const publicKey = address; // Alias for compatibility
 
-    const handleConnect = async () => {
-        const adapter = wallet?.adapter || wallets?.[0]?.adapter;
-
-        if (!adapter) {
-            console.error("No wallet adapter found");
-            return;
-        }
-
-        // Ensure it is selected in the provider state
-        if (!wallet) {
-            select(adapter.name);
-        }
-
-        // Connect directly via the adapter to avoid React state lag
-        try {
-            await adapter.connect(DecryptPermission.OnChainHistory, "testnetbeta" as WalletAdapterNetwork)
-        } catch (error) {
-            console.error("Connection failed:", error);
-        }
+    const handleConnect = () => {
+        setVisible(true)
     }
 
     if (publicKey) {
