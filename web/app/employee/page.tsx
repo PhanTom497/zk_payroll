@@ -57,7 +57,7 @@ export default function EmployeePage() {
             const records = await requestRecords(PROGRAM_ID, true)
 
             // Scan Certificates
-            const certs: SalaryCertificate[] = (records as any[])
+            const allCerts: SalaryCertificate[] = (records as any[])
                 .filter((rec: any) => !rec.spent && rec.recordName === 'SalaryCertificate')
                 .map((rec: any) => {
                     const amountRaw = getRecordField(rec, 'amount');
@@ -76,7 +76,18 @@ export default function EmployeePage() {
                         _record: rec.recordPlaintext || rec.plaintext
                     };
                 })
-            setCertificates(certs)
+
+            // Deduplicate: Keep only the certificate with the highest claim_count for the same right
+            const certMap = new Map<string, SalaryCertificate>()
+            allCerts.forEach(cert => {
+                // Determine uniqueness by payroll_id, amount, and start_height (defines the "Right")
+                const key = `${cert.payroll_id}-${cert.amount}-${cert.start_height}`
+                const existing = certMap.get(key)
+                if (!existing || cert.claim_count > existing.claim_count) {
+                    certMap.set(key, cert)
+                }
+            })
+            setCertificates(Array.from(certMap.values()))
 
             // Scan Salary Payments (Proofs)
             const payments: SalaryRecord[] = (records as any[])
@@ -97,7 +108,11 @@ export default function EmployeePage() {
 
         } catch (e: any) {
             console.error("Error scanning records:", e)
-            toast.error("Error scanning records: " + e.message)
+            if (e.message && e.message.includes("Program not allowed")) {
+                toast.error("New Program Detected: Please DISCONNECT and RECONNECT your wallet to authorize the new contract.")
+            } else {
+                toast.error("Error scanning records: " + e.message)
+            }
         } finally {
             setIsScanning(false)
         }
@@ -253,7 +268,7 @@ export default function EmployeePage() {
                                                 {salaryRecords.map((rec, idx) => (
                                                     <tr key={idx} className="hover:bg-white/5 transition-colors group">
                                                         <td className="px-6 py-5 font-bold text-white">
-                                                            {rec.amount.replace('.private', '').replace('u64', '')}
+                                                            {rec.amount.replace('.private', '').replace('u64', '')} <span className="text-xs text-gray-500 font-normal">credits</span>
                                                         </td>
                                                         <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
                                                             {rec.payment_id.replace('.private', '').replace('field', '')}

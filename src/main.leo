@@ -1,4 +1,4 @@
-program baba_zk_payroll_v6.aleo {
+program baba_zk_payroll_v7.aleo {
 
     // ========================================================================
     // STRUCTURES
@@ -178,7 +178,7 @@ program baba_zk_payroll_v6.aleo {
         let salary_record: SalaryRecord = SalaryRecord {
             owner: certificate.owner,
             amount: certificate.amount,
-            payment_id: 999field, // Placeholder for claim ID
+            payment_id: BHP256::hash_to_field(certificate), // Unique ID from input cert hash
             payroll_id: certificate.payroll_id,
         };
 

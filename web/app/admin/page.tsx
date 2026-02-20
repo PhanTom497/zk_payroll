@@ -165,7 +165,28 @@ export default function AdminPage() {
                 ],
                 300_000
             )
-            toast.success("Initialization Started! TX ID: " + txId)
+            toast.success("Initialization Started! Waiting for confirmation...")
+
+            // Poll for completion (up to 60s)
+            let attempts = 0
+            const checkInterval = setInterval(async () => {
+                attempts++
+                try {
+                    const check = await fetchMappingValue('payroll_budgets', '1field')
+                    if (check) {
+                        clearInterval(checkInterval)
+                        setBudget(check)
+                        setIsInitialized(true)
+                        toast.success("System Initialized Successfully!")
+                    } else if (attempts > 30) {
+                        clearInterval(checkInterval)
+                        toast.warning("Verification taking longer than expected. Please refresh manually.")
+                    }
+                } catch (e) {
+                    console.error("Polling error", e)
+                }
+            }, 2000)
+
         } catch (err: any) {
             console.error(err)
             toast.error("Error: " + err.message)
@@ -437,8 +458,18 @@ export default function AdminPage() {
             // 2. Prepare Inputs
             // transition generate_audit_report(spent_record, timestamp, pay_period_hash, merkle_root)
             const timestamp = Math.floor(Date.now() / 1000).toString() + 'u32'
+
+            // Handle different wallet response structures (plaintext vs recordPlaintext)
+            const safePlaintext = spentRecord.plaintext || spentRecord.recordPlaintext
+
+            if (!safePlaintext) {
+                console.error("Invalid record structure:", spentRecord)
+                toast.error("Error: Could not retrieve record plaintext from wallet.")
+                return
+            }
+
             const inputs = [
-                spentRecord.plaintext.replace(/\n/g, '').replace(/ /g, ''),
+                safePlaintext.replace(/\n/g, '').replace(/ /g, ''),
                 timestamp,
                 periodHash || '0field', // Default if empty
                 merkleRoot || '0field'

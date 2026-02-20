@@ -1,5 +1,5 @@
 {
-    "program": "baba_zk_payroll_v6.aleo",
+    "program": "baba_zk_payroll_v7.aleo",
     "version": "0.1.0",
     "description": "Privacy-preserving payroll system for DAOs using ZK proofs",
     "license": "MIT"
