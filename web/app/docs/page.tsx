@@ -92,7 +92,7 @@ export default function DocsPage() {
                                             Public blockchains expose all transaction data. For DAO payroll, this means competitors see your compensation structure, salaries become publicly searchable, and payment timing reveals cash flow.
                                         </p>
                                         <p>
-                                            <strong>ZK Payroll solves this</strong> by using Aleo's zero-knowledge proofs to enable private salaries with public budget enforcement, ensuring both contributor privacy and organizational transparency.
+                                            <strong>ZK Payroll solves this</strong> by using Aleo&apos;s zero-knowledge proofs to enable private salaries with public budget enforcement, ensuring both contributor privacy and organizational transparency.
                                         </p>
 
                                         <div className="my-12 p-6 rounded-xl border border-white/10 bg-white/5">
@@ -146,7 +146,7 @@ export default function DocsPage() {
                                 <div className="space-y-8">
                                     <div className="space-y-4 border-b border-white/10 pb-8">
                                         <h1 className="text-4xl md:text-5xl font-black tracking-tight">Architecture</h1>
-                                        <p className="text-xl text-muted-foreground">How ZK Payroll's hybrid models operate.</p>
+                                        <p className="text-xl text-muted-foreground">How ZK Payroll&apos;s hybrid models operate.</p>
                                     </div>
 
                                     <div className="prose prose-invert prose-p:text-gray-400 max-w-none">
@@ -162,7 +162,7 @@ export default function DocsPage() {
                                                 <p className="text-sm text-muted-foreground mb-4">Direct Issue & Audit. Best for contractors and one-off payments.</p>
                                                 <ul className="text-sm space-y-2 text-gray-300">
                                                     <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Admin authorizes via <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary</code> with Multi-Sig.</span></li>
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">The Admin's private <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is immediately updated.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">The Admin&apos;s private <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is immediately updated.</span></li>
                                                     <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Compliance reports instantly reflect new expenditures.</span></li>
                                                 </ul>
                                             </GlassCard>
@@ -233,7 +233,7 @@ export default function DocsPage() {
                                             <Eye className="w-6 h-6 mb-4 text-white" />
                                             <h3 className="text-lg font-bold text-white mb-2">Double-Spend Protection & Isolation</h3>
                                             <p className="text-sm text-gray-400">
-                                                Aleo's record consumption model intrinsically prevents double spending. When a <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is used to issue a salary, it is verifiably consumed and replaced with an updated state. Furthermore, a strict <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">payroll_id</code> domain separation isolates concurrent payroll silos entirely.
+                                                Aleo&apos;s record consumption model intrinsically prevents double spending. When a <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is used to issue a salary, it is verifiably consumed and replaced with an updated state. Furthermore, a strict <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">payroll_id</code> domain separation isolates concurrent payroll silos entirely.
                                             </p>
                                         </GlassCard>
                                     </div>

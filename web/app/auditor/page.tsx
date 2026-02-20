@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { WalletConnectButton } from '@/components/WalletConnectButton'
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
+import GlassCard from '@/components/GlassCard'
+import WireframeBackground from '@/components/WireframeBackground'
+import Link from 'next/link'
+import { ArrowLeft, ShieldCheck, Database, FileDigit, Calendar } from 'lucide-react'
 
 export default function AuditorDashboard() {
     const { wallet, address, requestRecords } = useWallet()
@@ -54,106 +58,175 @@ export default function AuditorDashboard() {
     const cleanValue = (val: string) => val.replace(/u64|u32|field|\.private/g, '')
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-24 relative overflow-hidden text-gray-100">
-            {/* Background Decor */}
-            <div className="absolute top-0 right-1/2 translate-x-1/2 w-[600px] h-[600px] bg-white opacity-[0.02] blur-[150px] rounded-full pointer-events-none" />
+        <div className="relative min-h-screen bg-black text-white selection:bg-white/30 overflow-hidden font-sans">
+            <WireframeBackground />
 
-            <h1 className="text-4xl font-bold mb-8 z-10 tracking-tight">Auditor Portal</h1>
-
-            <div className="w-full max-w-6xl z-10">
-                <div className="flex flex-col md:flex-row gap-6 mb-8">
-                    {/* Header / Wallet */}
-                    <div className="glass-card flex-1 flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-semibold mb-2 text-gray-200">Auditor Access</h2>
-                            <div className="flex items-center gap-4">
-                                <WalletConnectButton />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Action Bar */}
-                    <div className="glass-card flex items-center justify-between gap-4">
-                        <div>
-                            <h2 className="text-lg font-bold text-white">Compliance Proofs</h2>
-                            <p className="text-xs text-gray-400">Decrypt and verify payroll records.</p>
-                        </div>
-                        <button
-                            onClick={fetchReports}
-                            disabled={loading}
-                            className="px-6 py-2 bg-white text-black rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                        >
-                            {loading ? 'Verifying...' : 'Fetch Proofs'}
-                        </button>
+            {/* Nav */}
+            <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
+                            <ArrowLeft className="w-4 h-4" /> Back to Home
+                        </Link>
+                        <div className="h-4 w-px bg-white/10" />
+                        <span className="text-sm font-bold tracking-tight">Auditor Portal</span>
                     </div>
                 </div>
+            </nav>
 
-                {/* Content Area */}
-                {!publicKey ? (
-                    <div className="text-center py-20">
-                        <p className="text-xl text-gray-500">Please connect your authorized wallet to access audit records.</p>
-                    </div>
-                ) : (
-                    <div className="w-full">
-                        {error && (
-                            <div className="p-4 mb-6 bg-red-900/20 border border-red-500/30 text-red-400 rounded-lg backdrop-blur-sm">
-                                {error}
+            <main className="relative z-10 pt-32 pb-24 px-6 max-w-7xl mx-auto space-y-12">
+                <div className="space-y-4 border-b border-white/10 pb-8">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center gap-4">
+                        <ShieldCheck className="w-10 h-10 text-white" />
+                        Compliance Audit
+                    </h1>
+                    <p className="text-xl text-muted-foreground">Verify zero-knowledge proofs of budget solvency without accessing private data.</p>
+                </div>
+
+                <div className="grid lg:grid-cols-[350px,1fr] gap-8 items-start">
+                    {/* Sidebar / Controls */}
+                    <div className="space-y-6 sticky top-32">
+                        <GlassCard className="p-6">
+                            <h2 className="text-lg font-bold mb-4">Auditor Access</h2>
+                            <div className="mb-6">
+                                <WalletConnectButton />
                             </div>
-                        )}
-
-                        {reports.length === 0 && !loading && !error && (
-                            <div className="text-center py-16 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                <p className="text-gray-500">No compliance proofs found.</p>
-                            </div>
-                        )}
-
-                        <div className="grid gap-6">
-                            {reports.map((report, idx) => (
-                                <div key={idx} className="glass-card group hover:bg-white/10 transition-colors">
-                                    <div className="flex justify-between items-start mb-6 border-b border-white/5 pb-4">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
-                                                <span className="text-sm font-bold text-green-400 uppercase tracking-wider">Verified Proof</span>
-                                            </div>
-                                            <h3 className="text-lg font-bold text-white font-mono">Payroll ID: {cleanValue(report.data.payroll_id)}</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-sm font-medium text-gray-400 mb-1">Status</h3>
+                                    {publicKey ? (
+                                        <div className="flex items-center gap-2 text-sm text-green-400 bg-green-400/10 px-3 py-2 rounded-lg border border-green-400/20">
+                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                            Auditor Connected
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-gray-500 uppercase">Generated On</p>
-                                            <p className="font-mono text-gray-300">{new Date(parseInt(cleanValue(report.data.timestamp)) * 1000).toLocaleDateString()}</p>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-sm text-yellow-500 bg-yellow-500/10 px-3 py-2 rounded-lg border border-yellow-500/20">
+                                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                            Wallet Disconnected
                                         </div>
-                                    </div>
-
-                                    <div className="grid md:grid-cols-2 gap-6 mb-6">
-                                        <div className="p-4 bg-black/30 rounded-lg border border-white/5">
-                                            <p className="text-gray-500 text-xs uppercase mb-1">Total Payroll Volume</p>
-                                            <p className="text-3xl font-bold font-mono text-white tracking-tight">{cleanValue(report.data.total_spent)} <span className="text-sm font-sans font-normal text-gray-500">credits</span></p>
-                                        </div>
-                                        <div className="p-4 bg-black/30 rounded-lg border border-white/5">
-                                            <p className="text-gray-500 text-xs uppercase mb-1">Recipients Paid</p>
-                                            <p className="text-3xl font-bold font-mono text-white tracking-tight">{cleanValue(report.data.recipient_count)} <span className="text-sm font-sans font-normal text-gray-500">employees</span></p>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-4 border-t border-white/5">
-                                        <h4 className="text-xs font-bold uppercase text-gray-500 mb-3 tracking-wider">Cryptographic Commitments</h4>
-                                        <div className="grid md:grid-cols-2 gap-6 text-xs font-mono break-all text-gray-400">
-                                            <div className="group/item">
-                                                <span className="block text-gray-600 mb-1 group-hover/item:text-gray-400 transition-colors">Period Hash</span>
-                                                <span className="bg-black/20 p-1 rounded">{cleanValue(report.data.pay_period_hash)}</span>
-                                            </div>
-                                            <div className="group/item">
-                                                <span className="block text-gray-600 mb-1 group-hover/item:text-gray-400 transition-colors">Merkle Root</span>
-                                                <span className="bg-black/20 p-1 rounded">{cleanValue(report.data.merkle_root)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        </GlassCard>
+
+                        {publicKey && (
+                            <GlassCard className="p-6">
+                                <h2 className="text-lg font-bold mb-2">Fetch Proofs</h2>
+                                <p className="text-sm text-gray-400 mb-6">Scan your connected wallet for decrypted Audit Reports.</p>
+                                <button
+                                    onClick={fetchReports}
+                                    disabled={loading}
+                                    className="w-full py-3 bg-white text-black rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)] flex justify-center items-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                            Verifying...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Database className="w-4 h-4" />
+                                            Scan Records
+                                        </>
+                                    )}
+                                </button>
+                            </GlassCard>
+                        )}
                     </div>
-                )}
-            </div>
-        </main>
+
+                    {/* Main Content Area */}
+                    <div className="space-y-6">
+                        {!publicKey ? (
+                            <GlassCard className="p-12 text-center flex flex-col items-center justify-center border-dashed border-white/10">
+                                <ShieldCheck className="w-12 h-12 text-gray-600 mb-4" />
+                                <h3 className="text-xl font-bold mb-2">Access Required</h3>
+                                <p className="text-gray-400 max-w-md">Connect your authorized auditor wallet to scan for compliance proofs.</p>
+                            </GlassCard>
+                        ) : (
+                            <>
+                                {error && (
+                                    <div className="p-4 bg-red-900/20 border border-red-500/30 text-red-400 rounded-lg backdrop-blur-sm text-sm">
+                                        {error}
+                                    </div>
+                                )}
+
+                                {reports.length === 0 && !loading && !error && (
+                                    <GlassCard className="p-12 text-center flex flex-col items-center justify-center border-dashed border-white/10">
+                                        <Database className="w-12 h-12 text-gray-600 mb-4" />
+                                        <h3 className="text-xl font-bold mb-2">No Reports Found</h3>
+                                        <p className="text-gray-400 max-w-md">No decrypted Audit Reports were found for this wallet address.</p>
+                                    </GlassCard>
+                                )}
+
+                                <div className="space-y-6">
+                                    {reports.map((report, idx) => (
+                                        <GlassCard key={idx} hover={false} className="p-0 overflow-hidden border-white/10 group">
+                                            {/* Report Header */}
+                                            <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                                        <ShieldCheck className="w-4 h-4 text-green-400" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-mono font-bold">Payroll ID: {cleanValue(report.data.payroll_id)}</h3>
+                                                        <div className="flex items-center gap-1 text-xs text-green-400 font-medium tracking-wide uppercase mt-0.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.8)]" />
+                                                            Zero-Knowledge Verified
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-0.5 flex items-center justify-end gap-1"><Calendar className="w-3 h-3" /> Date</div>
+                                                    <div className="font-mono text-sm text-gray-300">{new Date(parseInt(cleanValue(report.data.timestamp)) * 1000).toLocaleDateString()}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Report Metrics */}
+                                            <div className="p-6 grid grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-lg bg-black/40 border border-white/5 group-hover:bg-black/60 transition-colors">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Total Volume</div>
+                                                    <div className="text-3xl font-bold font-mono tracking-tight text-white flex items-baseline gap-2">
+                                                        {cleanValue(report.data.total_spent)}
+                                                        <span className="text-sm font-sans font-normal text-gray-500">Aleo Credits</span>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 rounded-lg bg-black/40 border border-white/5 group-hover:bg-black/60 transition-colors">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Recipients Paid</div>
+                                                    <div className="text-3xl font-bold font-mono tracking-tight text-white flex items-baseline gap-2">
+                                                        {cleanValue(report.data.recipient_count)}
+                                                        <span className="text-sm font-sans font-normal text-gray-500">Employees</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Cryptographic Proofs */}
+                                            <div className="px-6 py-4 bg-white/[0.02] border-t border-white/5">
+                                                <h4 className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500 mb-4 tracking-wider">
+                                                    <FileDigit className="w-4 h-4" /> Cryptographic Commitments
+                                                </h4>
+                                                <div className="grid md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Period Hash</div>
+                                                        <div className="font-mono text-xs text-gray-400 break-all bg-black/50 p-2 rounded border border-white/5">
+                                                            {cleanValue(report.data.pay_period_hash)}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Merkle Root</div>
+                                                        <div className="font-mono text-xs text-gray-400 break-all bg-black/50 p-2 rounded border border-white/5">
+                                                            {cleanValue(report.data.merkle_root)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </GlassCard>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </main>
+        </div>
     )
 }
