@@ -10,6 +10,7 @@ import { motion } from "framer-motion"
 import { EmployeeClaimComponent } from '@/components/EmployeeClaimComponent'
 import { ArrowLeft, Wallet, RefreshCw, Copy, PlusCircle, History } from "lucide-react"
 import Link from 'next/link'
+import { WalletConnectButton } from "@/components/WalletConnectButton"
 
 interface SalaryCertificate {
     id: string
@@ -147,14 +148,17 @@ export default function EmployeePage() {
                     <ArrowLeft className="w-4 h-4" />
                     Back
                 </Link>
-                {publicKey && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="font-mono text-xs text-gray-300">
-                            {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
-                        </span>
-                    </div>
-                )}
+                <div className="flex items-center gap-4">
+                    {publicKey && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hidden md:flex">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="font-mono text-xs text-gray-300">
+                                {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
+                            </span>
+                        </div>
+                    )}
+                    <WalletConnectButton />
+                </div>
             </div>
 
             {/* Content Container */}
@@ -300,7 +304,7 @@ export default function EmployeePage() {
                         <Wallet className="w-12 h-12 text-gray-600 mb-6" />
                         <h2 className="text-xl text-white font-bold mb-2">Wallet Not Connected</h2>
                         <p className="text-gray-500 text-sm max-w-md text-center mb-8">
-                            Please connect your Leo Wallet to view your salary rights and claim paychecks.
+                            Please connect your Leo Wallet using the button in the top right to view your salary rights and claim paychecks.
                         </p>
                     </div>
                 )}
