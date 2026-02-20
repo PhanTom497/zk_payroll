@@ -38,12 +38,16 @@ leo deploy \
 
 Create the payroll instance and set the budget.
 
-**Command:**
+**Command (v7 with Multi-Sig):**
 ```bash
 leo execute initialize_payroll \
   1000u64 \
   1field \
-  <YOUR_WALLET_ADDRESS> \
+  1u64 \
+  <ADMIN_1_ADDRESS> \
+  <ADMIN_2_ADDRESS> \
+  <ADMIN_3_ADDRESS> \
+  <AUDITOR_ADDRESS> \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
@@ -54,12 +58,12 @@ leo execute initialize_payroll \
 **Parameters:**
 - `1000u64`: Budget ceiling
 - `1field`: Unique Payroll ID
+- `1u64`: Multi-Sig Threshold (e.g., 1-of-3)
+- `aleo1...` x3: Addresses of the 3 admin signers
 - `aleo1...`: Auditor address (for selective disclosure)
 
 **Save Output:**
-Copy the `AdminCap` and `SpentRecord` records from the output. You will need them for the next steps.
-
-> **Tip:** You can find these JSON strings in your terminal output under the "Outputs" section of the command you just ran.
+Copy the `SpentRecord` record from the output. You will need it for Auditor actions.
 
 ---
 
@@ -133,6 +137,14 @@ The transaction will be **Rejected** on-chain.
 - The constraint `assert(new_total_spent <= budget_ceiling)` will fail during finalization.
 - You can verify the "Rejected" status in the block explorer.
 
+## 💡 Note on CLI Testing for v7 (Multi-Sig & Pull Payments)
+
+**Important**: In version 7, `issue_salary` and `create_recipient_ticket` require a complex `Signatures` struct and a `[address; 3]` signer array as arguments to satisfy the Multi-Sig conditions. 
+
+Because formatting Aleo CLI struct inputs for signatures is highly complex and error-prone, **we strongly recommend using the Frontend UI (`npm run dev` in the `/web` directory)** to test these flows. The frontend automatically gathers signatures, constructs the payload, and executes the transition seamlessly using the Aleo SDK.
+
+If testing manually via CLI, you must provide valid `Signatures { sig1: ..., sig2: ..., sig3: ... }` strings matching the admin addresses.
+
 ---
 
 ## 📋 7. Generate Audit Report
@@ -142,9 +154,10 @@ Prove solvency to an auditor without revealing individual salaries.
 **Command:**
 ```bash
 leo execute generate_audit_report \
-  "{ ... ADMIN_CAP_RECORD ... }" \
   "{ ... SPENT_RECORD ... }" \
   1738181000u32 \
+  1field \
+  2field \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \

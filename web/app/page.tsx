@@ -113,9 +113,9 @@ export default function Home() {
                         <Link href="/admin" className="glow-btn text-sm flex items-center gap-2">
                             Launch App <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <button className="px-6 py-3 rounded-lg border border-white/20 text-foreground text-sm font-semibold hover:bg-white/5 transition-all duration-300">
+                        <Link href="/docs" className="px-6 py-3 rounded-lg border border-white/20 text-foreground text-sm font-semibold hover:bg-white/5 transition-all duration-300">
                             Learn More
-                        </button>
+                        </Link>
                     </motion.div>
                 </div>
 

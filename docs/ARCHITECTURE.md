@@ -18,14 +18,16 @@ The heart of the system, written in Leo. It manages:
 
 ### 2. Record Structures
 
-#### `AdminCap`
+#### `SpentRecord`
 - **Owner**: Admin
-- **Purpose**: Controlling payroll operations
-- **Privacy**: Fully encrypted (`owner` and `payroll_id` are private)
+- **Purpose**: Tracking cumulative spending privately for Push payments and initialization
+- **Privacy**: `total_spent` is encrypted but proven correct via ZK
 - **Fields**:
   - `owner`: Address of the admin
-  - `payroll_id`: Unique identifier for the payroll instance
-  - `auditor`: Address of the authorized auditor (Wave 2 feature)
+  - `total_spent`: u64, cumulative amount paid out so far (private)
+  - `payroll_id`: Links to the payroll instance
+  - `auditor`: Address of the authorized auditor
+  - `recipient_count`: Number of private payments made
 
 #### `SpentRecord`
 - **Owner**: Admin
@@ -45,9 +47,21 @@ The heart of the system, written in Leo. It manages:
   - `owner`: Address of the employee
   - `payroll_id`: Links to the correct payroll instance
 
+#### `SalaryCertificate`
+- **Owner**: Recipient (Employee)
+- **Purpose**: Represents the right to claim a recurring salary (Pull Model)
+- **Privacy**: Only the recipient can decrypt the terms
+- **Fields**:
+  - `owner`: Address of the employee
+  - `amount`: u64, the salary amount (private)
+  - `start_height`: Block height when claiming begins
+  - `interval`: Blocks required between claims
+  - `claim_count`: Number of successful claims made
+  - `payroll_id`: Links to the payroll instance
+
 #### `SalaryRecord`
 - **Owner**: Recipient (Employee)
-- **Purpose**: The actual payment record
+- **Purpose**: The actual payment record/voucher
 - **Privacy**: Only the recipient can decrypt the amount
 - **Fields**:
   - `owner`: Address of the employee
@@ -65,35 +79,36 @@ The heart of the system, written in Leo. It manages:
   - `payroll_id`: Links to payroll instance
   - `timestamp`: u32, time of report generation
 
----
-
 ## Data Flow & Architecture Diagram
 
 ```mermaid
 graph TD
-    User[DAO Admin] -->|1. Initialize| Init[initialize_payroll]
+    User[DAO Admin] -->|1. Initialize Multi-Sig| Init[initialize_payroll]
     Init -->|Public| Budget[Mapping: payroll_budgets]
-    Init -->|Private| AC[AdminCap]
     Init -->|Private| SR[SpentRecord]
 
-    User -->|2. Create Ticket| TicketTx[create_recipient_ticket]
-    TicketTx -->|Private| RT[RecipientTicket]
-    RT -->|Off-chain| Emp[Employee]
+    subgraph Push Model
+        User -->|Issue Direct Pay| Issue[issue_salary]
+        SR --> Issue
+        Emp1[Contractor] -->|Provide Ticket| Issue
+        Issue -->|Success| SR_New[Updated SpentRecord]
+        Issue -->|Success| Pay1[SalaryRecord]
+        Pay1 --> Emp1
+    end
 
-    User -->|3. Issue Salary| Issue[issue_salary]
-    AC --> Issue
-    SR --> Issue
-    Emp -->|Provide Ticket| Issue
-    
-    Issue -->|Verify| ZK[ZK Proof]
-    ZK -->|Enforce| Budget
-    
-    Issue -->|Success| SR_New[Updated SpentRecord]
-    Issue -->|Success| Pay[SalaryRecord]
-    Pay --> Emp
+    subgraph Pull Model
+        User -->|Set Salary Limit| Limit[issue_limit]
+        Limit -->|Private Right| SC[SalaryCertificate]
+        SC --> Emp2[Core Employee]
+        
+        Emp2 -->|Self-Claim| Claim[claim_salary]
+        SC --> Claim
+        Claim -->|Generate| Pay2[SalaryRecord]
+        Pay2 --> Emp2
+        Claim -->|Update| SC_New[Updated SalaryCertificate]
+    end
 
-    User -->|4. Audit| AuditTx[generate_audit_report]
-    AC --> AuditTx
+    User -->|Audit Generation| AuditTx[generate_audit_report]
     SR_New --> AuditTx
     AuditTx -->|Private Report| Auditor[Auditor]
 ```
@@ -111,7 +126,7 @@ graph TD
 
 ## Security Model
 
--   **Budget Enforcement**: The `finalize` block of `issue_salary` asserts that `new_total_spent <= budget_ceiling`. This is enforced by the network consensus.
--   **Access Control**: Only the holder of `AdminCap` can issue salaries or create tickets.
--   **Double-Spend Protection**: `SpentRecord` is consumed and re-created with an updated total in every `issue_salary` transaction, preventing reuse of old states.
+-   **Budget Enforcement**: The `finalize` blocks assert logic limits against on-chain mappings.
+-   **Multi-Sig Authorization**: `issue_salary` checks a 3-of-3 or threshold signatures struct to prevent unilateral rogue admin actions.
+-   **Airgapped Claims**: `claim_salary` does not modify `SpentRecord`, meaning a compromised employee claim flow cannot poison the organization's verified reporting metric.
 -   **Payroll Isolation**: `payroll_id` ensures that records from one payroll instance cannot be used in another.

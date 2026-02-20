@@ -12,34 +12,26 @@ chmod +x test.sh && ./test.sh
 
 ---
 
-## Full Verification Flow
-
 ### 1. Initialize Payroll & Budget
 
-**Purpose:** Set up a new payroll instance with a strict budget ceiling.
+**Purpose:** Set up a new payroll instance with a strict budget ceiling and multi-sig parameters.
 
 **Command:**
 ```bash
-leo execute initialize_payroll 1000u64 1field <AUDITOR_ADDRESS> --network testnet ...
+leo execute initialize_payroll 1000u64 1field 1u64 <ADMIN1> <ADMIN2> <ADMIN3> <AUDITOR> --network testnet ...
 ```
 
 **Outcome:**
 - **On-chain State:** `payroll_budgets[1field] = 1000u64`
-- **Private Records:** `AdminCap` and `SpentRecord` created (total_spent: 0)
+- **Private Records:** `SpentRecord` created (total_spent: 0)
 
 ---
 
-### 2. Recipient Authentication
+### 2. Note on Manual Testing (v7)
 
-**Purpose:** Issue a private ticket to an employee so they can receive funds.
+**Purpose:** With the introduction of Multi-Sig in Wave 2 (v7), transitions like `issue_salary` and `create_recipient_ticket` require valid signature structs (`Signatures`) to execute. 
 
-**Command:**
-```bash
-leo execute create_recipient_ticket "[ADMIN_CAP]" <EMPLOYEE_ADDRESS> --network testnet ...
-```
-
-**Outcome:**
-- **Private Record:** `RecipientTicket` created, owned by the employee.
+**Recommendation:** It is highly recommended to test the full lifecycle (Creating Tickets, Issuing Salaries, Claiming Salaries, and Batching) using the **Frontend Web Application** (`/web`), which automatically handles the complex cryptography and formatting required for the Aleo SDK. Manual CLI testing requires constructing valid offline signatures.
 
 ---
 
@@ -86,7 +78,7 @@ leo execute issue_salary ... 600u64 ...
 
 **Command:**
 ```bash
-leo execute generate_audit_report "[ADMIN_CAP]" "[SPENT_RECORD]" <TIMESTAMP> --network testnet ...
+leo execute generate_audit_report "[SPENT_RECORD]" <TIMESTAMP> <PAY_PERIOD_HASH> <MERKLE_ROOT> --network testnet ...
 ```
 
 **Outcome:**

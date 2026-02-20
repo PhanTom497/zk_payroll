@@ -3,11 +3,11 @@
 **Privacy-Preserving DAO Payments on Aleo**
 
 > **ZK Payroll solves the "Compliance-Privacy Paradox" by enabling DAO administrators to prove budget solvency to auditors without ever revealing individual contributor data.**
-> **Built on Aleo for total privacy and public verifiability.**
+> **Built on Aleo for total privacy, public verifiability, and Multi-Sig enterprise security.**
 
 [![Aleo](https://img.shields.io/badge/Built%20on-Aleo-blue)](https://aleo.org)
 [![Leo](https://img.shields.io/badge/Language-Leo-purple)](https://leo-lang.org)
-[![Wave](https://img.shields.io/badge/Buildathon-Wave%201-green)](https://aleo.org)
+[![Version](https://img.shields.io/badge/Version-v7-success)](https://aleo.org)
 
 ---
 
@@ -52,7 +52,7 @@ ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with p
 | Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible* |
 | Budget Compliance | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven |
 
-> * *Admin visibility is limited to local history; once a SalaryRecord is issued, only the recipient can decrypt and spend it.*
+> * *Admin visibility is limited to local decryption history. Push payments update the admin's tracking record directly. Pull payments (Employee Claims) protect employee privacy entirely.*
 
 > **Key Insight**: Auditors verify totals without seeing individual salaries. Public observers only see the budget limit and ZK proof validity.
 
@@ -66,27 +66,30 @@ ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with p
 
 ---
 
-## 🔄 Payment Lifecycle
+## 🔄 Architecture Models: Push vs. Pull
+
+ZK Payroll supports two distinct payment mechanisms natively to cater to different operational and privacy needs:
+
+### 1. Push Model (Direct Issue & Audit)
+**Best for**: Contractors, one-off payments, and strict real-time audit compliance.
+- 🧑‍💼 **Admin** authorizes and funds the paycheck directly via `issue_salary` with M-of-N Multisig authorization.
+- 📊 **Tracking**: The Admin's private `SpentRecord` is synchronously updated.
+- 📋 **Auditor**: Compliance reports instantly reflect the new expenditure, ensuring tightly-coupled organizational accounting.
+
+### 2. Pull Model (Automated Claiming)
+**Best for**: Core team, recurring salaries, and ultimate employee privacy.
+- 🧑‍💼 **Admin** issues an organizational limit (`SalaryCertificate`) via `issue_limit`. The total budget is reserved.
+- 👷 **Employee** periodically claims their salary autonomously via `claim_salary` using their `SalaryCertificate`.
+- 🔐 **Privacy Boundary**: Because the Employee generates the ZK Proof, they cannot modify the Admin's private `SpentRecord`. This creates an airgap: the organization knows the budget is reserved, but the exact timing and execution of the claim remain entirely private to the employee.
 
 ```mermaid
-flowchart LR
-    A[🔐 Admin] -->|issue_salary| B[⚡ ZK Proof]
-    B -->|verify| C{Budget Check}
-    C -->|pass| D[📦 SalaryRecord]
-    C -->|fail| E[❌ Rejected]
-    D -->|encrypted| F[👤 Recipient]
+flowchart TD
+    A[🔐 Admin (Multi-Sig)] -->|Push: issue_salary| B[📦 SalaryRecord to Employee]
+    A -->|Push: issue_salary| C[📊 Updates Admin's SpentRecord]
     
-    subgraph On-Chain
-        C
-        G[📊 Mapping: payroll_budgets]
-    end
-    
-    subgraph Private Records
-        D
-        F
-    end
-    
-    B -.->|read budget| G
+    A -->|Pull: issue_limit| D[📜 SalaryCertificate to Employee]
+    D -->|Pull: claim_salary| E[👷 Employee Self-Claims]
+    E -->|Generates| F[📦 SalaryRecord]
 ```
 
 ---
@@ -124,10 +127,11 @@ A production-grade Next.js application is located in the `web/` directory.
 2.  `npm install`
 3.  `npm run dev`
 
-Features:
-*   **Admin Dashboard**: Manage payroll, issuance, and multi-sig operations.
-*   **Employee Portal**: View and decrypt pay stubs privacy-preservingly.
-*   **Wallet Adapter**: Connects with Leo Wallet.
+### Features:
+*   **Admin Dashboard**: Manage payroll, issuance, and multi-sig operations. Includes **Batch Processing** (Legacy and Privacy-Preserving combinations).
+*   **Employee Portal**: View rights (Salary Certificates) and independently claim paychecks. Deduplication built-in.
+*   **Auditor Portal**: Decrypt `AuditReports` and view verified solvency proofs.
+*   **Wallet Integration**: Connects seamlessly with Leo Wallet.
 
 ## 📁 Project Structure
 
@@ -182,15 +186,15 @@ AuditReport {
 
 
 
-## 📊 Contract Stats
+## 📊 Contract Stats (v7)
 
 | Metric | Value |
 |--------|-------|
-| Records | 5 (AdminCap, SpentRecord, RecipientTicket, SalaryRecord, AuditReport) |
-| Transitions | 4 |
-| Program Size | 3.06 KB |
-| Statements | 66 |
-| **Standards** | ✅ **ARC-0006 Compliant** (Async Constructors) |
+| Records | 5 (`SpentRecord`, `RecipientTicket`, `SalaryCertificate`, `SalaryRecord`, `AuditReport`) |
+| Core Transitions | 7 |
+| Program Size | ~16 KB |
+| Statements | ~420 |
+| **Enterprise Features** | ✅ M-of-N Multi-Sig, ✅ Privacy Batching, ✅ Pull Payments |
 
 ---
 

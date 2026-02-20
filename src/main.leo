@@ -50,7 +50,7 @@ program baba_zk_payroll_v7.aleo {
     // ... existing AuditReport ...
 
     // ========================================================================
-    // PULL PAYMENT TRANSITIONS (Wave 3)
+    // PULL PAYMENT TRANSITIONS (Wave 2)
     // ========================================================================
 
     /// fund_payroll: Admin deposits public funds into the program to back claims
