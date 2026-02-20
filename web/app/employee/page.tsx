@@ -3,7 +3,13 @@
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
 import { fetchBlockHeight, requestTransaction, PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
-import { EmployeeClaimComponent } from '../../components/EmployeeClaimComponent'
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import GlassCard from "@/components/GlassCard"
+import { motion } from "framer-motion"
+import { EmployeeClaimComponent } from '@/components/EmployeeClaimComponent'
+import { ArrowLeft, Wallet, RefreshCw, Copy, PlusCircle, History } from "lucide-react"
+import Link from 'next/link'
 
 interface SalaryCertificate {
     id: string
@@ -27,7 +33,7 @@ export default function EmployeePage() {
     const publicKey = address; // Alias for compatibility
 
     const [certificates, setCertificates] = useState<SalaryCertificate[]>([])
-    const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]) // New state
+    const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([])
     const [isScanning, setIsScanning] = useState(false)
     const [currentHeight, setCurrentHeight] = useState<number>(0)
     const [loadingClaim, setLoadingClaim] = useState(false)
@@ -48,17 +54,12 @@ export default function EmployeePage() {
         setIsScanning(true)
         console.log("Scanning with PROGRAM_ID:", PROGRAM_ID);
         try {
-            // true = request decryped records (requires view key permission userside or auto-decrypt)
             const records = await requestRecords(PROGRAM_ID, true)
-            console.log("DEBUG: Raw Records from Wallet:", JSON.stringify(records, null, 2));
 
             // Scan Certificates
             const certs: SalaryCertificate[] = (records as any[])
                 .filter((rec: any) => !rec.spent && rec.recordName === 'SalaryCertificate')
                 .map((rec: any) => {
-                    console.log("DEBUG: Processing Record:", rec);
-                    console.log("DEBUG: Plaintext:", rec.plaintext);
-
                     const amountRaw = getRecordField(rec, 'amount');
                     const startHeightRaw = getRecordField(rec, 'start_height');
                     const intervalRaw = getRecordField(rec, 'interval');
@@ -67,7 +68,7 @@ export default function EmployeePage() {
 
                     return {
                         id: rec.serialNumber || 'unknown',
-                        amount: amountRaw || '0u64', // Fallback to 0u64 to prevent undefined
+                        amount: amountRaw || '0u64',
                         start_height: startHeightRaw ? parseInt(startHeightRaw.replace('u32', '')) : 0,
                         interval: intervalRaw ? parseInt(intervalRaw.replace('u32', '')) : 0,
                         claim_count: claimCountRaw ? parseInt(claimCountRaw.replace('u32', '')) : 0,
@@ -87,7 +88,7 @@ export default function EmployeePage() {
 
                     return {
                         id: rec.serialNumber || 'unknown',
-                        amount: amountRaw || '0u64', // Fallback
+                        amount: amountRaw || '0u64',
                         payment_id: paymentIdRaw || 'unknown',
                         payroll_id: payrollIdRaw || 'unknown'
                     };
@@ -96,7 +97,7 @@ export default function EmployeePage() {
 
         } catch (e: any) {
             console.error("Error scanning records:", e)
-            alert("Error scanning records: " + e.message)
+            toast.error("Error scanning records: " + e.message)
         } finally {
             setIsScanning(false)
         }
@@ -114,59 +115,98 @@ export default function EmployeePage() {
                 [recordPlaintext],
                 500000 // Fee (0.5 credits)
             )
-            alert("Claim transaction submitted! Please wait for a few minutes, then click 'Scan' again to see your new payment record.")
+            toast.success("Transaction submitted. Update incoming...")
         } catch (e: any) {
             console.error("Error claiming salary:", e)
-            alert("Failed to claim salary. Details: " + e.message)
+            toast.error("Failed to claim: " + e.message)
         } finally {
             setLoadingClaim(false)
         }
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-24 relative overflow-hidden text-gray-100">
-            {/* Background Decor */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white opacity-[0.02] blur-[150px] rounded-full pointer-events-none" />
-
-            <h1 className="text-4xl font-bold mb-8 z-10 tracking-tight">Employee Portal</h1>
-
-            <div className="w-full max-w-6xl z-10">
-                {/* Wallet Connection Status */}
-                <div className="mb-8 glass-card flex justify-between items-center">
-                    <div>
-                        <h2 className="text-xl font-semibold mb-2 text-gray-200">My Wallet</h2>
-                        {publicKey ? (
-                            <div className="flex items-center gap-2 text-green-400 font-mono">
-                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
-                                Connected: {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
-                            </div>
-                        ) : (
-                            <div className="text-yellow-500">Not Connected</div>
-                        )}
+        <main className="min-h-screen bg-black text-gray-100 font-sans selection:bg-white/20">
+            {/* Top Bar */}
+            <div className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center z-10 relative">
+                <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                </Link>
+                {publicKey && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="font-mono text-xs text-gray-300">
+                            {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
+                        </span>
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500">Block Height</p>
-                        <p className="text-2xl font-mono font-bold text-white">{currentHeight || 'Syncing...'}</p>
-                    </div>
+                )}
+            </div>
+
+            {/* Content Container */}
+            <div className="w-full max-w-6xl mx-auto px-6 pb-20 z-10 relative">
+
+                {/* Centered Header */}
+                <div className="text-center mb-16 mt-4">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">Employee Portal</h1>
                 </div>
 
-                {/* Dashboard Content */}
-                {publicKey && (
-                    <div className="space-y-8">
+                {/* Dashboard Grid */}
+                {publicKey ? (
+                    <div className="space-y-12">
 
-                        {/* Certificates (Salary Rights) Section */}
-                        <div className="glass-card">
-                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-glass-border">
+                        {/* Info Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Connected Wallet Card */}
+                            <div className="bg-[#111111] border border-white/5 p-6 rounded-xl relative group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Connected Wallet</span>
+                                    <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    <span className="font-mono text-xl text-white tracking-tight">
+                                        {publicKey.slice(0, 12)}...{publicKey.slice(-8)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Network Status Card */}
+                            <div className="bg-[#111111] border border-white/5 p-6 rounded-xl relative group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Network Status</span>
+                                    <button
+                                        className={`p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-colors ${!currentHeight && 'animate-spin'}`}
+                                    >
+                                        <RefreshCw className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="font-mono text-2xl font-bold text-white tracking-tight">
+                                        #{currentHeight > 0 ? currentHeight : '---'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Salary Rights Section */}
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-end">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white">Salary Rights (Paychecks)</h2>
-                                    <p className="text-sm text-gray-400">Your authorized salary streams.</p>
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <PlusCircle className="w-5 h-5 text-gray-400" />
+                                        Salary Rights
+                                    </h2>
+                                    <p className="text-sm text-gray-500 mt-1 ml-7">Your authorized salary streams.</p>
                                 </div>
                                 <button
                                     onClick={scanRecords}
                                     disabled={isScanning}
-                                    className="px-6 py-2 bg-white text-black rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
                                 >
-                                    {isScanning ? 'Decrypting...' : 'Check for Paychecks'}
+                                    <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
+                                    {isScanning ? 'Scanning...' : 'Check for Paychecks'}
                                 </button>
                             </div>
 
@@ -183,54 +223,80 @@ export default function EmployeePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-16 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                    <div className="inline-block p-4 rounded-full bg-white/5 mb-4 text-gray-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-gray-300 text-lg mb-2">No active salary rights found.</p>
-                                    <p className="text-gray-500 text-sm max-w-md mx-auto">Click &quot;Check for Paychecks&quot; to decrypt your private records from the blockchain.</p>
+                                <div className="w-full bg-[#111111] border border-white/5 border-dashed rounded-xl p-16 text-center">
+                                    <p className="text-gray-500 mb-4">No salary certificates found.</p>
+                                    <button onClick={scanRecords} className="text-sm text-white underline underline-offset-4">Scan Network</button>
                                 </div>
                             )}
                         </div>
 
-                        {/* Withdraw History */}
-                        <div className="glass-card">
-                            <h2 className="text-xl font-bold mb-6 text-white">Withdrawal History</h2>
-                            {salaryRecords.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full text-left text-sm text-gray-300">
-                                        <thead className="bg-white/5 text-gray-100 uppercase font-medium text-xs tracking-wider">
-                                            <tr>
-                                                <th className="px-4 py-4 rounded-tl-lg">Amount</th>
-                                                <th className="px-4 py-4">Payment ID</th>
-                                                <th className="px-4 py-4">Payroll ID</th>
-                                                <th className="px-4 py-4 text-right rounded-tr-lg">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/10">
-                                            {salaryRecords.map((rec, idx) => (
-                                                <tr key={idx} className="hover:bg-white/5 transition">
-                                                    <td className="px-4 py-4 font-mono font-bold text-white">{rec.amount}</td>
-                                                    <td className="px-4 py-4 font-mono text-xs text-gray-500">{rec.payment_id}</td>
-                                                    <td className="px-4 py-4 font-mono text-xs text-gray-500">{rec.payroll_id}</td>
-                                                    <td className="px-4 py-4 text-right">
-                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-green-500/20 text-green-300 border border-green-500/20">
-                                                            Withdrawn
-                                                        </span>
-                                                    </td>
+                        {/* Withdrawal History */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <History className="w-5 h-5 text-white" />
+                                <h2 className="text-xl font-bold text-white">Withdrawal History</h2>
+                            </div>
+
+                            <div className="bg-[#111111] border border-white/5 rounded-xl overflow-hidden">
+                                {salaryRecords.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-black/40 text-gray-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5">
+                                                <tr>
+                                                    <th className="px-6 py-5 font-medium">Amount</th>
+                                                    <th className="px-6 py-5 font-medium">Payment ID</th>
+                                                    <th className="px-6 py-5 font-medium">Payroll ID</th>
+                                                    <th className="px-6 py-5 font-medium text-right">Status</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <p className="text-gray-500 italic py-4">No withdrawal history available.</p>
-                            )}
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 text-sm">
+                                                {salaryRecords.map((rec, idx) => (
+                                                    <tr key={idx} className="hover:bg-white/5 transition-colors group">
+                                                        <td className="px-6 py-5 font-bold text-white">
+                                                            {rec.amount.replace('.private', '').replace('u64', '')}
+                                                        </td>
+                                                        <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
+                                                            {rec.payment_id.replace('.private', '').replace('field', '')}
+                                                        </td>
+                                                        <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
+                                                            {rec.payroll_id.replace('.private', '').replace('field', '')}
+                                                        </td>
+                                                        <td className="px-6 py-5 text-right">
+                                                            <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#1A3325] text-[#4ADE80] text-[10px] font-bold uppercase tracking-wider">
+                                                                Withdrawn
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="p-12 text-center text-gray-500 text-sm">
+                                        No withdrawal history found
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 bg-[#111111] border border-white/5 rounded-xl">
+                        <Wallet className="w-12 h-12 text-gray-600 mb-6" />
+                        <h2 className="text-xl text-white font-bold mb-2">Wallet Not Connected</h2>
+                        <p className="text-gray-500 text-sm max-w-md text-center mb-8">
+                            Please connect your Leo Wallet to view your salary rights and claim paychecks.
+                        </p>
                     </div>
                 )}
+            </div>
+
+            {/* Background Decor */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/5 blur-[120px] rounded-full" />
+                {/* Grid Pattern */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)] opacity-20" />
             </div>
         </main>
     )

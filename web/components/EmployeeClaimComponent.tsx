@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from "framer-motion"
+import { Link, ArrowRight, CheckCircle, Clock } from "lucide-react"
 
 interface SalaryCertificate {
     id: string
@@ -9,7 +11,7 @@ interface SalaryCertificate {
     interval: number
     claim_count: number
     payroll_id: string
-    _record: any // The full Leo record object needed for consumption
+    _record: any
 }
 
 interface EmployeeClaimProps {
@@ -23,69 +25,93 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
     const [timeRemaining, setTimeRemaining] = useState<string>('')
     const [canClaim, setCanClaim] = useState(false)
 
-    // Parse "amount" string like "5000u64.private" -> "5000"
+    // Clean display values
     const displayAmount = certificate.amount.replace(/u64|u32|field|\.private/g, '')
 
-    // Calculate next claim block
+    // Calculate details
     const nextClaimHeight = certificate.start_height + (certificate.claim_count * certificate.interval)
     const blocksLeft = nextClaimHeight - currentBlockHeight
 
     useEffect(() => {
         if (blocksLeft <= 0) {
             setCanClaim(true)
-            setTimeRemaining('Ready to claim!')
+            setTimeRemaining('Ready to claim')
         } else {
             setCanClaim(false)
             // Approx 3 seconds per block on Aleo
             const secondsLeft = blocksLeft * 3
-            const minutes = Math.floor(secondsLeft / 60)
-            const seconds = secondsLeft % 60
-            setTimeRemaining(`${blocksLeft} blocks (~${minutes}m ${seconds}s)`)
+            if (secondsLeft > 120) {
+                const minutes = Math.ceil(secondsLeft / 60)
+                setTimeRemaining(`~${minutes}m left`)
+            } else {
+                setTimeRemaining(`~${secondsLeft}s left`)
+            }
         }
     }, [blocksLeft, currentBlockHeight])
 
     return (
-        <div className="glass-card flex flex-col h-full bg-white/5 border border-white/10">
-            <div className="flex justify-between items-start mb-6">
-                <div>
-                    <span className="inline-block px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider bg-white/10 text-white mb-2 border border-white/5">
-                        Salary Right
+        <div className="flex flex-col h-full bg-[#111111] border border-white/5 p-6 rounded-xl hover:border-white/10 transition-colors group relative overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6 z-10 relative">
+                <div className="flex items-center gap-2 text-gray-500">
+                    <Link className="w-4 h-4 rotate-45" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Salary Right</span>
+                </div>
+                <div className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest border ${canClaim
+                        ? 'bg-[#1A3325] text-[#4ADE80] border-[#4ADE80]/20'
+                        : 'bg-[#331A1A] text-[#FB923C] border-[#FB923C]/20'
+                    }`}>
+                    {canClaim ? 'Available' : 'Locked'}
+                </div>
+            </div>
+
+            {/* Main Amount */}
+            <div className="mb-8 z-10 relative">
+                <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-white tracking-tight">{displayAmount}</span>
+                    <span className="text-sm text-gray-500 font-medium">credits</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1 pl-0.5">Per Interval</p>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-8 z-10 relative">
+                <div className="p-4 bg-black/40 rounded-lg border border-white/5">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Status</span>
+                    <span className={`text-sm font-bold ${canClaim ? 'text-white' : 'text-gray-400'}`}>
+                        {timeRemaining}
                     </span>
-                    <h3 className="text-2xl font-bold font-mono text-white">{displayAmount} <span className="text-sm font-sans font-normal text-gray-400">Credits</span></h3>
                 </div>
-                <div className="text-right">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">Next Withdrawal</p>
-                    <p className={`font-mono font-bold ${canClaim ? 'text-green-400' : 'text-orange-400'}`}>
-                        {canClaim ? 'NOW' : `Block ${nextClaimHeight}`}
-                    </p>
+                <div className="p-4 bg-black/40 rounded-lg border border-white/5">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Claimed</span>
+                    <span className="text-sm font-bold text-gray-200">{certificate.claim_count} times</span>
                 </div>
             </div>
 
-            <div className="bg-black/20 rounded-lg p-4 mb-6 space-y-2 border border-white/5">
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Current Block</span>
-                    <span className="font-mono text-gray-300">{currentBlockHeight > 0 ? currentBlockHeight : 'Syncing...'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Wait Time</span>
-                    <span className="font-mono text-gray-300">{timeRemaining}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Withdrawals So Far</span>
-                    <span className="font-mono text-gray-300">{certificate.claim_count}</span>
-                </div>
+            {/* Action Button */}
+            <div className="mt-auto z-10 relative">
+                <button
+                    onClick={() => onClaim(certificate._record)}
+                    disabled={!canClaim || loading}
+                    className={`w-full py-3.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${canClaim && !loading
+                            ? 'bg-white text-black hover:bg-gray-200 shadow-lg shadow-white/5'
+                            : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'
+                        }`}
+                >
+                    {loading ? 'Processing...' : canClaim ? (
+                        <>
+                            Withdraw Funds <ArrowRight className="w-4 h-4 ml-1" />
+                        </>
+                    ) : (
+                        <>
+                            <Clock className="w-4 h-4" /> Wait {blocksLeft} Blocks
+                        </>
+                    )}
+                </button>
             </div>
 
-            <button
-                onClick={() => onClaim(certificate._record)}
-                disabled={!canClaim || loading}
-                className={`w-full py-3 rounded-lg font-bold transition-all border mt-auto ${canClaim
-                    ? 'bg-white text-black hover:bg-gray-200 border-transparent shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-                    : 'bg-transparent text-gray-600 border-gray-800 cursor-not-allowed'
-                    }`}
-            >
-                {loading ? 'Processing...' : canClaim ? 'Withdraw Funds' : `Locked (${blocksLeft} Blocks)`}
-            </button>
+            {/* Glow Effect */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </div>
     )
 }

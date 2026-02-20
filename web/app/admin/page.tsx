@@ -3,6 +3,30 @@
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
 import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, batchProcessTransactions, BatchTransactionItem } from '@/lib/zk-utils'
+import { motion } from "framer-motion"
+import {
+    LayoutDashboard,
+    Wallet,
+    ShieldCheck,
+    Layers,
+    FileCheck,
+    ArrowLeft,
+    Signal,
+    DollarSign,
+    Hash,
+    Zap,
+    BarChart3,
+    ArrowUpCircle,
+    Copy,
+    Check
+} from "lucide-react"
+import Link from 'next/link'
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import GlassCard from "@/components/GlassCard"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { WalletConnectButton } from "@/components/WalletConnectButton"
 
 export default function AdminPage() {
     const { wallet, address, requestRecords } = useWallet()
@@ -59,7 +83,7 @@ export default function AdminPage() {
     }, [])
 
     const handleSaveTemplate = () => {
-        if (!newTemplateName) return alert("Please enter a template name")
+        if (!newTemplateName) return toast.error("Please enter a template name")
         const newTemplates = {
             ...templates,
             [newTemplateName]: {
@@ -71,7 +95,7 @@ export default function AdminPage() {
         setTemplates(newTemplates)
         localStorage.setItem('payroll_templates', JSON.stringify(newTemplates))
         setNewTemplateName('')
-        alert(`Template "${newTemplateName}" saved!`)
+        toast.success(`Template "${newTemplateName}" saved!`)
     }
 
     const handleLoadTemplate = (name: string) => {
@@ -120,7 +144,7 @@ export default function AdminPage() {
 
     const handleInitializePayroll = async () => {
         if (!publicKey || !admin2 || !admin3 || !auditorAddr) {
-            alert("Please fill all fields (Admins & Auditor)")
+            toast.error("Please fill all fields (Admins & Auditor)")
             return
         }
         setIsTransacting(true)
@@ -141,10 +165,10 @@ export default function AdminPage() {
                 ],
                 300_000
             )
-            alert("Initialization Started! TX ID: " + txId)
+            toast.success("Initialization Started! TX ID: " + txId)
         } catch (err: any) {
             console.error(err)
-            alert("Error: " + err.message)
+            toast.error("Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
@@ -182,11 +206,11 @@ export default function AdminPage() {
                 [fundAmount + 'u64', '1field'], // public amount, public payroll_id
                 300_000
             )
-            alert("Funding Transaction sent! ID: " + txId)
+            toast.success("Funding Transaction sent! ID: " + txId)
             fetchState() // Update state immediately after
         } catch (err: any) {
             console.error(err)
-            alert("Error: " + err.message)
+            toast.error("Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
@@ -213,10 +237,10 @@ export default function AdminPage() {
                 inputs,
                 300_000
             )
-            alert("Certificate Issued! Transaction ID: " + txId)
+            toast.success("Certificate Issued! Transaction ID: " + txId)
         } catch (err: any) {
             console.error(err)
-            alert("Error: " + err.message)
+            toast.error("Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
@@ -271,7 +295,7 @@ export default function AdminPage() {
             if (items.length === 0) {
                 if (bulkRecipients.trim().length > 0) {
                     console.warn("Text found but no regex matches. Check format.")
-                    alert("No valid 'address, role' pairs found. Please check format.")
+                    toast.error("No valid 'address, role' pairs found. Please check format.")
                     setBatchStatus("Error: Invalid format")
                     setIsTransacting(false)
                     return
@@ -292,13 +316,13 @@ export default function AdminPage() {
             if (result.failed.length > 0) {
                 msg += `\nFirst Error: ${result.failed[0].error}`
             }
-            alert(msg)
+            toast.info(msg)
             setBatchStatus(msg)
 
         } catch (err: any) {
             console.error(err)
             setBatchStatus("Error: " + err.message)
-            alert("Batch Error: " + err.message)
+            toast.error("Batch Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
@@ -328,7 +352,7 @@ export default function AdminPage() {
             }
 
             if (allRecipients.length === 0) {
-                alert("No valid recipients found.")
+                toast.error("No valid recipients found.")
                 setIsTransacting(false)
                 return
             }
@@ -382,12 +406,12 @@ export default function AdminPage() {
             if (result.failed.length > 0) {
                 msg += `\nFirst Error: ${result.failed[0].error}`
             }
-            alert(msg)
+            toast.info(msg)
             setBatchStatus(msg)
 
         } catch (err: any) {
             console.error(err)
-            alert("Error: " + err.message)
+            toast.error("Error: " + err.message)
             setBatchStatus("Error: " + err.message)
         } finally {
             setIsTransacting(false)
@@ -406,7 +430,7 @@ export default function AdminPage() {
             ).pop() // Get the latest one
 
             if (!spentRecord) {
-                alert("No active SpentRecord found for this admin.")
+                toast.error("No active SpentRecord found for this admin.")
                 return
             }
 
@@ -430,469 +454,520 @@ export default function AdminPage() {
                 300_000 // 0.3 credit fee
             )
 
-            alert("Transaction sent! ID: " + txId)
+            toast.success("Transaction sent! ID: " + txId)
         } catch (err: any) {
             console.error(err)
-            alert("Error: " + err.message)
+            toast.error("Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
     }
 
-    return (
-        <main className="flex min-h-screen bg-black text-gray-100 font-sans">
-            {/* Background Decor */}
-            <div className="fixed top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black -z-10" />
-            <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-white opacity-[0.02] blur-[150px] rounded-full pointer-events-none -z-10" />
+    const navItems = [
+        { id: 'dashboard', title: "Dashboard", icon: LayoutDashboard },
+        { id: 'deposit', title: "Deposit Fund", icon: Wallet },
+        { id: 'authorize', title: "Authorize Payroll", icon: ShieldCheck },
+        { id: 'batch', title: "Batch Run", icon: Layers },
+        { id: 'compliance', title: "Compliance & Audit", icon: FileCheck },
+    ]
 
-            {/* Sidebar Navigation */}
-            <aside className="w-64 border-r border-white/10 flex flex-col h-screen fixed top-0 left-0 bg-black/40 backdrop-blur-xl">
-                <div className="p-6 border-b border-white/5">
-                    <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                        <div className="w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
-                        ZK Admin
-                    </h1>
+    return (
+        <div className="flex min-h-screen relative z-10 font-sans">
+            {/* Background */}
+            <div className="fixed inset-0 z-0 bg-background" />
+
+            {/* Sidebar */}
+            <aside className="w-64 border-r border-white/10 bg-black/40 backdrop-blur-xl flex flex-col fixed inset-y-0 left-0 z-50">
+                <div className="p-6 border-b border-white/10">
+                    <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="text-sm">Back to Home</span>
+                    </Link>
+                    <h2 className="text-xl font-bold mt-4 text-foreground">Admin Portal</h2>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
-                    {[
-                        { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-                        { id: 'deposit', label: 'Deposit Fund', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-                        { id: 'authorize', label: 'Authorize Payroll', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-                        { id: 'batch', label: 'Batch Run', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-                        { id: 'compliance', label: 'Compliance & Audit', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-                    ].map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id as any)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === item.id
-                                ? 'bg-white text-black shadow-lg shadow-white/10'
-                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                            </svg>
-                            {item.label}
-                        </button>
-                    ))}
+                <nav className="flex-1 p-4 space-y-1">
+                    {navItems.map((item) => {
+                        const isActive = activeTab === item.id;
+                        const Icon = item.icon;
+
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id as any)}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all duration-300 group relative",
+                                    isActive
+                                        ? "bg-white/10 text-foreground"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                                )}
+                            >
+                                {isActive && (
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-foreground rounded-full" />
+                                )}
+                                <Icon className="w-4 h-4" />
+                                <span>{item.title}</span>
+                            </button>
+                        );
+                    })}
                 </nav>
 
-                <div className="p-6 border-t border-white/5">
-                    <p className="text-xs text-gray-500 uppercase mb-2">Network Status</p>
-                    <div className="flex justify-between items-center bg-white/5 rounded px-3 py-2">
-                        <span className="text-xs text-gray-400">Height</span>
-                        <span className="text-sm font-mono font-bold text-white">{currentHeight || '...'}</span>
+                {/* Network status */}
+                <div className="p-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Signal className="w-3 h-3" />
+                        <span>Aleo Testnet</span>
+                        <div className="ml-auto flex items-center gap-2">
+                            <span className="text-xs font-mono">{currentHeight > 0 ? `#${currentHeight}` : '...'}</span>
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        </div>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <div className="ml-64 flex-1 p-12 overflow-y-auto h-screen">
-                <div className="max-w-5xl mx-auto">
+            {/* Main content */}
+            <main className="flex-1 flex flex-col ml-64 relative z-10">
+                {/* Top bar */}
+                <header className="h-16 border-b border-white/10 bg-black/20 backdrop-blur-sm flex items-center justify-end px-6 sticky top-0 z-40">
+                    <WalletConnectButton />
+                </header>
 
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-12">
-                        <h2 className="text-3xl font-bold tracking-tight text-white capitalize">
-                            {activeTab.replace(/([A-Z])/g, ' $1').trim()}
-                        </h2>
-                        {publicKey ? (
-                            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/10">
-                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] animate-pulse"></div>
-                                <span className="text-sm font-mono text-gray-300">{publicKey.slice(0, 6)}...{publicKey.slice(-4)}</span>
-                            </div>
-                        ) : (
-                            <div className="text-yellow-500 text-sm font-bold bg-yellow-500/10 px-4 py-2 rounded-full border border-yellow-500/20">Wallet Disconnected</div>
-                        )}
-                    </div>
-
-                    {/* Content Views */}
+                <div className="flex-1 p-8 overflow-auto">
                     {!publicKey ? (
-                        <div className="glass-card flex flex-col items-center justify-center p-20 text-center">
-                            <p className="text-gray-400 text-lg mb-4">Please connect your wallet to access the Admin Portal.</p>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center justify-center h-[60vh] text-center max-w-md mx-auto"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                                <Wallet className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">Connect Your Wallet</h2>
+                            <p className="text-muted-foreground mb-8">
+                                Please connect your Aleo wallet to access the Admin Portal and manage payroll.
+                            </p>
+                            <WalletConnectButton />
+                        </motion.div>
                     ) : isInitialized === false ? (
-                        <div className="glass-card max-w-2xl mx-auto border-yellow-500/30">
-                            <div className="flex items-start gap-4 mb-6">
-                                <div className="p-3 bg-yellow-500/10 rounded-lg text-yellow-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white">System Not Initialized</h3>
-                                    <p className="text-gray-400 text-sm mt-1">
-                                        This payroll instance (ID 1) has not been set up on-chain yet.
-                                        You must initialize it to create the <b>SpentRecord</b> required for compliance proofs.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Budget Ceiling</label>
-                                        <input type="number" value={initBudget} onChange={e => setInitBudget(e.target.value)} className="glass-input w-full" />
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="max-w-2xl mx-auto"
+                        >
+                            <GlassCard className="border-yellow-500/20 shadow-[0_0_50px_-20px_rgba(234,179,8,0.2)]">
+                                <div className="flex items-start gap-4 mb-8">
+                                    <div className="p-3 bg-yellow-500/10 rounded-lg text-yellow-500">
+                                        <Zap className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Multi-Sig Threshold</label>
-                                        <input type="number" value={initThreshold} onChange={e => setInitThreshold(e.target.value)} className="glass-input w-full" />
+                                        <h3 className="text-xl font-bold text-foreground">System Not Initialized</h3>
+                                        <p className="text-muted-foreground text-sm mt-1">
+                                            This payroll instance (ID 1) has not been set up on-chain yet.
+                                            You must initialize it to create the <span className="text-foreground font-semibold">SpentRecord</span> required for compliance proofs.
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Admin 2 Address</label>
-                                    <input type="text" placeholder="aleo1..." value={admin2} onChange={e => setAdmin2(e.target.value)} className="glass-input w-full font-mono text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Admin 3 Address</label>
-                                    <input type="text" placeholder="aleo1..." value={admin3} onChange={e => setAdmin3(e.target.value)} className="glass-input w-full font-mono text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 ml-1 mb-1 block">Auditor Address (For Reports)</label>
-                                    <input type="text" placeholder="aleo1..." value={auditorAddr} onChange={e => setAuditorAddr(e.target.value)} className="glass-input w-full font-mono text-sm" />
-                                </div>
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Budget Ceiling</Label>
+                                            <Input
+                                                type="number"
+                                                value={initBudget}
+                                                onChange={e => setInitBudget(e.target.value)}
+                                                className="bg-white/5 border-white/10"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Multi-Sig Threshold</Label>
+                                            <Input
+                                                type="number"
+                                                value={initThreshold}
+                                                onChange={e => setInitThreshold(e.target.value)}
+                                                className="bg-white/5 border-white/10"
+                                            />
+                                        </div>
+                                    </div>
 
-                                <button
-                                    onClick={handleInitializePayroll}
-                                    disabled={isTransacting}
-                                    className="w-full py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)] mt-4"
-                                >
-                                    {isTransacting ? 'Initializing...' : 'Initialize System'}
-                                </button>
-                            </div>
-                        </div>
+                                    <div className="space-y-2">
+                                        <Label>Admin 2 Address</Label>
+                                        <Input
+                                            placeholder="aleo1..."
+                                            value={admin2}
+                                            onChange={e => setAdmin2(e.target.value)}
+                                            className="bg-white/5 border-white/10 font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Admin 3 Address</Label>
+                                        <Input
+                                            placeholder="aleo1..."
+                                            value={admin3}
+                                            onChange={e => setAdmin3(e.target.value)}
+                                            className="bg-white/5 border-white/10 font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Auditor Address</Label>
+                                        <Input
+                                            placeholder="aleo1..."
+                                            value={auditorAddr}
+                                            onChange={e => setAuditorAddr(e.target.value)}
+                                            className="bg-white/5 border-white/10 font-mono"
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handleInitializePayroll}
+                                        disabled={isTransacting}
+                                        className="glow-btn w-full mt-4"
+                                    >
+                                        {isTransacting ? 'Initializing...' : 'Initialize System'}
+                                    </button>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
                     ) : (
-                        <>
+                        <div className="space-y-8">
+                            <div>
+                                <h1 className="text-3xl font-bold text-foreground mb-2 capitalize">
+                                    {activeTab === 'batch' ? 'Batch Run' : activeTab}
+                                </h1>
+                                <p className="text-muted-foreground text-sm">
+                                    {activeTab === 'dashboard' && 'Overview of your ZK Payroll system'}
+                                    {activeTab === 'deposit' && 'Add funds to the payroll liquidity pool'}
+                                    {activeTab === 'authorize' && 'Authorize individual payroll payments'}
+                                    {activeTab === 'batch' && 'Run payroll for multiple employees at once'}
+                                    {activeTab === 'compliance' && 'Generate and verify compliance proofs'}
+                                </p>
+                            </div>
+
                             {/* Dashboard Stats View */}
                             {activeTab === 'dashboard' && (
-                                <div className="space-y-6">
+                                <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="glass-card p-6 bg-gradient-to-br from-white/5 to-transparent relative group">
-                                            <button
-                                                onClick={fetchState}
-                                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                                                title="Refresh Balance"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                            </button>
-                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Liquidity Pool</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <h3 className="text-4xl font-bold font-mono text-white">{cleanValue(budget)}</h3>
-                                                <span className="text-sm text-gray-500">credits</span>
-                                            </div>
-                                            <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                                                On-Chain Balance
-                                            </div>
-                                        </div>
+                                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                                            <GlassCard className="relative group overflow-hidden">
+                                                <div className="flex items-start justify-between relative z-10">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground mb-1">Liquidity Pool</p>
+                                                        <div className="flex items-baseline gap-2">
+                                                            <p className="text-2xl font-bold text-foreground font-mono">{cleanValue(budget)}</p>
+                                                            <span className="text-xs text-muted-foreground">credits</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
+                                                        <DollarSign className="w-5 h-5 text-foreground" />
+                                                    </div>
+                                                </div>
+                                                <button onClick={fetchState} className="absolute inset-0 w-full h-full cursor-pointer z-20" title="Refresh" />
+                                            </GlassCard>
+                                        </motion.div>
 
-                                        <div className="glass-card p-6">
-                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Payroll ID</p>
-                                            <h3 className="text-4xl font-bold font-mono text-white">1</h3>
-                                            <p className="mt-4 text-xs text-gray-500">Global identifier for this payroll instance.</p>
-                                        </div>
+                                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                                            <GlassCard>
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground mb-1">Active Payroll ID</p>
+                                                        <p className="text-2xl font-bold text-foreground font-mono">#1</p>
+                                                    </div>
+                                                    <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
+                                                        <Hash className="w-5 h-5 text-foreground" />
+                                                    </div>
+                                                </div>
+                                            </GlassCard>
+                                        </motion.div>
 
-                                        <div className="glass-card p-6 hover:bg-white/5 transition cursor-pointer" onClick={() => setActiveTab('authorize')}>
-                                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-wide">Quick Action</p>
-                                            <h3 className="text-xl font-bold text-white mb-2">Issue New Salary</h3>
-                                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                                </svg>
-                                            </div>
-                                        </div>
+                                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                                            <GlassCard className="cursor-pointer hover:border-white/20" onClick={() => setActiveTab('authorize')}>
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground mb-1">Quick Action</p>
+                                                        <p className="text-xl font-bold text-foreground">Issue Salary</p>
+                                                    </div>
+                                                    <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
+                                                        <Zap className="w-5 h-5 text-foreground" />
+                                                    </div>
+                                                </div>
+                                            </GlassCard>
+                                        </motion.div>
                                     </div>
 
-                                    <div className="glass-card p-8 mt-8">
-                                        <h3 className="text-xl font-bold text-white mb-4">System Overview</h3>
-                                        <div className="h-48 bg-white/5 rounded-lg flex items-center justify-center border border-white/5">
-                                            <p className="text-gray-500 text-sm">[Chart Placeholder: Spending History]</p>
-                                        </div>
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                                        <GlassCard hover={false} className="min-h-[300px]">
+                                            <div className="flex items-center gap-2 mb-6">
+                                                <BarChart3 className="w-5 h-5 text-foreground" />
+                                                <h2 className="text-lg font-semibold text-foreground">System Overview</h2>
+                                            </div>
+                                            <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+                                                <div className="text-center">
+                                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-white/10 flex items-center justify-center">
+                                                        <BarChart3 className="w-8 h-8 text-muted-foreground/50" />
+                                                    </div>
+                                                    Spending analytics pending...
+                                                </div>
+                                            </div>
+                                        </GlassCard>
+                                    </motion.div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={() => setIsInitialized(false)}
+                                            className="text-xs text-muted-foreground hover:text-yellow-500 underline"
+                                        >
+                                            Force Re-Initialize System (Debug)
+                                        </button>
                                     </div>
                                 </div>
                             )}
 
                             {/* Deposit Tab */}
                             {activeTab === 'deposit' && (
-                                <div className="glass-card max-w-xl">
-                                    <h3 className="font-semibold mb-2 text-gray-200">Deposit Liquidity</h3>
-                                    <p className="text-sm text-gray-500 mb-6">Add public credits to the payroll pool. This balance is viewable by auditors.</p>
-
-                                    <div className="p-4 bg-black/30 rounded-lg mb-6 border border-white/5 flex justify-between items-center">
-                                        <span className="text-gray-400 text-sm">Current Balance</span>
-                                        <span className="font-mono text-xl font-bold text-white">{cleanValue(budget)}</span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Amount to Deposit</label>
-                                            <input
-                                                type="number"
-                                                placeholder="e.g. 50000"
-                                                className="glass-input w-full"
-                                                value={fundAmount}
-                                                onChange={(e) => setFundAmount(e.target.value)}
-                                            />
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    <GlassCard hover={false} className="max-w-xl">
+                                        <div className="flex items-center gap-3 mb-8 p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <Wallet className="w-5 h-5 text-foreground" />
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Current Balance</p>
+                                                <p className="text-lg font-bold text-foreground font-mono">{cleanValue(budget)} ALEO</p>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={handleFundPayroll}
-                                            disabled={isTransacting}
-                                            className="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-                                        >
-                                            {isTransacting ? 'Processing...' : 'Confirm Deposit'}
-                                        </button>
-                                    </div>
-                                </div>
+
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label>Deposit Amount</Label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Enter amount in ALEO"
+                                                    value={fundAmount}
+                                                    onChange={(e) => setFundAmount(e.target.value)}
+                                                    className="bg-white/5 border-white/10"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={handleFundPayroll}
+                                                disabled={isTransacting}
+                                                className="glow-btn w-full flex items-center justify-center gap-2 mt-4"
+                                            >
+                                                {isTransacting ? (
+                                                    'Processing...'
+                                                ) : (
+                                                    <>
+                                                        <ArrowUpCircle className="w-4 h-4" />
+                                                        Deposit Funds
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
                             )}
 
                             {/* Authorize Payroll Tab */}
                             {activeTab === 'authorize' && (
-                                <div className="glass-card max-w-xl">
-                                    <p className="text-sm text-gray-500 mb-6">Issue a salary rights record to a specific employee address.</p>
-
-                                    <div className="space-y-5">
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Employee Address</label>
-                                            <input
-                                                type="text"
-                                                placeholder="aleo1..."
-                                                className="glass-input w-full font-mono text-sm"
-                                                value={issueRecipient}
-                                                onChange={(e) => setIssueRecipient(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-xs text-gray-500 ml-1 mb-1 block">Salary Amount</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Credits"
-                                                    className="glass-input w-full"
-                                                    value={issueAmount}
-                                                    onChange={(e) => setIssueAmount(e.target.value)}
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    <GlassCard hover={false} className="max-w-xl">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label>Employee Address</Label>
+                                                <Input
+                                                    placeholder="aleo1..."
+                                                    value={issueRecipient}
+                                                    onChange={(e) => setIssueRecipient(e.target.value)}
+                                                    className="bg-white/5 border-white/10 font-mono"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="text-xs text-gray-500 ml-1 mb-1 block">Interval</label>
-                                                <input
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label>Salary Amount</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Credits"
+                                                        value={issueAmount}
+                                                        onChange={(e) => setIssueAmount(e.target.value)}
+                                                        className="bg-white/5 border-white/10"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Interval (Blocks)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={issueInterval}
+                                                        onChange={(e) => setIssueInterval(e.target.value)}
+                                                        className="bg-white/5 border-white/10"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Start Block Height (Current: {currentHeight})</Label>
+                                                <Input
                                                     type="number"
-                                                    placeholder="Blocks"
-                                                    className="glass-input w-full"
-                                                    value={issueInterval}
-                                                    onChange={(e) => setIssueInterval(e.target.value)}
+                                                    value={issueStart}
+                                                    onChange={(e) => setIssueStart(e.target.value)}
+                                                    className="bg-white/5 border-white/10"
                                                 />
                                             </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Start Block Height</label>
-                                            <input
-                                                type="number"
-                                                placeholder="Block Height"
-                                                className="glass-input w-full"
-                                                value={issueStart}
-                                                onChange={(e) => setIssueStart(e.target.value)}
-                                            />
-                                            <p className="text-[10px] text-gray-500 mt-1 ml-1">Current Height: {currentHeight}</p>
-                                        </div>
 
-                                        <button
-                                            onClick={handleIssueCertificate}
-                                            disabled={isTransacting}
-                                            className="w-full py-3 bg-white text-black font-bold rounded-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50 mt-4"
-                                        >
-                                            Authorize Payroll
-                                        </button>
-                                    </div>
-                                </div>
+                                            <button
+                                                onClick={handleIssueCertificate}
+                                                disabled={isTransacting}
+                                                className="glow-btn w-full flex items-center justify-center gap-2 mt-4"
+                                            >
+                                                {isTransacting ? 'Processing...' : (
+                                                    <>
+                                                        <ShieldCheck className="w-4 h-4" />
+                                                        Authorize Payroll
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
                             )}
 
                             {/* Batch Payroll Tab */}
                             {activeTab === 'batch' && (
-                                <div className="glass-card max-w-2xl">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <p className="text-sm text-gray-500">Run payroll for multiple employees at once.</p>
-                                        {/* Template Loader */}
-                                        {Object.keys(templates).length > 0 && (
-                                            <select
-                                                className="bg-black/50 border border-white/10 text-xs rounded p-2 text-gray-300 outline-none focus:border-white transition-colors"
-                                                onChange={(e) => handleLoadTemplate(e.target.value)}
-                                                value={selectedTemplate}
-                                            >
-                                                <option value="">Load Template...</option>
-                                                {Object.keys(templates).map(name => (
-                                                    <option key={name} value={name}>{name}</option>
-                                                ))}
-                                            </select>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Base Salary</label>
-                                            <input
-                                                type="number"
-                                                className="glass-input w-full"
-                                                value={baseSalary}
-                                                onChange={(e) => setBaseSalary(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Interval</label>
-                                            <input
-                                                type="number"
-                                                className="glass-input w-full"
-                                                value={bulkInterval}
-                                                onChange={(e) => setBulkInterval(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="text-xs text-gray-500 ml-1 mb-1 block">Recipients (Address, Role)</label>
-                                        <textarea
-                                            placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
-                                            className="glass-input w-full h-32 font-mono text-xs"
-                                            value={bulkRecipients}
-                                            onChange={(e) => setBulkRecipients(e.target.value)}
-                                        />
-                                    </div>
-
-                                    {batchStatus && (
-                                        <div className="mb-4 p-3 bg-white/5 border border-white/10 rounded text-xs font-mono text-gray-300 fade-in">
-                                            {batchStatus}
-                                        </div>
-                                    )}
-
-                                    <div className="flex gap-4 mb-6">
-                                        <button
-                                            onClick={handleBulkIssue}
-                                            disabled={isTransacting}
-                                            className="flex-1 py-3 border border-gray-600 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition disabled:opacity-50 font-medium"
-                                        >
-                                            Legacy Batch
-                                        </button>
-                                        <button
-                                            onClick={handlePrivacyBatch}
-                                            disabled={isTransacting}
-                                            className="flex-1 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition disabled:opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                                        >
-                                            Private Batch Run (3x)
-                                        </button>
-                                    </div>
-
-                                    {/* Save Template */}
-                                    <div className="flex gap-3 items-center pt-4 border-t border-glass-border">
-                                        <input
-                                            type="text"
-                                            placeholder="Template Name"
-                                            className="glass-input flex-1 py-2 text-sm"
-                                            value={newTemplateName}
-                                            onChange={(e) => setNewTemplateName(e.target.value)}
-                                        />
-                                        <button
-                                            onClick={handleSaveTemplate}
-                                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition"
-                                        >
-                                            Save Template
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Compliance & Audit Tab */}
-                            {activeTab === 'compliance' && (
-                                <div className="glass-card max-w-xl">
-                                    <h3 className="font-semibold mb-4 text-gray-300">Generate Compliance Proof</h3>
-                                    <p className="text-sm text-gray-500 mb-6">Create a Zero-Knowledge proof of total spending and recipient count without revealing individual salaries.</p>
-
-                                    <div className="space-y-4 mb-6">
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Pay Period Hash (Optional)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Field Element"
-                                                className="glass-input w-full text-sm"
-                                                value={periodHash}
-                                                onChange={(e) => setPeriodHash(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 ml-1 mb-1 block">Merkle Root (Optional)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Field Element"
-                                                className="glass-input w-full text-sm"
-                                                value={merkleRoot}
-                                                onChange={(e) => setMerkleRoot(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleGenerateReport}
-                                        disabled={isTransacting}
-                                        className="w-full py-3 border border-purple-500/50 text-purple-300 rounded-lg hover:bg-purple-900/20 transition disabled:opacity-50 font-bold tracking-wide"
-                                    >
-                                        Generate Compliance Proof
-                                    </button>
-
-                                    {/* Advanced Initialization Option */}
-                                    <div className="mt-12 pt-8 border-t border-white/5">
-                                        <h4 className="text-sm font-semibold text-gray-400 mb-2">Advanced: System Initialization</h4>
-                                        <p className="text-xs text-gray-600 mb-4">
-                                            If you are seeing "No active SpentRecord" errors, you may need to re-initialize your admin connection to the payroll instance.
-                                        </p>
-
-                                        <details className="group">
-                                            <summary className="text-xs text-yellow-500 cursor-pointer hover:text-yellow-400 transition mb-2">
-                                                Show Initialization Form
-                                            </summary>
-                                            <div className="space-y-3 p-4 bg-yellow-900/10 rounded border border-yellow-500/10 mt-2">
-                                                <input
-                                                    type="number"
-                                                    placeholder="Budget (e.g. 1000000)"
-                                                    className="glass-input w-full text-xs"
-                                                    value={initBudget}
-                                                    onChange={(e) => setInitBudget(e.target.value)}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Admin 2 Address"
-                                                    className="glass-input w-full text-xs"
-                                                    value={admin2}
-                                                    onChange={(e) => setAdmin2(e.target.value)}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Admin 3 Address"
-                                                    className="glass-input w-full text-xs"
-                                                    value={admin3}
-                                                    onChange={(e) => setAdmin3(e.target.value)}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Auditor Address"
-                                                    className="glass-input w-full text-xs"
-                                                    value={auditorAddr}
-                                                    onChange={(e) => setAuditorAddr(e.target.value)}
-                                                />
-                                                <button
-                                                    onClick={handleInitializePayroll}
-                                                    disabled={isTransacting}
-                                                    className="w-full py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 text-xs rounded transition"
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    <GlassCard hover={false} className="max-w-2xl">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="font-semibold text-foreground">Batch Configuration</h3>
+                                            {/* Template Loader */}
+                                            {Object.keys(templates).length > 0 && (
+                                                <select
+                                                    className="bg-black/50 border border-white/10 text-xs rounded p-2 text-gray-300 outline-none focus:border-white transition-colors"
+                                                    onChange={(e) => handleLoadTemplate(e.target.value)}
+                                                    value={selectedTemplate}
                                                 >
-                                                    Force Initialize
-                                                </button>
+                                                    <option value="">Load Template...</option>
+                                                    {Object.keys(templates).map(name => (
+                                                        <option key={name} value={name}>{name}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-6">
+                                            <div className="space-y-2">
+                                                <Label>Base Salary</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={baseSalary}
+                                                    onChange={(e) => setBaseSalary(e.target.value)}
+                                                    className="bg-white/5 border-white/10"
+                                                />
                                             </div>
-                                        </details>
-                                    </div>
-                                </div>
+                                            <div className="space-y-2">
+                                                <Label>Interval</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={bulkInterval}
+                                                    onChange={(e) => setBulkInterval(e.target.value)}
+                                                    className="bg-white/5 border-white/10"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 mb-6">
+                                            <Label>Recipients (Address, Role)</Label>
+                                            <textarea
+                                                placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
+                                                className="bg-white/5 border border-white/10 rounded-lg w-full h-32 font-mono text-sm p-3 outline-none focus:border-white/50 transition-colors text-foreground placeholder:text-muted-foreground/50"
+                                                value={bulkRecipients}
+                                                onChange={(e) => setBulkRecipients(e.target.value)}
+                                            />
+                                        </div>
+
+                                        {batchStatus && (
+                                            <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg text-sm font-mono text-gray-300">
+                                                {batchStatus}
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-4 mb-8">
+                                            <button
+                                                onClick={handleBulkIssue}
+                                                disabled={isTransacting}
+                                                className="flex-1 py-3 border border-white/20 rounded-lg text-foreground hover:bg-white/5 transition disabled:opacity-50 font-medium"
+                                            >
+                                                Legacy Batch
+                                            </button>
+                                            <button
+                                                onClick={handlePrivacyBatch}
+                                                disabled={isTransacting}
+                                                className="glow-btn flex-1 flex items-center justify-center gap-2"
+                                            >
+                                                <Zap className="w-4 h-4" />
+                                                Private Batch Run
+                                            </button>
+                                        </div>
+
+                                        <div className="flex gap-3 items-center pt-6 border-t border-white/10">
+                                            <Input
+                                                type="text"
+                                                placeholder="Template Name"
+                                                value={newTemplateName}
+                                                onChange={(e) => setNewTemplateName(e.target.value)}
+                                                className="bg-white/5 border-white/10"
+                                            />
+                                            <button
+                                                onClick={handleSaveTemplate}
+                                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
                             )}
-                        </>
+
+                            {/* Compliance Tab */}
+                            {activeTab === 'compliance' && (
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    <GlassCard hover={false} className="max-w-xl">
+                                        <p className="text-sm text-gray-400 mb-6">
+                                            Generate ZK proofs of solvency for auditors without revealing individual salary data.
+                                        </p>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Pay Period Hash (Optional)</Label>
+                                                <Input
+                                                    value={periodHash}
+                                                    onChange={e => setPeriodHash(e.target.value)}
+                                                    placeholder="e.g. 1234field"
+                                                    className="bg-white/5 border-white/10 font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Merkle Root (Optional)</Label>
+                                                <Input
+                                                    value={merkleRoot}
+                                                    onChange={e => setMerkleRoot(e.target.value)}
+                                                    placeholder="e.g. 5678field"
+                                                    className="bg-white/5 border-white/10 font-mono"
+                                                />
+                                            </div>
+
+                                            <button
+                                                onClick={handleGenerateReport}
+                                                disabled={isTransacting}
+                                                className="glow-btn w-full flex items-center justify-center gap-2 mt-4"
+                                            >
+                                                {isTransacting ? 'Generating...' : (
+                                                    <>
+                                                        <FileCheck className="w-4 h-4" />
+                                                        Generate Compliance Report
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
+                            )}
+                        </div>
                     )}
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     )
 }
