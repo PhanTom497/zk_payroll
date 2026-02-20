@@ -72,14 +72,6 @@ export default function AuditorDashboard() {
                         <span className="text-sm font-bold tracking-tight">Auditor Portal</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        {publicKey && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hidden md:flex">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="font-mono text-xs text-gray-300">
-                                    {publicKey.slice(0, 10)}...{publicKey.slice(-6)}
-                                </span>
-                            </div>
-                        )}
                         <WalletConnectButton />
                     </div>
                 </div>
