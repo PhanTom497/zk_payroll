@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
-import { WalletAdapterNetwork } from '@provablehq/aleo-wallet-adaptor-core'
+import { Network } from '@provablehq/aleo-types'
 
 export function GlobalAutoConnect() {
     const { wallets, select, connect, connected, connecting, wallet } = useWallet();
@@ -16,7 +16,7 @@ export function GlobalAutoConnect() {
             try {
                 // If a wallet instance is already selected by the provider but not connected
                 if (wallet) {
-                    await connect(wallet.adapter.name, WalletAdapterNetwork.Testnet);
+                    await connect(wallet.adapter.name, Network.TESTNET);
                     return;
                 }
 
