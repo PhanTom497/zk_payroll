@@ -4,6 +4,7 @@ import './globals.css'
 import { AleoWalletProvider } from '@/components/AleoWalletProvider'
 import ReactQueryProvider from '@/components/ReactQueryProvider'
 import { Toaster } from "@/components/ui/sonner"
+import { GlobalAutoConnect } from '@/components/GlobalAutoConnect'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
             <body className={inter.className}>
                 <ReactQueryProvider>
                     <AleoWalletProvider>
+                        <GlobalAutoConnect />
                         {children}
                         <Toaster />
                     </AleoWalletProvider>
