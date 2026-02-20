@@ -5,7 +5,7 @@ import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { Network } from '@provablehq/aleo-types'
 
 export function GlobalAutoConnect() {
-    const { wallets, select, connect, connected, connecting, wallet } = useWallet();
+    const { wallets, selectWallet, connect, connected, connecting, wallet } = useWallet();
 
     useEffect(() => {
         // If already connected or currently trying, do nothing
@@ -16,7 +16,7 @@ export function GlobalAutoConnect() {
             try {
                 // If a wallet instance is already selected by the provider but not connected
                 if (wallet) {
-                    await connect(wallet.adapter.name, Network.TESTNET);
+                    await connect(Network.TESTNET);
                     return;
                 }
 
@@ -24,9 +24,7 @@ export function GlobalAutoConnect() {
                 // First check if Leo is in the available wallets list
                 const leoWallet = wallets.find(w => w.adapter.name === 'Leo Wallet');
                 if (leoWallet) {
-                    select('Leo Wallet');
-                    // Connection usually triggers automatically after select if autoConnect is true on the provider,
-                    // but we can enforce it here if needed.
+                    selectWallet(leoWallet.adapter.name as any);
                 }
             } catch (err) {
                 console.log("Auto-connect silent failure (expected if wallet locked):", err);
@@ -36,7 +34,7 @@ export function GlobalAutoConnect() {
         // Added slight delay to let the provider initialize fully before attempting
         const timer = setTimeout(tryAutoConnect, 500);
         return () => clearTimeout(timer);
-    }, [connected, connecting, wallet, wallets, select, connect]);
+    }, [connected, connecting, wallet, wallets, selectWallet, connect]);
 
     return null; // This is a logic-only component rendering nothing
 }
