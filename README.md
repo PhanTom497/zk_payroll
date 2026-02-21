@@ -53,9 +53,9 @@ ZK Payroll caters to both automated enterprise scaling and strict real-time audi
 
 ```mermaid
 flowchart TD
-    classDef admin fill:#f9f0ff,stroke:#8e44ad,stroke-width:2px;
-    classDef worker fill:#e8f4f8,stroke:#3498db,stroke-width:2px;
-    classDef chain fill:#edf7f5,stroke:#2ecc71,stroke-width:2px;
+    classDef admin fill:#f9f0ff,stroke:#8e44ad,stroke-width:2px,color:#000000;
+    classDef worker fill:#e8f4f8,stroke:#3498db,stroke-width:2px,color:#000000;
+    classDef chain fill:#edf7f5,stroke:#2ecc71,stroke-width:2px,color:#000000;
 
     A[🔐 Admin Panel<br/>Multi-Sig Ready]:::admin
     
