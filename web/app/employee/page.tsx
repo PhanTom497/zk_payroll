@@ -33,6 +33,10 @@ export default function EmployeePage() {
     const { wallet, address, requestRecords } = useWallet()
     const publicKey = address; // Alias for compatibility
 
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+    const isConnected = mounted && publicKey;
+
     const [certificates, setCertificates] = useState<SalaryCertificate[]>([])
     const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([])
     const [isScanning, setIsScanning] = useState(false)
@@ -162,7 +166,7 @@ export default function EmployeePage() {
                 </div>
 
                 {/* Dashboard Grid */}
-                {publicKey ? (
+                {isConnected ? (
                     <div className="space-y-12">
 
                         {/* Info Cards */}

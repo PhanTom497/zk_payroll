@@ -4,14 +4,32 @@ import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui'
 import { Network } from '@provablehq/aleo-types'
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css'
+import { useState, useEffect } from 'react'
 
 export const WalletConnectButton = () => {
     const { wallet, address, disconnect, connecting } = useWallet()
     const { setVisible } = useWalletModal()
     const publicKey = address; // Alias for compatibility
 
+    // Prevent SSR hydration mismatch
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
     const handleConnect = () => {
         setVisible(true)
+    }
+
+    if (!mounted) {
+        return (
+            <button
+                disabled
+                className="glass-button bg-white text-black px-6 py-2 rounded-full font-semibold opacity-50 cursor-not-allowed"
+            >
+                Checking...
+            </button>
+        )
     }
 
     if (publicKey) {

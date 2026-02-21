@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WalletConnectButton } from '@/components/WalletConnectButton'
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
@@ -12,6 +12,10 @@ import { ArrowLeft, ShieldCheck, Database, FileDigit, Calendar } from 'lucide-re
 export default function AuditorDashboard() {
     const { wallet, address, requestRecords } = useWallet()
     const publicKey = address; // Alias for compatibility
+
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+    const isConnected = mounted && publicKey;
 
     const [reports, setReports] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -97,7 +101,7 @@ export default function AuditorDashboard() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-400 mb-1">Status</h3>
-                                    {publicKey ? (
+                                    {isConnected ? (
                                         <div className="flex items-center gap-2 text-sm text-green-400 bg-green-400/10 px-3 py-2 rounded-lg border border-green-400/20">
                                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                                             Auditor Connected
@@ -112,7 +116,7 @@ export default function AuditorDashboard() {
                             </div>
                         </GlassCard>
 
-                        {publicKey && (
+                        {isConnected && (
                             <GlassCard className="p-6">
                                 <h2 className="text-lg font-bold mb-2">Fetch Proofs</h2>
                                 <p className="text-sm text-gray-400 mb-6">Scan your connected wallet for decrypted Audit Reports.</p>
@@ -139,7 +143,7 @@ export default function AuditorDashboard() {
 
                     {/* Main Content Area */}
                     <div className="space-y-6">
-                        {!publicKey ? (
+                        {!isConnected ? (
                             <GlassCard className="p-12 text-center flex flex-col items-center justify-center border-dashed border-white/10">
                                 <ShieldCheck className="w-12 h-12 text-gray-600 mb-4" />
                                 <h3 className="text-xl font-bold mb-2">Access Required</h3>

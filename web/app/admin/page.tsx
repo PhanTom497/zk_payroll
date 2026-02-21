@@ -30,7 +30,11 @@ import { WalletConnectButton } from "@/components/WalletConnectButton"
 
 export default function AdminPage() {
     const { wallet, address, requestRecords } = useWallet()
-    const publicKey = address; // Alias for compatibility with existing code
+    const publicKey = address; // Alias for compatibility
+
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+    const isConnected = mounted && publicKey;
 
     const [budget, setBudget] = useState<string>('Loading...')
     const [periodHash, setPeriodHash] = useState('')
@@ -564,7 +568,7 @@ export default function AdminPage() {
                 </header>
 
                 <div className="flex-1 p-8 overflow-auto">
-                    {!publicKey ? (
+                    {!isConnected ? (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
