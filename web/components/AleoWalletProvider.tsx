@@ -12,11 +12,11 @@ import { Network } from '@provablehq/aleo-types'
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css'
 import { PROGRAM_ID } from '../lib/zk-utils'
 
-export const AleoWalletProvider = ({
+export default function AleoWalletProvider({
     children,
 }: {
     children: React.ReactNode
-}) => {
+}) {
     const [wallets] = useState(() => [
         new LeoWalletAdapter({
             appName: 'ZK Payroll',
