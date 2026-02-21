@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useState } from 'react'
 import { AleoWalletProvider as ProvableWalletProvider } from '@provablehq/aleo-wallet-adaptor-react'
 import { WalletModalProvider } from '@provablehq/aleo-wallet-adaptor-react-ui'
 import { ShieldWalletAdapter } from '@provablehq/aleo-wallet-adaptor-shield'
@@ -17,17 +17,14 @@ export const AleoWalletProvider = ({
 }: {
     children: React.ReactNode
 }) => {
-    const wallets = useMemo(
-        () => [
-            new LeoWalletAdapter({
-                appName: 'ZK Payroll',
-            }),
-            new ShieldWalletAdapter({
-                appName: 'ZK Payroll',
-            }),
-        ],
-        []
-    )
+    const [wallets] = useState(() => [
+        new LeoWalletAdapter({
+            appName: 'ZK Payroll',
+        }),
+        new ShieldWalletAdapter({
+            appName: 'ZK Payroll',
+        }),
+    ])
 
     return (
         <ProvableWalletProvider
