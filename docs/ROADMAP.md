@@ -102,3 +102,7 @@ This document outlines the strategic development plan for ZK Payroll, moving fro
 ### 5. Privacy-Preserving HR Oracle
 -   **Idea:** Sync employee lists from Web2 HR tools (BambooHR, Deel).
 -   **Mechanism:** An oracle signs a `EmployeeCredential` that allows the user to mint their own `RecipientTicket` on-chain, verifying employment status without the admin manually creating every ticket.
+
+### 6. True Aleo Token Deductions (`credits.aleo` Integration)
+-   **Problem:** Currently, `fund_payroll` only simulates a funding deposit by updating an internal state mapping without actually transferring real user funds.
+-   **Solution:** Integrate `credits.aleo/transfer_public_to_private` (or equivalent) in the `fund_payroll` transition to physically deduct Aleo microcredits from the admin's wallet and lock them into the program's balance.

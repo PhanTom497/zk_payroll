@@ -1,220 +1,129 @@
 # 🔐 ZK Payroll
 
-**Privacy-Preserving DAO Payments on Aleo**
+**Enterprise-Grade, Privacy-Preserving DAO Payments on the Aleo Network**
 
-> **ZK Payroll solves the "Compliance-Privacy Paradox" by enabling DAO administrators to prove budget solvency to auditors without ever revealing individual contributor data.**
-> **Built on Aleo for total privacy, public verifiability, and Multi-Sig enterprise security.**
+> **ZK Payroll solves the "Compliance-Privacy Paradox" by enabling organizations to prove budget solvency to auditors via selective disclosure, without ever exposing individual salaries or employee data to the public.** 
+> **Built natively on Aleo for total privacy, public verifiability, and M-of-N Multi-Sig enterprise security.**
 
 [![Aleo](https://img.shields.io/badge/Built%20on-Aleo-blue)](https://aleo.org)
-[![Leo](https://img.shields.io/badge/Language-Leo-purple)](https://leo-lang.org)
-[![Version](https://img.shields.io/badge/Version-v7-success)](https://aleo.org)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js-black)](https://nextjs.org/)
+[![Status](https://img.shields.io/badge/Status-Testnet_Live-success)](#)
+
+## 🌐 Live Demos
+
+- **Live Application:** [https://zk-payroll.vercel.app/](https://zk-payroll.vercel.app/)
+- **Demo Video:** [Watch on YouTube](https://youtu.be/21zNfbOz614?si=TT9mEVVVMgmv54_I)
 
 ---
 
-## 🎯 Problem
+## 🎯 The Problem
 
-Public blockchains expose all transaction data. For DAO payroll:
-- 💸 Competitors see your compensation structure
-- 👀 Salaries become publicly searchable  
-- 📊 Payment timing reveals cash flow
+Public blockchains inherently expose all transaction data. When managing payroll on-chain:
+- 💸 Competitors can analyze your compensation structure.
+- 👀 Salaries become publicly searchable and trackable.
+- 📊 Payment timing reveals organizational cash flow and burn rates.
 
-## 💡 Solution
+## 💡 The Solution
 
-ZK Payroll uses Aleo's zero-knowledge proofs to enable **private salaries with public budget enforcement**, ensuring both contributor privacy and organizational transparency.
+ZK Payroll leverages **Zero-Knowledge Proofs (ZKPs)** to execute entirely private salary transactions while enforcing a **public mathematical budget and compliance reporting limits**. 
 
----
-
-## ⛓️ On-Chain Verification
-
-**Live Aleo Testnet Proofs** (Judges check here):
-
-| Type | Transaction ID | Status |
-|------|----------------|--------|
-| **Deployment** | [`at1swvsjd...`](https://testnet.explorer.provable.com/transaction/at1swvsjd7weuku62jhgpaya3twlwtqalq65wg7zlfy9y9t4uqpsugqpn3kmg) | ✅ Accepted |
-| **Execution** | [`at1qengyj...`](https://testnet.explorer.provable.com/transaction/at1qengyjkrdlkrtqdvljr9hl7a6qu8uzaa0yxkmljh6zqwhf9zuyxs3jwg74) | ✅ Accepted |
-
-### Deployment Proof
-![Deployment Proof](assets/deploy_proof.png)
-
-### Execution Proof
-![Execution Proof](assets/execution_proof.png)
+We ensure total operational privacy for the contributor and complete solvency transparency for the organization.
 
 ---
 
-## 👁️ Privacy Meter: Who Sees What?
+## 👁️ Privacy Matrix: Who Sees What?
+
+Through cryptography and selective disclosure, ZK Payroll dynamically restricts data visibility depending on the participant's role.
 
 | Data | 🌐 Public Observer | 📋 Auditor | 🔐 Admin |
 |------|:------------------:|:----------:|:--------:|
 | Budget Ceiling | ✅ Visible | ✅ Visible | ✅ Visible* |
 | Total Spent | ❌ Hidden | ✅ Verified | ✅ Visible* |
 | Individual Salaries | ❌ Hidden | ❌ Hidden | ✅ Visible* |
-| Recipient Addresses | ❌ Hidden | ❌ Hidden | ✅ Visible* |
 | Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible* |
-| Budget Compliance | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven |
+| Compliance Validity | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven |
 
-> * *Admin visibility is limited to local decryption history. Push payments update the admin's tracking record directly. Pull payments (Employee Claims) protect employee privacy entirely.*
-
-> **Key Insight**: Auditors verify totals without seeing individual salaries. Public observers only see the budget limit and ZK proof validity.
+> * *Admin visibility is strictly limited to local decryption contexts. Push payments update the admin's tracking directly, while Pull payments (Employee Claims) protect employee privacy entirely.*
 
 ---
 
-## 🖼️ Auditor Portal Demo
+## 🔄 Architecture Models
 
-![Auditor Portal - Decrypted Report](docs/screenshots/auditor-portal.png)
-
-*The Auditor Portal shows how compliance officers receive verified spending totals via selective disclosure—without seeing individual employee salaries.*
-
----
-
-## 🔄 Architecture Models: Push vs. Pull
-
-ZK Payroll supports two distinct payment mechanisms natively to cater to different operational and privacy needs:
-
-### 1. Push Model (Direct Issue & Audit)
-**Best for**: Contractors, one-off payments, and strict real-time audit compliance.
-- 🧑‍💼 **Admin** authorizes and funds the paycheck directly via `issue_salary` with M-of-N Multisig authorization.
-- 📊 **Tracking**: The Admin's private `SpentRecord` is synchronously updated.
-- 📋 **Auditor**: Compliance reports instantly reflect the new expenditure, ensuring tightly-coupled organizational accounting.
-
-### 2. Pull Model (Automated Claiming)
-**Best for**: Core team, recurring salaries, and ultimate employee privacy.
-- 🧑‍💼 **Admin** issues an organizational limit (`SalaryCertificate`) via `issue_limit`. The total budget is reserved.
-- 👷 **Employee** periodically claims their salary autonomously via `claim_salary` using their `SalaryCertificate`.
-- 🔐 **Privacy Boundary**: Because the Employee generates the ZK Proof, they cannot modify the Admin's private `SpentRecord`. This creates an airgap: the organization knows the budget is reserved, but the exact timing and execution of the claim remain entirely private to the employee.
+ZK Payroll caters to both automated enterprise scaling and strict real-time audit approvals natively:
 
 ```mermaid
 flowchart TD
-    A[🔐 Admin (Multi-Sig)] -->|Push: issue_salary| B[📦 SalaryRecord to Employee]
-    A -->|Push: issue_salary| C[📊 Updates Admin's SpentRecord]
+    classDef admin fill:#f9f0ff,stroke:#8e44ad,stroke-width:2px;
+    classDef worker fill:#e8f4f8,stroke:#3498db,stroke-width:2px;
+    classDef chain fill:#edf7f5,stroke:#2ecc71,stroke-width:2px;
+
+    A[🔐 Admin Panel<br/>Multi-Sig Ready]:::admin
     
-    A -->|Pull: issue_limit| D[📜 SalaryCertificate to Employee]
-    D -->|Pull: claim_salary| E[👷 Employee Self-Claims]
-    E -->|Generates| F[📦 SalaryRecord]
+    subgraph Push Model [Legacy Push Processing]
+        A -- "issue_salary()" --> B(📦 Direct SalaryRecord<br/>to Employee):::chain
+    end
+    
+    subgraph Pull Model [Automated Privacy Claiming]
+        A -- "issue_limit()" --> C[📜 Issue SalaryCertificate]:::chain
+        C --> D[👷 Employee Self-Claims<br/>At Will]:::worker
+        D -- "claim_salary()" --> E(📦 Generates SalaryRecord):::chain
+    end
 ```
+
+### 1. The Pull Model (Automated Claiming)
+- **Use Case:** Core teams, recurring salaries, and ultimate employee privacy.
+- **Flow:** An Admin issues a mathematical bounding limit (`SalaryCertificate`). Employees autonomously claim their salary on their own schedule.
+- **Privacy Barrier:** The employee generates the final ZK Proof. The organization knows the budget is reserved, but the exact timing and execution of the claim remain entirely private to the employee.
+
+### 2. The Push Model (Direct Issue)
+- **Use Case:** Independent contractors, one-off payments, strict auditor coupling.
+- **Flow:** Admins authorize and execute the paycheck directly (`issue_salary`) requiring M-of-N threshold signatures. 
+- **Tracking:** The Admin's private organizational `SpentRecord` is synchronously updated, guaranteeing immediate compliance alignment.
 
 ---
 
-## 🚀 Quick Start
+## 💻 Tech Stack & Structure
 
-```bash
-# Clone
-git clone https://github.com/PhanTom497/zk_payroll.git
-cd zk_payroll
-
-# Build
-leo build
-
-# Run demo
-leo run initialize_payroll 1000u64 1field <AUDITOR_ADDRESS>
-```
-
-### One-Command Verify
-
-```bash
-# Run the full test suite
-chmod +x test.sh && ./test.sh
-```
-
----
-
-
-## 💻 Frontend (Web App)
-
-A production-grade Next.js application is located in the `web/` directory.
-
-### Quick Start
-1.  `cd web`
-2.  `npm install`
-3.  `npm run dev`
-
-### Features:
-*   **Admin Dashboard**: Manage payroll, issuance, and multi-sig operations. Includes **Batch Processing** (Legacy and Privacy-Preserving combinations).
-*   **Employee Portal**: View rights (Salary Certificates) and independently claim paychecks. Deduplication built-in.
-*   **Auditor Portal**: Decrypt `AuditReports` and view verified solvency proofs.
-*   **Wallet Integration**: Connects seamlessly with Leo Wallet.
-
-## 📁 Project Structure
+A production-grade Next.js dApp serves as the primary GUI, communicating with the Aleo network via `@provablehq` adapters.
 
 ```
 zk_payroll/
-├── [src/main.leo](./src/main.leo)   # Core contract (66 statements)
-├── web/                   # Next.js dApp (React + Wallet Adapter)
-├── demo/                  # Legacy static demo
-
-│   ├── index.html
-│   ├── style.css
-│   └── demo.js
-├── docs/
-│   ├── ARCHITECTURE.md   # Technical deep-dive
-│   ├── TESTING.md        # Test commands
-│   └── screenshots/      # Demo screenshots
-├── test.sh               # One-command verify
+├── src/main.leo           # Core Aleo Smart Contract (~400 lines)
+├── web/                   # Next.js 14 App Router Interface
+│   ├── app/admin/         # Multi-Sig Dashboard & Batch Operations
+│   ├── app/employee/      # Self-serve Claiming Portal
+│   └── app/auditor/       # Selective Disclosure Compliance Dashboard
+├── docs/                  # Architecture & Testing Documentation
 └── README.md
 ```
 
----
+### Local Development
+```bash
+# Clone the repository
+git clone https://github.com/PhanTom497/zk_payroll.git
+cd zk_payroll/web
 
-## 🛡️ Security Model
-
-| Attack Vector | Mitigation |
-|---------------|------------|
-| Fake budget input | Read from on-chain mapping |
-| Stolen AdminCap | `self.caller == owner` check |
-| Address leakage | RecipientTicket pattern |
-| Cross-payroll replay | Payroll ID consistency |
-
----
-
-## ⚖️ Compliance & Audit Trail
-
-ZK Payroll enables **regulatory compliance without sacrificing contributor privacy**:
-
-### Selective Disclosure
-- Admin generates `AuditReport` for authorized auditors
-- Auditors verify `total_spent ≤ budget` without individual salaries
-- Report includes immutable `timestamp` for audit trail
-
-### Immutable Timestamp
-```
-AuditReport {
-  owner: auditor_address,
-  total_spent: 750u64,        // Verified total
-  payroll_id: 1field,
-  timestamp: 1738181000u32    // Immutable audit trail
-}
+# Install and run
+npm install
+npm run dev
 ```
 
+---
 
+## 🗺️ Vision & Roadmap
 
-## 📊 Contract Stats (v7)
+ZK Payroll is marching towards becoming the foundational primitive for all Web3 organizational payments.
 
-| Metric | Value |
-|--------|-------|
-| Records | 5 (`SpentRecord`, `RecipientTicket`, `SalaryCertificate`, `SalaryRecord`, `AuditReport`) |
-| Core Transitions | 7 |
-| Program Size | ~16 KB |
-| Statements | ~420 |
-| **Enterprise Features** | ✅ M-of-N Multi-Sig, ✅ Privacy Batching, ✅ Pull Payments |
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Wave 1** | Core ZK Payload, Selective Disclosure, Testnet Deployment | ✅ Complete |
+| **Wave 2** | Next.js Overhaul, M-of-N Admins, Pull Payments, React Dashboards | ✅ Complete |
+| **Wave 3** | Token Contracts (Stablecoins), Real `credits.aleo` integration | 🏗️ Planned |
+| **Wave 4** | Zero-Knowledge Tax Reporting Oracles, Linear Vesting Portals | 🏗️ Planned |
 
 ---
 
-## 🗺️ Roadmap
-
-| Wave | Feature | Status |
-|------|---------|--------|
-| 1 | Core ZK Payroll + Selective Disclosure + Testnet Deployment | ✅ Complete |
-| 2 | Multi-sig Admin | Planned |
-| 3 | Recurring Payments | Planned |
-| 4+ | Token Integration | Planned |
-
----
-Aleo wallet for grant distribution :- aleo1luatvgqmdt0j662lpgh0tf3l07tkjeq6rrr6c7qzzwnmtjwvy5ps4mk6kr
----
-
-## 📄 License
-
-MIT
-
----
-
-**Built for Aleo Privacy Buildathon 2026** 🏆
+## 📄 License & Grants
+- **License:** MIT
+- **Built for Aleo Privacy Buildathon** 🏆
+- **Grant/Funding Wallet (Aleo):** `aleo1luatvgqmdt0j662lpgh0tf3l07tkjeq6rrr6c7qzzwnmtjwvy5ps4mk6kr`
