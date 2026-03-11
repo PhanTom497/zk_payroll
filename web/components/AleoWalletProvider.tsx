@@ -32,7 +32,7 @@ export default function AleoWalletProvider({
             decryptPermission={DecryptPermission.AutoDecrypt}
             network={Network.TESTNET}
             autoConnect
-            programs={[PROGRAM_ID]}
+            programs={[PROGRAM_ID, 'credits.aleo', 'test_usdcx_stablecoin.aleo', 'test_usad_stablecoin.aleo']}
         >
             <WalletModalProvider>
                 {children}

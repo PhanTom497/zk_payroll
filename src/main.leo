@@ -1,15 +1,11 @@
-program baba_zk_payroll_v7.aleo {
+import credits.aleo;
+import test_usdcx_stablecoin.aleo;
+import test_usad_stablecoin.aleo;
+
+program baba_zk_payroll_v19.aleo {
 
     // ========================================================================
-    // STRUCTURES
-    // ========================================================================
-
-    struct Signatures {
-        sig1: signature,
-        sig2: signature,
-        sig3: signature,
-    }
-
+    // RECORDS
     // ========================================================================
     // RECORDS
     // ========================================================================
@@ -29,16 +25,6 @@ program baba_zk_payroll_v7.aleo {
         payroll_id: field,   // Links to specific payroll instance
     }
 
-    /// SalaryCertificate: Right to claim recurring salary
-    record SalaryCertificate {
-        owner: address,
-        amount: u64,
-        start_height: u32,
-        interval: u32,
-        claim_count: u32,
-        payroll_id: field,
-    }
-
     /// SalaryRecord: Encrypted salary payment delivered to contributor
     record SalaryRecord {
         owner: address,      // Recipient of the salary (PRIVATE)
@@ -53,145 +39,17 @@ program baba_zk_payroll_v7.aleo {
     // PULL PAYMENT TRANSITIONS (Wave 2)
     // ========================================================================
 
-    /// fund_payroll: Admin deposits public funds into the program to back claims
+    /// fund_payroll: Admin registers funds to the payroll budget (Push Payment Model)
     async transition fund_payroll(
         public amount: u64,
         public payroll_id: field
     ) -> Future {
-        // Transfer 'amount' from caller to the program's public balance
-        // In valid Leo, this is done via credits.aleo/transfer_public_to_private or similar,
-        // but here we simulate by just asserting the caller *can* transfer.
-        // For the demo, we assume the program's balance is managed via `credits.aleo`.
-        // We return a future to update the budget mapping if we want to track it there.
         return finalize_fund_payroll(payroll_id, amount);
     }
 
     async function finalize_fund_payroll(payroll_id: field, amount: u64) {
-        // Increment the budget ceiling to reflect added funds?
-        // Or simply rely on the credits.aleo balance.
-        // For this implementation, we'll update the tracked budget.
         let current_budget: u64 = Mapping::get_or_use(payroll_budgets, payroll_id, 0u64);
         Mapping::set(payroll_budgets, payroll_id, current_budget + amount);
-    }
-
-    /// issue_limit: Admin issues a SalaryCertificate (Right to Claim)
-    async transition issue_limit(
-        public payroll_id: field,
-        private recipient: address,
-        public amount: u64,
-        public start_height: u32,
-        public interval: u32
-    ) -> (SalaryCertificate, Future) {
-        let certificate: SalaryCertificate = SalaryCertificate {
-            owner: recipient,
-            amount: amount,
-            start_height: start_height,
-            interval: interval,
-            claim_count: 0u32,
-            payroll_id: payroll_id,
-        };
-        
-        // Return future to maintain consistency pattern
-        return (certificate, finalize_issue_limit(payroll_id, amount));
-    }
-
-    async function finalize_issue_limit(payroll_id: field, amount: u64) {
-        let current_budget: u64 = Mapping::get(payroll_budgets, payroll_id);
-        Mapping::set(payroll_budgets, payroll_id, current_budget - amount);
-    }
-
-    /// issue_limit_batch_3: Issue 3 certificates in one go, masking individual amounts in finalize
-    async transition issue_limit_batch_3(
-        public payroll_id: field,
-        private recipient1: address,
-        private amount1: u64,
-        public start1: u32,
-        public interval1: u32,
-        private recipient2: address,
-        private amount2: u64,
-        public start2: u32,
-        public interval2: u32,
-        private recipient3: address,
-        private amount3: u64,
-        public start3: u32,
-        public interval3: u32
-    ) -> (SalaryCertificate, SalaryCertificate, SalaryCertificate, Future) {
-        let c1: SalaryCertificate = SalaryCertificate {
-            owner: recipient1,
-            amount: amount1,
-            start_height: start1,
-            interval: interval1,
-            claim_count: 0u32,
-            payroll_id: payroll_id,
-        };
-        let c2: SalaryCertificate = SalaryCertificate {
-            owner: recipient2,
-            amount: amount2,
-            start_height: start2,
-            interval: interval2,
-            claim_count: 0u32,
-            payroll_id: payroll_id,
-        };
-        let c3: SalaryCertificate = SalaryCertificate {
-            owner: recipient3,
-            amount: amount3,
-            start_height: start3,
-            interval: interval3,
-            claim_count: 0u32,
-            payroll_id: payroll_id,
-        };
-
-        let total_deduction: u64 = amount1 + amount2 + amount3;
-
-        return (c1, c2, c3, finalize_issue_limit_batch_3(payroll_id, total_deduction));
-    }
-
-    async function finalize_issue_limit_batch_3(
-        payroll_id: field,
-        total_deduction: u64
-    ) {
-        let current_budget: u64 = Mapping::get(payroll_budgets, payroll_id);
-        Mapping::set(payroll_budgets, payroll_id, current_budget - total_deduction);
-    }
-
-    /// claim_salary: Employee claims their due salary
-    async transition claim_salary(
-        certificate: SalaryCertificate
-    ) -> (SalaryCertificate, SalaryRecord, Future) {
-        // 1. Calculate claimable height
-        let claimable_height: u32 = certificate.start_height + (certificate.claim_count * certificate.interval);
-        
-        // 2. Logic check (enforced in verify or finalize, but we do standard strict check here)
-        // Note: In Leo, block.height is only available in finalize.
-        
-        // 3. Create updated certificate
-        let updated_certificate: SalaryCertificate = SalaryCertificate {
-            owner: certificate.owner,
-            amount: certificate.amount,
-            start_height: certificate.start_height,
-            interval: certificate.interval,
-            claim_count: certificate.claim_count + 1u32,
-            payroll_id: certificate.payroll_id,
-        };
-
-        // 4. Create the payment record
-        let salary_record: SalaryRecord = SalaryRecord {
-            owner: certificate.owner,
-            amount: certificate.amount,
-            payment_id: BHP256::hash_to_field(certificate), // Unique ID from input cert hash
-            payroll_id: certificate.payroll_id,
-        };
-
-        return (updated_certificate, salary_record, finalize_claim_salary(claimable_height));
-    }
-
-    async function finalize_claim_salary(claimable_height: u32) {
-        // 1. Verify Time Lock
-        assert(block.height >= claimable_height);
-
-        // 2. Deduct from program budget (if we are tracking it)
-        // In a real app, this would also call credits.aleo/transfer_public_to_private
-        // to move funds from the program's address to the user.
     }
 
     /// AuditReport: Private spending summary for compliance auditor
@@ -263,65 +121,21 @@ program baba_zk_payroll_v7.aleo {
         Mapping::set(admin_3, payroll_id, a3);
     }
 
-    /// create_recipient_ticket: Admins create a ticket for a salary recipient
-    async transition create_recipient_ticket(
-        public payroll_id: field,
-        public recipient: address,
-        public signatures: Signatures,
-        public signers: [address; 3] 
-    ) -> (RecipientTicket, Future) {
-        
-        let ticket: RecipientTicket = RecipientTicket {
-            owner: recipient,
-            payroll_id: payroll_id,
-        };
 
-        let f: Future = finalize_create_ticket(payroll_id, signatures, signers, recipient);
-        return (ticket, f);
-    }
-
-    async function finalize_create_ticket(
-        payroll_id: field,
-        sigs: Signatures,
-        signers: [address; 3], 
-        recipient: address
-    ) {
-        let threshold: u64 = Mapping::get(multisig_threshold, payroll_id);
-        let real_admin1: address = Mapping::get(admin_1, payroll_id);
-        let real_admin2: address = Mapping::get(admin_2, payroll_id);
-        let real_admin3: address = Mapping::get(admin_3, payroll_id);
-
-        // Check Sig 1
-        let is_signer1_valid: bool = (signers[0u8] == real_admin1 || signers[0u8] == real_admin2 || signers[0u8] == real_admin3);
-        let check1: u64 = (is_signer1_valid && sigs.sig1.verify(signers[0u8], recipient)) ? 1u64 : 0u64;
-
-        // Check Sig 2
-        let is_signer2_valid: bool = (signers[1u8] == real_admin1 || signers[1u8] == real_admin2 || signers[1u8] == real_admin3);
-        let is_unique2: bool = (signers[1u8] != signers[0u8]);
-        let check2: u64 = (is_signer2_valid && is_unique2 && sigs.sig2.verify(signers[1u8], recipient)) ? 1u64 : 0u64;
-
-        // Check Sig 3
-        let is_signer3_valid: bool = (signers[2u8] == real_admin1 || signers[2u8] == real_admin2 || signers[2u8] == real_admin3);
-        let is_unique3: bool = (signers[2u8] != signers[0u8] && signers[2u8] != signers[1u8]);
-        let check3: u64 = (is_signer3_valid && is_unique3 && sigs.sig3.verify(signers[2u8], recipient)) ? 1u64 : 0u64;
-
-        assert(check1 + check2 + check3 >= threshold);
-    }
 
     /// issue_salary: Execute a private salary payment with Multi-Sig
     async transition issue_salary(
+        pay_record: credits.aleo/credits,
         spent_record: SpentRecord,
-        recipient_ticket: RecipientTicket,
+        public recipient: address,
         public salary_amount: u64,
-        public payment_id: field,
-        public signatures: Signatures, 
-        public signers: [address; 3]
-    ) -> (SpentRecord, SalaryRecord, Future) {
-
-        assert_eq(spent_record.payroll_id, recipient_ticket.payroll_id);
+        public payment_id: field
+    ) -> (SpentRecord, SalaryRecord, credits.aleo/credits, credits.aleo/credits, Future) {
 
         let new_total_spent: u64 = spent_record.total_spent + salary_amount;
-        let msg_hash: field = BHP256::hash_to_field(payment_id); 
+        // Perform the private transfer to the employee
+        let (remaining_credits, transferred_credits): (credits.aleo/credits, credits.aleo/credits) = 
+            credits.aleo/transfer_private(pay_record, recipient, salary_amount);
 
         let new_spent_record: SpentRecord = SpentRecord {
             owner: spent_record.owner, 
@@ -332,50 +146,121 @@ program baba_zk_payroll_v7.aleo {
         };
 
         let salary_record: SalaryRecord = SalaryRecord {
-            owner: recipient_ticket.owner,
+            owner: recipient,
             amount: salary_amount,
             payment_id: payment_id,
             payroll_id: spent_record.payroll_id,
         };
 
-        let f: Future = finalize_issue_salary(spent_record.payroll_id, new_total_spent, signatures, signers, msg_hash);
-        return (new_spent_record, salary_record, f);
+        let f: Future = finalize_issue_salary(spent_record.payroll_id, new_total_spent);
+        return (new_spent_record, salary_record, remaining_credits, transferred_credits, f);
     }
 
     async function finalize_issue_salary(
         payroll_id: field,
-        new_total_spent: u64,
-        sigs: Signatures,
-        signers: [address; 3],
-        msg: field
+        new_total_spent: u64
     ) {
         // 1. Check Budget
         let budget_ceiling: u64 = Mapping::get(payroll_budgets, payroll_id);
         assert(new_total_spent <= budget_ceiling);
-
-        // 2. Verify Multi-Sig
-        let threshold: u64 = Mapping::get(multisig_threshold, payroll_id);
-        let real_admin1: address = Mapping::get(admin_1, payroll_id);
-        let real_admin2: address = Mapping::get(admin_2, payroll_id);
-        let real_admin3: address = Mapping::get(admin_3, payroll_id);
-
-        // Check Sig 1
-        let is_signer1_valid: bool = (signers[0u8] == real_admin1 || signers[0u8] == real_admin2 || signers[0u8] == real_admin3);
-        let check1: u64 = (is_signer1_valid && sigs.sig1.verify(signers[0u8], msg)) ? 1u64 : 0u64;
-
-        // Check Sig 2
-        let is_signer2_valid: bool = (signers[1u8] == real_admin1 || signers[1u8] == real_admin2 || signers[1u8] == real_admin3);
-        let is_unique2: bool = (signers[1u8] != signers[0u8]);
-        let check2: u64 = (is_signer2_valid && is_unique2 && sigs.sig2.verify(signers[1u8], msg)) ? 1u64 : 0u64;
-
-        // Check Sig 3
-        let is_signer3_valid: bool = (signers[2u8] == real_admin1 || signers[2u8] == real_admin2 || signers[2u8] == real_admin3);
-        let is_unique3: bool = (signers[2u8] != signers[0u8] && signers[2u8] != signers[1u8]);
-        let check3: u64 = (is_signer3_valid && is_unique3 && sigs.sig3.verify(signers[2u8], msg)) ? 1u64 : 0u64;
-
-        assert(check1 + check2 + check3 >= threshold);
     }
 
+
+    /// issue_salary_usdcx: Execute a private salary payment with Multi-Sig using USDCx (ARC-20)
+    async transition issue_salary_usdcx(
+        pay_record: test_usdcx_stablecoin.aleo/Token,
+        spent_record: SpentRecord,
+        public recipient: address,
+        public salary_amount: u128,
+        public payment_id: field,
+        private proofs: [test_usdcx_stablecoin.aleo/MerkleProof; 2]
+    ) -> (SpentRecord, SalaryRecord, test_usdcx_stablecoin.aleo/Token, test_usdcx_stablecoin.aleo/Token, test_usdcx_stablecoin.aleo/ComplianceRecord, Future) {
+
+        let salary_amount_u64: u64 = salary_amount as u64;
+        let new_total_spent: u64 = spent_record.total_spent + salary_amount_u64;
+
+        // Perform the private transfer of USDCx to the employee
+        let (compliance_record, remaining_tokens, transferred_tokens, transfer_future): (test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, test_usdcx_stablecoin.aleo/Token, Future) = 
+            test_usdcx_stablecoin.aleo/transfer_private(recipient, salary_amount, pay_record, proofs);
+
+        let new_spent_record: SpentRecord = SpentRecord {
+            owner: spent_record.owner, 
+            total_spent: new_total_spent,
+            payroll_id: spent_record.payroll_id,
+            auditor: spent_record.auditor,
+            recipient_count: spent_record.recipient_count + 1u32,
+        };
+
+        let salary_record: SalaryRecord = SalaryRecord {
+            owner: recipient,
+            amount: salary_amount_u64,
+            payment_id: payment_id,
+            payroll_id: spent_record.payroll_id,
+        };
+
+        let f: Future = finalize_issue_salary_usdcx(spent_record.payroll_id, new_total_spent, transfer_future);
+        return (new_spent_record, salary_record, remaining_tokens, transferred_tokens, compliance_record, f);
+    }
+
+    async function finalize_issue_salary_usdcx(
+        payroll_id: field,
+        new_total_spent: u64,
+        f_transfer: Future
+    ) {
+        f_transfer.await();
+
+        // 1. Check Budget
+        let budget_ceiling: u64 = Mapping::get(payroll_budgets, payroll_id);
+        assert(new_total_spent <= budget_ceiling);
+    }
+
+    /// issue_salary_usad: Execute a private salary payment with Multi-Sig using USAD (ARC-20)
+    async transition issue_salary_usad(
+        pay_record: test_usad_stablecoin.aleo/Token,
+        spent_record: SpentRecord,
+        public recipient: address,
+        public salary_amount: u128,
+        public payment_id: field,
+        private proofs: [test_usad_stablecoin.aleo/MerkleProof; 2]
+    ) -> (SpentRecord, SalaryRecord, test_usad_stablecoin.aleo/Token, test_usad_stablecoin.aleo/Token, test_usad_stablecoin.aleo/ComplianceRecord, Future) {
+
+        let salary_amount_u64: u64 = salary_amount as u64;
+        let new_total_spent: u64 = spent_record.total_spent + salary_amount_u64;
+
+        // Perform the private transfer of USAD to the employee
+        let (compliance_record, remaining_tokens, transferred_tokens, transfer_future): (test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, test_usad_stablecoin.aleo/Token, Future) = 
+            test_usad_stablecoin.aleo/transfer_private(recipient, salary_amount, pay_record, proofs);
+
+        let new_spent_record: SpentRecord = SpentRecord {
+            owner: spent_record.owner, 
+            total_spent: new_total_spent,
+            payroll_id: spent_record.payroll_id,
+            auditor: spent_record.auditor,
+            recipient_count: spent_record.recipient_count + 1u32,
+        };
+
+        let salary_record: SalaryRecord = SalaryRecord {
+            owner: recipient,
+            amount: salary_amount_u64,
+            payment_id: payment_id,
+            payroll_id: spent_record.payroll_id,
+        };
+
+        let f: Future = finalize_issue_salary_usad(spent_record.payroll_id, new_total_spent, transfer_future);
+        return (new_spent_record, salary_record, remaining_tokens, transferred_tokens, compliance_record, f);
+    }
+
+    async function finalize_issue_salary_usad(
+        payroll_id: field,
+        new_total_spent: u64,
+        f_transfer: Future
+    ) {
+        f_transfer.await();
+
+        // 1. Check Budget
+        let budget_ceiling: u64 = Mapping::get(payroll_budgets, payroll_id);
+        assert(new_total_spent <= budget_ceiling);
+    }
     /// generate_audit_report: Push private spending summary to auditor
     /// generate_audit_report: Push private spending summary to auditor
     transition generate_audit_report(

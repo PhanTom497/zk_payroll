@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn leo deploy --network testnet --endpoint "https://api.explorer.provable.com/v1" --private-key "APrivateKey1zkp7Ut7qtZRmMjPWij2puVMuewB86gS8mwVjK8EpxoebVeN" --priority-fees 1000000 --broadcast
+
+expect "Do you want to proceed with deployment? (y/n)"
+send "y\r"
+
+expect "Would you like to proceed?"
+send "y\r"
+
+expect eof

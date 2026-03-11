@@ -67,6 +67,33 @@ Copy the `SpentRecord` record from the output. You will need it for Auditor acti
 
 ---
 
+## 💰 3.5. Fund Payroll
+
+Convert public `credits.aleo` into a private `credits.aleo/credits` record owned by the admin, to be used for private payouts.
+
+**Command:**
+```bash
+leo execute fund_payroll \
+  1000u64 \
+  1field \
+  <ADMIN_1_ADDRESS> \
+  --network testnet \
+  --endpoint $ENDPOINT \
+  --private-key $PRIVATE_KEY \
+  --priority-fees 100000 \
+  --broadcast
+```
+
+**Parameters:**
+- `1000u64`: Amount of credits to convert and lock into the payroll.
+- `1field`: Unique Payroll ID matching step 3.
+- `<ADMIN_1_ADDRESS>`: The admin who will hold the private funds record.
+
+**Save Output:**
+Copy the `credits.aleo/credits` record from the output. This is your `PAY_RECORD` for issuing salaries.
+
+---
+
 ## 🎟️ 4. Create Recipient Ticket
 
 Generate a private ticket for an employee to receive a salary.
@@ -91,16 +118,18 @@ leo execute create_recipient_ticket \
 
 ## 💸 5. Issue Salary (Success Case)
 
-Pay a salary within the budget (e.g., 500u64).
+Pay a salary privately using the funded `credits.aleo/credits` record.
 
 **Command:**
 ```bash
 leo execute issue_salary \
-  "{ ... ADMIN_CAP_RECORD ... }" \
+  "{ ... PAY_RECORD ... }" \
   "{ ... SPENT_RECORD ... }" \
   "{ ... RECIPIENT_TICKET ... }" \
   500u64 \
   101field \
+  "{ sig1: ..., sig2: ..., sig3: ... }" \
+  "[aleo1..., aleo2..., aleo3...]" \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \
@@ -109,7 +138,7 @@ leo execute issue_salary \
 ```
 
 **Verification:**
-The transaction will be **Accepted**. The `SpentRecord` will update to `500u64`, and a `SalaryRecord` will be created for the employee.
+The transaction will be **Accepted**. The `SpentRecord` will update to `500u64`, a `SalaryRecord` will be created for the employee, and two new `credits.aleo/credits` records will be returned (one for the employee with the salary, one for the admin with the remainder).
 
 ---
 
@@ -120,11 +149,13 @@ Attempt to pay more than the remaining budget (e.g., 600u64 when only 500u64 rem
 **Command:**
 ```bash
 leo execute issue_salary \
-  "{ ... ADMIN_CAP_RECORD ... }" \
+  "{ ... PAY_RECORD ... }" \
   "{ ... SPENT_RECORD ... }" \
   "{ ... RECIPIENT_TICKET ... }" \
   1050u64 \
   102field \
+  "{ sig1: ..., sig2: ..., sig3: ... }" \
+  "[aleo1..., aleo2..., aleo3...]" \
   --network testnet \
   --endpoint $ENDPOINT \
   --private-key $PRIVATE_KEY \

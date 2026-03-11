@@ -3,7 +3,7 @@
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
 import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, batchProcessTransactions, BatchTransactionItem } from '@/lib/zk-utils'
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
     LayoutDashboard,
     Wallet,
@@ -28,13 +28,48 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { WalletConnectButton } from "@/components/WalletConnectButton"
 
+function getMicrocredits(record: any): number {
+    try {
+        if (!record) return 0;
+
+        // Fast path for explicit object properties
+        if (record.data && record.data.microcredits) {
+            return parseInt(String(record.data.microcredits).replace(/u64|\.private/g, ''));
+        }
+        if (record.data && record.data.amount) {
+            return parseInt(String(record.data.amount).replace(/u128|\.private/g, ''));
+        }
+
+        // Fallback: Stringify the entire object to bypass any Wallet Adapter JS-object wrapping or nesting
+        const fullStr = typeof record === 'string' ? record : JSON.stringify(record);
+
+        // Match any format variant anywhere in the record: microcredits: 1000u64, "microcredits":"1000u64.private", etc.
+        const match = fullStr.match(/(?:microcredits|"microcredits"|amount|"amount")\s*:\s*["']?([\d_]+)/);
+        if (match && match[1]) {
+            return parseInt(match[1].replace(/_/g, ''));
+        }
+
+        return 0;
+    } catch (e) {
+        console.error("Record parse bug:", e);
+        return 0;
+    }
+}
+
 export default function AdminPage() {
-    const { wallet, address, requestRecords } = useWallet()
+    const { wallet, address, requestRecords, decrypt } = useWallet()
     const publicKey = address; // Alias for compatibility
 
     const [mounted, setMounted] = useState(false)
     useEffect(() => setMounted(true), [])
     const isConnected = mounted && publicKey;
+
+    // Multisig UI State
+    const [isSigModalOpen, setIsSigModalOpen] = useState(false)
+    const [sig1, setSig1] = useState<string | null>(null)
+    const [sig2, setSig2] = useState<string | null>(null)
+    const [sig3, setSig3] = useState<string | null>(null)
+    const [pendingTxPayload, setPendingTxPayload] = useState<any>(null)
 
     const [budget, setBudget] = useState<string>('Loading...')
     const [periodHash, setPeriodHash] = useState('')
@@ -45,8 +80,16 @@ export default function AdminPage() {
     // Tab State
     const [activeTab, setActiveTab] = useState<'dashboard' | 'deposit' | 'authorize' | 'batch' | 'compliance'>('dashboard')
 
-    // Helper to clean Aleo values
-    const cleanValue = (val: string) => val.replace(/u64|u32|field|\.private/g, '')
+    // Helper to clean Aleo values and convert u64 (microcredits) to Credits
+    const cleanValue = (val: string, forceMicrocredits: boolean = false) => {
+        if (!val) return '0'
+        const isMicrocredits = forceMicrocredits || val.includes('u64')
+        let clean = val.replace(/u64|u32|field|\.private/g, '').replace(/_/g, '')
+        if (isMicrocredits) {
+            return (parseFloat(clean) / 1_000_000).toString()
+        }
+        return clean
+    }
 
     // Form States
     const [fundAmount, setFundAmount] = useState('')
@@ -57,7 +100,8 @@ export default function AdminPage() {
 
     // Initialization State
     const [isInitialized, setIsInitialized] = useState<boolean | null>(null) // null = check pending
-    const [initBudget, setInitBudget] = useState('1000000')
+    const [currency, setCurrency] = useState<'credits' | 'usdcx' | 'usad'>('credits')
+    const [initBudget, setInitBudget] = useState('1000')
     const [initThreshold, setInitThreshold] = useState('2')
     const [admin2, setAdmin2] = useState('')
     const [admin3, setAdmin3] = useState('')
@@ -159,7 +203,7 @@ export default function AdminPage() {
                 PROGRAM_ID,
                 'initialize_payroll',
                 [
-                    initBudget + 'u64', // budget_ceiling
+                    (parseInt(initBudget) * 1_000_000) + 'u64', // budget_ceiling in microcredits
                     '1field',           // payroll_id
                     initThreshold + 'u64', // threshold
                     publicKey,          // admin1 (self)
@@ -223,12 +267,14 @@ export default function AdminPage() {
         if (!publicKey || !fundAmount) return
         setIsTransacting(true)
         try {
+            // Convert user input ALEO credits into Aleo Microcredits (support decimals)
+            const microcredits = Math.floor(parseFloat(fundAmount) * 1_000_000)
             const txId = await requestTransaction(
                 wallet?.adapter!,
                 publicKey,
                 PROGRAM_ID,
                 'fund_payroll',
-                [fundAmount + 'u64', '1field'], // public amount, public payroll_id
+                [microcredits + 'u64', '1field'], // public amount, public payroll_id
                 300_000
             )
             toast.success("Funding Transaction sent! ID: " + txId)
@@ -241,28 +287,257 @@ export default function AdminPage() {
         }
     }
 
-    const handleIssueCertificate = async () => {
-        if (!publicKey || !issueRecipient || !issueAmount) return
+    const handleConvertPublicToPrivate = async () => {
+        if (!publicKey || !fundAmount) {
+            toast.error("Please enter a valid amount to convert.")
+            return
+        }
         setIsTransacting(true)
         try {
-            // transition issue_limit(payroll_id, recipient, amount, start_height, interval)
-            const inputs = [
-                '1field',                   // payroll_id (public)
-                issueRecipient,             // recipient (private)
-                issueAmount + 'u64',        // amount (public)
-                issueStart + 'u32',         // start_height (public)
-                issueInterval + 'u32'       // interval (public)
-            ]
-
+            const microcredits = parseInt(fundAmount) * 1_000_000
             const txId = await requestTransaction(
                 wallet?.adapter!,
                 publicKey,
-                PROGRAM_ID,
-                'issue_limit',
-                inputs,
+                'credits.aleo',
+                'transfer_public_to_private',
+                [publicKey, microcredits + 'u64'],
                 300_000
             )
-            toast.success("Certificate Issued! Transaction ID: " + txId)
+            toast.success("Conversion request sent! Your private balance will update soon. Tx: " + txId)
+        } catch (err: any) {
+            console.error(err)
+            toast.error("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
+    // Triggered when clicking 'Sign Message' in the Modal
+    const handleSignMessage = async (step: number) => {
+        try {
+            if (!pendingTxPayload) return;
+            // Leo's internal verify() expects the signature to be validated against the signer's address string!
+            // However, snarkVM serializes this 63-char string into a 32-byte affine x-coordinate during `verify()`.
+            let adminAddressToSign = pendingTxPayload.admin1 as string;
+            if (step === 2) adminAddressToSign = pendingTxPayload.admin2 as string;
+            if (step === 3) adminAddressToSign = pendingTxPayload.admin3 as string;
+
+            toast.info("Requesting 32-byte strict payload from SDK Server...");
+
+            const serverRes = await fetch('/api/get-address-bytes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: adminAddressToSign })
+            });
+            const addrData = await serverRes.json();
+            if (!serverRes.ok) throw new Error(addrData.error || "Failed to fetch Address bytes");
+
+            const msgBytes = new Uint8Array(addrData.bytes);
+
+            toast.info("Requesting Signature over 32-byte Native Payload...");
+            const sigBytes = await (wallet as any)?.adapter?.signMessage(msgBytes);
+            if (!sigBytes) throw new Error("Signature rejected or failed");
+
+            // Send Uint8Array to NextJS server API to completely bypass Webpack SSR Polyfill crashes
+            const res = await fetch('/api/parse-sig', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bytes: Array.from(sigBytes) })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to parse signature");
+
+            const signatureStr = data.signature;
+
+            if (step === 1) setSig1(signatureStr)
+            if (step === 2) setSig2(signatureStr)
+            if (step === 3) setSig3(signatureStr)
+
+            toast.success(`Admin ${step} Signature Captured!`)
+        } catch (err: any) {
+            console.error("Signing error:", err)
+            toast.error("Failed to sign: " + err.message)
+        }
+    }
+
+    // Executes the actual transaction after all 3 signatures are collected
+    const executeIssueSalary = async () => {
+        if (!pendingTxPayload || !sig1 || !sig2 || !sig3) return;
+        setIsTransacting(true)
+        setIsSigModalOpen(false)
+        try {
+            toast.info("Pushing Salary Transaction to Network...")
+
+            const amountLiteral = pendingTxPayload.currency === 'credits' ? 'u64' : 'u128';
+            let inputs = [
+                pendingTxPayload.payRecordStr as string,
+                pendingTxPayload.spentRecordStr as string,
+                pendingTxPayload.issueRecipient as string,
+                (pendingTxPayload.requiredMicrocredits + amountLiteral) as string,
+                pendingTxPayload.paymentId as string
+            ]
+
+            if (pendingTxPayload.proofsStr) {
+                inputs.push(pendingTxPayload.proofsStr as string);
+            }
+
+            const funcName = pendingTxPayload.currency === 'credits' ? 'issue_salary' :
+                (pendingTxPayload.currency === 'usdcx' ? 'issue_salary_usdcx' : 'issue_salary_usad');
+
+            const txId = await requestTransaction(
+                wallet?.adapter!,
+                publicKey!,
+                PROGRAM_ID,
+                funcName,
+                inputs,
+                400_000
+            )
+            toast.success("Salary Pushed Successfully! Transaction ID: " + txId)
+
+            toast.info("Waiting for Wallet Synchronization to refresh Next.js state...")
+            setTimeout(() => {
+                toast.success("State synchronized. You're ready for the next tx!")
+                fetchState()
+            }, 10000)
+
+            // Clean up
+            setPendingTxPayload(null)
+            setSig1(null)
+            setSig2(null)
+            setSig3(null)
+        } catch (err: any) {
+            console.error(err)
+            toast.error("Error: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
+
+
+    const handleIssueCertificate = async () => {
+        if (!publicKey || !issueRecipient || !issueAmount) {
+            toast.error("Please provide recipient and amount.")
+            return
+        }
+        setIsTransacting(true)
+        try {
+            toast.info("1/3: Fetching SpentRecord...")
+            // 1. Fetch Spent Record automatically
+            const ourRecords = await (wallet as any)?.adapter?.requestRecords(PROGRAM_ID, true)
+            const spentRec = (ourRecords as any[])?.filter((rec: any) =>
+                !rec.spent && (rec.recordName === 'SpentRecord' || (rec.plaintext && rec.plaintext.includes('total_spent')))
+            ).pop()
+
+            if (!spentRec) {
+                toast.error("No active SpentRecord found. Did you initialize the system?")
+                setIsTransacting(false)
+                return
+            }
+
+            let spentRecordStr = spentRec.plaintext || spentRec.recordPlaintext;
+            if (!spentRecordStr && spentRec.ciphertext) spentRecordStr = spentRec.ciphertext;
+            if (typeof spentRecordStr === 'string') spentRecordStr = spentRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+
+            toast.info(`2/3: Searching for ${currency.toUpperCase()} Record...`)
+
+            const targetProgramId = currency === 'credits' ? 'credits.aleo' : (currency === 'usdcx' ? 'test_usdcx_stablecoin.aleo' : 'test_usad_stablecoin.aleo');
+            const targetRecords = await (wallet as any)?.adapter?.requestRecords(targetProgramId, false)
+            console.log("RAW SHIELD WALLET RECORDS:", targetRecords)
+
+            const requiredMicrocredits = Math.floor(parseFloat(issueAmount) * 1_000_000)
+
+            let payRecordStr: string | null = null;
+            if (targetRecords && Array.isArray(targetRecords)) {
+                for (const r of targetRecords) {
+                    if (r.spent) continue;
+                    let valMicrocredits = getMicrocredits(r); // val is in microcredits
+
+                    if (valMicrocredits === 0 && r.recordCiphertext && !r.plaintext && decrypt) {
+                        try {
+                            const decryptedStr = await decrypt(r.recordCiphertext);
+                            if (decryptedStr) {
+                                r.plaintext = typeof decryptedStr === 'string' ? decryptedStr : String(decryptedStr);
+                                valMicrocredits = getMicrocredits(r);
+                            }
+                        } catch (e) {
+                            console.warn("Manual Shield wallet decrypt failed:", e);
+                        }
+                    }
+
+                    const isSpendable = !!(r.plaintext || r.nonce || r._nonce || r.data?._nonce || r.ciphertext);
+                    // Match required microcredits with the record's microcredits value
+                    if (isSpendable && valMicrocredits >= requiredMicrocredits) {
+                        payRecordStr = r.plaintext || r.recordPlaintext;
+
+                        if (!payRecordStr) {
+                            const nonce = r.nonce || r._nonce || r.data?._nonce;
+                            if (nonce) {
+                                const storedVal = getMicrocredits(r.data);
+                                if (currency === 'credits') {
+                                    payRecordStr = `{ owner: ${r.owner}.private, microcredits: ${storedVal}u64.private, _nonce: ${nonce}.public }`;
+                                } else {
+                                    payRecordStr = `{ owner: ${r.owner}.private, amount: ${storedVal}u128.private, _nonce: ${nonce}.public }`;
+                                }
+                            } else if (r.ciphertext) {
+                                payRecordStr = r.ciphertext;
+                            } else {
+                                payRecordStr = String(r);
+                            }
+                        }
+                        if (typeof payRecordStr === 'string') {
+                            payRecordStr = payRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (!payRecordStr) {
+                toast.error(`UTXO Layout Error: You have funds, but Aleo requires a single unbroken record >= ${issueAmount} ${currency.toUpperCase()} to pay this.`)
+                setIsTransacting(false)
+                return
+            }
+
+            toast.info("3/3: Preparing Multisig Payload...")
+
+            let proofsStr = undefined;
+            if (currency !== 'credits') {
+                const s = Array(16).fill('0field').join(', ');
+                const rawProof = `{ siblings: [${s}], leaf_index: 1u32 }`;
+                proofsStr = `[${rawProof}, ${rawProof}]`;
+            }
+
+            const a1 = await fetchMappingValue('admin_1', '1field')
+            const a2 = await fetchMappingValue('admin_2', '1field')
+            const a3 = await fetchMappingValue('admin_3', '1field')
+
+            if (!a1 || !a2 || !a3) {
+                toast.error("Could not fetch Admin addresses from contract. Is it initialized?")
+                setIsTransacting(false)
+                return
+            }
+
+            const ts = Math.floor(Date.now() / 1000);
+            const rPart = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+            const prefix = currency === 'credits' ? '1' : currency === 'usdcx' ? '2' : '3';
+            const paymentId = `${prefix}${ts}${rPart}field`;
+
+            setPendingTxPayload({
+                payRecordStr,
+                spentRecordStr,
+                issueRecipient,
+                requiredMicrocredits,
+                paymentId,
+                currency,
+                proofsStr,
+                admin1: a1.replace(/"/g, ''),
+                admin2: a2.replace(/"/g, ''),
+                admin3: a3.replace(/"/g, '')
+            })
+
+            setIsSigModalOpen(true)
+            toast.success("Ready for Signatures!")
         } catch (err: any) {
             console.error(err)
             toast.error("Error: " + err.message)
@@ -294,8 +569,9 @@ export default function AdminPage() {
 
                 const role = roleStr?.toLowerCase() || 'junior'
                 const multiplier = roles[role] || 1.0
-                const base = parseInt(baseSalary) || 0
-                const amount = Math.floor(base * multiplier)
+                const base = parseFloat(baseSalary) || 0
+                // Convert to microcredits
+                const amountMicrocredits = Math.floor(base * multiplier * 1_000_000)
 
                 // transition issue_limit(payroll_id, recipient, amount, start_height, interval)
                 // We'll use current height + 10 for start
@@ -308,7 +584,7 @@ export default function AdminPage() {
                     inputs: [
                         '1field',              // payroll_id
                         addr,                  // recipient
-                        amount + 'u64',        // amount
+                        amountMicrocredits + 'u64', // amount in microcredits
                         startH + 'u32',        // start_height
                         bulkInterval + 'u32'   // interval
                     ],
@@ -686,9 +962,9 @@ export default function AdminPage() {
                                             <GlassCard className="relative group overflow-hidden">
                                                 <div className="flex items-start justify-between relative z-10">
                                                     <div>
-                                                        <p className="text-xs text-muted-foreground mb-1">Liquidity Pool</p>
+                                                        <p className="text-xs text-muted-foreground mb-1">Max Spending Limit</p>
                                                         <div className="flex items-baseline gap-2">
-                                                            <p className="text-2xl font-bold text-foreground font-mono">{cleanValue(budget)}</p>
+                                                            <p className="text-2xl font-bold text-foreground font-mono">{cleanValue(budget, true)}</p>
                                                             <span className="text-xs text-muted-foreground">credits</span>
                                                         </div>
                                                     </div>
@@ -765,7 +1041,7 @@ export default function AdminPage() {
                                             <Wallet className="w-5 h-5 text-foreground" />
                                             <div>
                                                 <p className="text-xs text-muted-foreground">Current Balance</p>
-                                                <p className="text-lg font-bold text-foreground font-mono">{cleanValue(budget)} ALEO</p>
+                                                <p className="text-lg font-bold text-foreground font-mono">{cleanValue(budget, true)} ALEO</p>
                                             </div>
                                         </div>
 
@@ -794,6 +1070,34 @@ export default function AdminPage() {
                                                     </>
                                                 )}
                                             </button>
+
+                                            <div className="relative py-4">
+                                                <div className="absolute inset-0 flex items-center">
+                                                    <span className="w-full border-t border-white/10" />
+                                                </div>
+                                                <div className="relative flex justify-center text-xs uppercase">
+                                                    <span className="bg-[#0a0f1c] px-2 text-muted-foreground">Self-Funding Helper</span>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-xs text-muted-foreground mb-4">
+                                                Push payments require private records. If you only have public Aleo credits, you can convert them to a private record here.
+                                            </p>
+
+                                            <button
+                                                onClick={handleConvertPublicToPrivate}
+                                                disabled={isTransacting}
+                                                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 font-medium hover:bg-blue-500/20 transition-all active:scale-95"
+                                            >
+                                                {isTransacting ? (
+                                                    'Processing...'
+                                                ) : (
+                                                    <>
+                                                        <ArrowUpCircle className="w-4 h-4" />
+                                                        Convert Public to Private
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
@@ -813,6 +1117,20 @@ export default function AdminPage() {
                                                     className="bg-white/5 border-white/10 font-mono"
                                                 />
                                             </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Currency</Label>
+                                                <select
+                                                    className="w-full bg-[#0a0f1c] border border-white/10 rounded-md p-2 text-sm text-foreground outline-none focus:border-white transition-colors"
+                                                    value={currency}
+                                                    onChange={(e) => setCurrency(e.target.value as any)}
+                                                >
+                                                    <option value="credits">Aleo Credits (Native)</option>
+                                                    <option value="usdcx">USDCx (Stablecoin)</option>
+                                                    <option value="usad">USAD (Stablecoin)</option>
+                                                </select>
+                                            </div>
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label>Salary Amount</Label>
@@ -834,15 +1152,7 @@ export default function AdminPage() {
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label>Start Block Height (Current: {currentHeight})</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={issueStart}
-                                                    onChange={(e) => setIssueStart(e.target.value)}
-                                                    className="bg-white/5 border-white/10"
-                                                />
-                                            </div>
+
 
                                             <button
                                                 onClick={handleIssueCertificate}
@@ -1003,6 +1313,88 @@ export default function AdminPage() {
                     )}
                 </div>
             </main>
+
+            {/* Multisig Modal */}
+            {isSigModalOpen && pendingTxPayload && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#0a0f1c] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                    >
+                        <h2 className="text-xl font-bold text-white mb-2">Multisig Authorization</h2>
+                        <p className="text-sm text-gray-400 mb-6">
+                            This transaction requires 3 independent Administrator signatures to proceed.
+                        </p>
+
+                        <div className="space-y-4 mb-8">
+                            {/* Step 1 */}
+                            <div className={`p-4 rounded-xl border ${sig1 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-gray-200">Admin 1</span>
+                                    {sig1 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                </div>
+                                <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin1.slice(0, 12)}...</div>
+                                <button
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    disabled={!!sig1 || (!publicKey?.includes(pendingTxPayload.admin1))}
+                                    onClick={() => handleSignMessage(1)}
+                                >
+                                    {sig1 ? 'Signed' : 'Sign Message'}
+                                </button>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className={`p-4 rounded-xl border ${sig2 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-gray-200">Admin 2</span>
+                                    {sig2 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                </div>
+                                <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin2.slice(0, 12)}...</div>
+                                <button
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    disabled={!!sig2 || (!publicKey?.includes(pendingTxPayload.admin2))}
+                                    onClick={() => handleSignMessage(2)}
+                                >
+                                    {sig2 ? 'Signed' : 'Sign Message'}
+                                </button>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className={`p-4 rounded-xl border ${sig3 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-gray-200">Admin 3</span>
+                                    {sig3 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                </div>
+                                <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin3.slice(0, 12)}...</div>
+                                <button
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    disabled={!!sig3 || (!publicKey?.includes(pendingTxPayload.admin3))}
+                                    onClick={() => handleSignMessage(3)}
+                                >
+                                    {sig3 ? 'Signed' : 'Sign Message'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => { setIsSigModalOpen(false) }}
+                                className="px-4 py-2 border border-white/20 hover:bg-white/5 text-white rounded transition flex-1"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeIssueSalary}
+                                disabled={!sig1 || !sig2 || !sig3 || isTransacting}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded transition flex-1 flex justify-center items-center gap-2"
+                            >
+                                {isTransacting ? 'Executing...' : 'Execute TX'}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     )
 }

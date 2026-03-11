@@ -29,6 +29,25 @@ interface SalaryRecord {
     payroll_id: string
 }
 
+const parsePaymentId = (paymentIdRecordString: string) => {
+    const id = paymentIdRecordString.replace('.private', '').replace('field', '');
+
+    if (id.length === 17 && ['1', '2', '3'].includes(id[0])) {
+        const currencyCode = id[0];
+        const timestampStr = id.substring(1, 11);
+        const timestamp = parseInt(timestampStr, 10);
+
+        // Sanity check timestamp (between Jan 1 2024 and Jan 1 2030)
+        if (timestamp > 1704067200 && timestamp < 1893456000) {
+            const currency = currencyCode === '1' ? 'CREDITS' : currencyCode === '2' ? 'USDCx' : 'USAD';
+            const date = new Date(timestamp * 1000).toLocaleString();
+            return { currency, date, id };
+        }
+    }
+
+    return { currency: 'CREDITS (Legacy)', date: 'Time Unavailable', id };
+}
+
 export default function EmployeePage() {
     const { wallet, address, requestRecords } = useWallet()
     const publicKey = address; // Alias for compatibility
@@ -211,9 +230,9 @@ export default function EmployeePage() {
                                 <div>
                                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                         <PlusCircle className="w-5 h-5 text-gray-400" />
-                                        Salary Rights
+                                        USDCx Salary Rights
                                     </h2>
-                                    <p className="text-sm text-gray-500 mt-1 ml-7">Your authorized salary streams.</p>
+                                    <p className="text-sm text-gray-500 mt-1 ml-7">USDCx Stablecoin streams require manual claiming before arriving in your wallet.</p>
                                 </div>
                                 <button
                                     onClick={scanRecords}
@@ -249,7 +268,10 @@ export default function EmployeePage() {
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
                                 <History className="w-5 h-5 text-white" />
-                                <h2 className="text-xl font-bold text-white">Withdrawal History</h2>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Direct Push History</h2>
+                                    <p className="text-sm text-gray-500 mt-1">Aleo Credits are pushed directly to your private balance. No claiming required.</p>
+                                </div>
                             </div>
 
                             <div className="bg-[#111111] border border-white/5 rounded-xl overflow-hidden">
@@ -265,24 +287,30 @@ export default function EmployeePage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-white/5 text-sm">
-                                                {salaryRecords.map((rec, idx) => (
-                                                    <tr key={idx} className="hover:bg-white/5 transition-colors group">
-                                                        <td className="px-6 py-5 font-bold text-white">
-                                                            {rec.amount.replace('.private', '').replace('u64', '')} <span className="text-xs text-gray-500 font-normal">credits</span>
-                                                        </td>
-                                                        <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
-                                                            {rec.payment_id.replace('.private', '').replace('field', '')}
-                                                        </td>
-                                                        <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
-                                                            {rec.payroll_id.replace('.private', '').replace('field', '')}
-                                                        </td>
-                                                        <td className="px-6 py-5 text-right">
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#1A3325] text-[#4ADE80] text-[10px] font-bold uppercase tracking-wider">
-                                                                Withdrawn
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {salaryRecords.map((rec, idx) => {
+                                                    const parsed = parsePaymentId(rec.payment_id);
+                                                    return (
+                                                        <tr key={idx} className="hover:bg-white/5 transition-colors group">
+                                                            <td className="px-6 py-5 font-bold text-white">
+                                                                {(Number(rec.amount.replace('.private', '').replace('u64', '')) / 1000000).toLocaleString(undefined, { maximumFractionDigits: 6 })} <span className="text-xs text-gray-500 font-normal">{parsed.currency}</span>
+                                                            </td>
+                                                            <td className="px-6 py-5 text-gray-500 group-hover:text-gray-400">
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-mono">{parsed.id.length > 15 ? `${parsed.id.slice(0, 10)}...${parsed.id.slice(-4)}` : parsed.id}</span>
+                                                                    <span className="text-[10px] text-gray-600 tracking-wide mt-0.5">{parsed.date}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-5 font-mono text-gray-500 group-hover:text-gray-400">
+                                                                {rec.payroll_id.replace('.private', '').replace('field', '')}
+                                                            </td>
+                                                            <td className="px-6 py-5 text-right">
+                                                                <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#1A3325] text-[#4ADE80] text-[10px] font-bold uppercase tracking-wider">
+                                                                    Withdrawn
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
