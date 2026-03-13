@@ -9,7 +9,7 @@ These steps will guide you through manually testing the new **Push Payment archi
    ```bash
    leo deploy --network testnet --endpoint "https://api.explorer.provable.com/v1" --private-key "YOUR_PRIVATE_KEY" --priority-fees 300000000 --broadcast --yes
    ```
-   *Note: `baba_zk_payroll_v19.aleo` is now correctly configured in `program.json`.*
+   *Note: `baba_zk_payroll_v21.aleo` is now correctly configured in `program.json`.*
 
 2. **Start the Frontend**:
    ```bash
@@ -32,7 +32,7 @@ These steps will guide you through manually testing the new **Push Payment archi
 
 ## Phase 3: Push Payment (The Core Update)
 
-Since we shifted to the NullPay Push Model, you must test paying an employee using a completely valid set of records.
+Since we shifted to the Direct Push Model, you must test paying an employee using a completely valid set of records.
 
 1. **Verify Your Wallet Records**:
    To successfully execute `issue_salary`, your wallet extension must possess at least two records:

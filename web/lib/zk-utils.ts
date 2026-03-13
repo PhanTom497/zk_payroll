@@ -1,7 +1,7 @@
 import { Network, TransactionOptions } from '@provablehq/aleo-types';
 
 export const NETWORK_URL = 'https://api.explorer.provable.com/v1';
-export const PROGRAM_ID = 'baba_zk_payroll_v19.aleo'; // Replace with deployed ID
+export const PROGRAM_ID = 'baba_zk_payroll_v22.aleo'; // Replace with deployed ID
 
 export async function fetchMappingValue(mappingName: string, key: string): Promise<string | null> {
     try {
@@ -58,6 +58,27 @@ export async function requestTransaction(
     } else {
         throw new Error("Wallet adapter does not support executeTransaction");
     }
+}
+
+export async function waitForTransaction(txId: string): Promise<boolean> {
+    // Aleo Testnet can sometimes take 2-5 minutes to finalize a block depending on network congestion
+    const maxAttempts = 120; // Wait up to ~6 minutes (120 * 3 seconds)
+    for (let i = 0; i < maxAttempts; i++) {
+        try {
+            const res = await fetch(`${NETWORK_URL}/testnet/transaction/${txId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.type) {
+                    console.log(`Transaction ${txId} confirmed in block ${data.transaction?.block_height || 'unknown'}!`);
+                    return true;
+                }
+            }
+        } catch (e) {
+            // Silently swallow fetch errors during polling as the node might just be dropping connections
+        }
+        await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    return false;
 }
 
 export type BatchTransactionItem = {

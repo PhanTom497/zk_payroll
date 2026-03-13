@@ -131,11 +131,13 @@ export default function DocsPage() {
                                             </div>
                                         </div>
 
-                                        <h2>Core Features (v7)</h2>
+                                        <h2>Core Features</h2>
                                         <ul>
                                             <li><strong>Enterprise Multi-Sig:</strong> Require M-of-N signatures for admin payroll operations, preventing a single rogue actor from draining the treasury.</li>
-                                            <li><strong>Privacy Batching:</strong> Issue multiple salaries in a combined state transition to mitigate timing correlation attacks.</li>
-                                            <li><strong>Pull & Push Payments:</strong> Flexible models allowing organization-driven dispatch or employee-driven autonomous claiming.</li>
+                                            <li><strong>Zero-Gas Pull Model (Treasury Relayer):</strong> Employees execute gasless &apos;Pull Requests&apos; which are fulfilled asynchronously by the Admin&apos;s Relayer, combining privacy with zero cost for employees.</li>
+                                            <li><strong>ARC-20 Stablecoin Support:</strong> Native integration with Aleo&apos;s <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">test_usdcx_stablecoin</code> and <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">test_usad_stablecoin</code> for fiat-pegged salaries.</li>
+                                            <li><strong>Time-Delayed Vesting:</strong> Cryptographically locked Native Aleo grants that strictly unlock only after a predefined block height is reached.</li>
+                                            <li><strong>Sequential ZK Batching:</strong> Issue multiple sequential salaries in an automated UTXO-chain polling transition.</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -157,26 +159,26 @@ export default function DocsPage() {
                                             <GlassCard hover={false} className="p-6 border-white/20">
                                                 <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
                                                     <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                                    1. Push Model
+                                                    1. Push Model (Direct)
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground mb-4">Direct Issue & Audit. Best for contractors and one-off payments.</p>
+                                                <p className="text-sm text-muted-foreground mb-4">Immediate settlement for Native Aleo and Stablecoins.</p>
                                                 <ul className="text-sm space-y-2 text-gray-300">
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Admin authorizes via <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary</code> with Multi-Sig.</span></li>
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">The Admin&apos;s private <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is immediately updated.</span></li>
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Compliance reports instantly reflect new expenditures.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Admin authorizes payroll via <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary</code> or <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary_usdcx</code> with Multi-Sig.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">The Admin&apos;s <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> tracks the updated total natively.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">For Stablecoins, precise Merkle Tree FreezeList proofs are dynamically generated and verified.</span></li>
                                                 </ul>
                                             </GlassCard>
 
                                             <GlassCard hover={false} className="p-6">
                                                 <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
                                                     <div className="w-2 h-2 rounded-full bg-white/40" />
-                                                    2. Pull Model
+                                                    2. Pull Model (Zero-Gas Relayer)
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground mb-4">Automated Claiming. Best for core team and ultimate privacy.</p>
+                                                <p className="text-sm text-muted-foreground mb-4">Gasless claiming with asynchronous execution.</p>
                                                 <ul className="text-sm space-y-2 text-gray-300">
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Admin issues a limit (<code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SalaryCertificate</code>) via <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_limit</code>.</span></li>
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Employee periodically claims their salary via <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">claim_salary</code>.</span></li>
-                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1"><strong>Privacy Boundary:</strong> The claim process forms an airgap, protecting exact claim timing from Admin tracking.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Admin issues an instant or time-vested <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">VestingRecord</code> or <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SalaryCertificate</code> to the employee.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1">Employee securely signs an off-chain network &quot;Pull Request&quot; without paying gas.</span></li>
+                                                    <li className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 opacity-50 shrink-0" /> <span className="flex-1"><strong>The Relayer:</strong> Admin broadcasts the proof off-chain, routing funds securely from the Treasury to the Employee natively.</span></li>
                                                 </ul>
                                             </GlassCard>
                                         </div>
@@ -188,12 +190,16 @@ export default function DocsPage() {
                                                 <p>Owned by Admin. Tracks cumulative spending privately. Used to generate Audit Reports.</p>
                                             </div>
                                             <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
+                                                <div className="font-mono text-white mb-1"><span className="text-muted-foreground">struct</span> VestingRecord</div>
+                                                <p>Owned by Employee. Includes an <code className="text-[#a8b1ff] text-xs">unlock_height</code> parameter mapped to Aleo block architecture for Time-Delayed grants.</p>
+                                            </div>
+                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
                                                 <div className="font-mono text-white mb-1"><span className="text-muted-foreground">struct</span> SalaryCertificate</div>
-                                                <p>Owned by Employee. Represents the right to claim a recurring pull salary.</p>
+                                                <p>Owned by Employee. Represents the unlocked right to pull a salary component via the Relayer.</p>
                                             </div>
                                             <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
                                                 <div className="font-mono text-white mb-1"><span className="text-muted-foreground">struct</span> SalaryRecord</div>
-                                                <p>Owned by Employee. The actual payment voucher revealing the decrypted salary amount.</p>
+                                                <p>Owned by Employee. The standard payment voucher revealing the decrypted salary payout.</p>
                                             </div>
                                             <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
                                                 <div className="font-mono text-white mb-1"><span className="text-muted-foreground">struct</span> AuditReport</div>
@@ -231,9 +237,9 @@ export default function DocsPage() {
 
                                         <GlassCard hover={false} className="p-6">
                                             <Eye className="w-6 h-6 mb-4 text-white" />
-                                            <h3 className="text-lg font-bold text-white mb-2">Double-Spend Protection & Isolation</h3>
+                                            <h3 className="text-lg font-bold text-white mb-2">Double-Spend & Time-Lock Isolation</h3>
                                             <p className="text-sm text-gray-400">
-                                                Aleo&apos;s record consumption model intrinsically prevents double spending. When a <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is used to issue a salary, it is verifiably consumed and replaced with an updated state. Furthermore, a strict <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">payroll_id</code> domain separation isolates concurrent payroll silos entirely.
+                                                Aleo&apos;s record consumption natively prevents double spending. When a <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> or <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">VestingRecord</code> is consumed by a transaction, it is explicitly discarded/destroyed from the unspent transition array. Time-delayed Vesting leverages a robust <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">block.height &gt;= unlock_height</code> verification gate within the ZK constraint network, inherently preventing premature extraction.
                                             </p>
                                         </GlassCard>
                                     </div>
@@ -249,31 +255,31 @@ export default function DocsPage() {
                                     </div>
 
                                     <div className="space-y-12 pb-12">
-                                        {/* Wave 2 / Completed Submission */}
+                                        {/* Wave 3 / Completed Submission */}
                                         <div className="relative pl-8 border-l border-white/20">
                                             <div className="absolute w-4 h-4 bg-white rounded-full -left-[9px] top-1 shadow-[0_0_10px_#fff]" />
-                                            <h2 className="text-2xl font-bold mb-2">Wave 2: Efficiency & Security</h2>
-                                            <span className="inline-block px-2 py-1 bg-white text-black text-xs font-bold rounded mb-4 tracking-widest uppercase">Current Submission</span>
-                                            <p className="text-gray-400 text-sm mb-4">Reduced administrative burden for DAO operations while securing critical infrastructure.</p>
+                                            <h2 className="text-2xl font-bold mb-2">Wave 3: Enterprise Integrations</h2>
+                                            <span className="inline-block px-2 py-1 bg-white text-black text-xs font-bold rounded mb-4 tracking-widest uppercase">Current Final Submission</span>
+                                            <p className="text-gray-400 text-sm mb-4">Bridging the gap between Web3 privacy and Web2 operational requirements natively.</p>
                                             <ul className="space-y-2 text-sm text-gray-300 list-disc list-inside">
-                                                <li><strong>Multi-Signature Control:</strong> Cryptographically enforced thresholds for treasury management.</li>
-                                                <li><strong>Pull Payments:</strong> Employees use certificates to claim salaries, decoupling Admin push timing.</li>
-                                                <li><strong>Privacy Batching:</strong> Issuing multiple credentials in privacy-preserving combined state transitions.</li>
-                                                <li><strong>Auditor Verification:</strong> Zero-knowledge proofs of solvency generation via complete dashboard.</li>
+                                                <li><strong>ARC-20 Token Integration:</strong> Native support for <code>USDCx</code> and <code>USAD</code> Stablecoins via Merkle Proof freezing logic.</li>
+                                                <li><strong>Time-Delayed Vesting:</strong> Cryptographically enforced unlock schedules tied sequentially to <code>block.height</code> limits.</li>
+                                                <li><strong>Zero-Gas Treasury Relayer:</strong> &quot;True Pull Model&quot; where employees execute claims securely without paying Aleo network gas.</li>
+                                                <li><strong>Multi-Signature Control & Auditing:</strong> End-to-end ZK solvency proofs and threshold management.</li>
                                             </ul>
                                         </div>
 
-                                        {/* Wave 3 / Future Planning */}
+                                        {/* Wave 4 / Future Planning */}
                                         <div className="relative pl-8 border-l border-white/20">
                                             <div className="absolute w-4 h-4 border-2 border-white bg-black rounded-full -left-[9px] top-1" />
-                                            <h2 className="text-2xl font-bold mb-2 text-white/90">Wave 3: Asset Diversification & Enterprise Compliance</h2>
-                                            <span className="inline-block px-2 py-1 border border-white/20 text-white/60 text-xs font-bold rounded mb-4 tracking-widest uppercase">Future Buildathon</span>
-                                            <p className="text-gray-400 text-sm mb-4">Bridging the gap between Web3 privacy and Web2 regulatory requirements.</p>
+                                            <h2 className="text-2xl font-bold mb-2 text-white/90">Wave 4: The Next Frontier</h2>
+                                            <span className="inline-block px-2 py-1 border border-white/20 text-white/60 text-xs font-bold rounded mb-4 tracking-widest uppercase">Future Roadmap</span>
+                                            <p className="text-gray-400 text-sm mb-4">Focusing on mass institutional adoption, advanced tax regulations, and processing scale limits.</p>
                                             <ul className="space-y-2 text-sm text-gray-500 list-disc list-inside">
-                                                <li><strong>ARC-20 Token Integration:</strong> Issuing stablecoins (USDC/USDT structures) dynamically.</li>
-                                                <li><strong>Token Vesting Contracts:</strong> Locked grants that unlock linearly based on programmatic block validation logic.</li>
-                                                <li><strong>Zero-Knowledge Tax Compliance:</strong> Deducting and creating W2-style proof of withheld liabilities.</li>
-                                                <li><strong>HR Oracles:</strong> Oracle integrations pulling proof-of-employment logic from BambooHR/Deel.</li>
+                                                <li><strong>Zero-Knowledge Tax Withholding:</strong> Generate downloadable cryptographic ZK proofs of &quot;Tax Paid&quot; logic for external IRS/Gov submission.</li>
+                                                <li><strong>True ZK Parallel Batch Rollups:</strong> Evolve SnarkVM UTXO consumption to allow simultaneous, one-click executing of entire payroll arrays globally.</li>
+                                                <li><strong>Multi-Currency Batch Rollups:</strong> Bulk process and distribute ARC-20 standard stablecoins explicitly.</li>
+                                                <li><strong>Decentralized HR Oracles (Wave 5):</strong> Pulling proof-of-employment states natively from SaaS platforms like BambooHR or Deel.</li>
                                             </ul>
                                         </div>
                                     </div>

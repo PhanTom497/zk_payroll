@@ -2,7 +2,7 @@
 
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
-import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, batchProcessTransactions, BatchTransactionItem } from '@/lib/zk-utils'
+import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, batchProcessTransactions, BatchTransactionItem, waitForTransaction } from '@/lib/zk-utils'
 import { motion, AnimatePresence } from "framer-motion"
 import {
     LayoutDashboard,
@@ -18,7 +18,9 @@ import {
     BarChart3,
     ArrowUpCircle,
     Copy,
-    Check
+    Check,
+    Activity,
+    AlertCircle
 } from "lucide-react"
 import Link from 'next/link'
 import { toast } from "sonner"
@@ -78,7 +80,7 @@ export default function AdminPage() {
     const [currentHeight, setCurrentHeight] = useState<number>(0)
 
     // Tab State
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'deposit' | 'authorize' | 'batch' | 'compliance'>('dashboard')
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'deposit' | 'authorize' | 'batch' | 'compliance' | 'relayer'>('dashboard')
 
     // Helper to clean Aleo values and convert u64 (microcredits) to Credits
     const cleanValue = (val: string, forceMicrocredits: boolean = false) => {
@@ -96,7 +98,7 @@ export default function AdminPage() {
     const [issueRecipient, setIssueRecipient] = useState('')
     const [issueAmount, setIssueAmount] = useState('')
     const [issueStart, setIssueStart] = useState('')
-    const [issueInterval, setIssueInterval] = useState('100')
+    const [issueVestingDelay, setIssueVestingDelay] = useState('0')
 
     // Initialization State
     const [isInitialized, setIsInitialized] = useState<boolean | null>(null) // null = check pending
@@ -263,22 +265,143 @@ export default function AdminPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    const [pendingPulls, setPendingPulls] = useState<any[]>([])
+
+    // Load pending pulls
+    useEffect(() => {
+        const loadPulls = () => {
+            const pulls = JSON.parse(localStorage.getItem('pending_pull_claims') || '[]')
+            setPendingPulls(pulls)
+        }
+
+        if (activeTab === 'relayer') {
+            loadPulls()
+        }
+
+        // Listen for cross-tab local storage changes
+        window.addEventListener('storage', loadPulls)
+        return () => window.removeEventListener('storage', loadPulls)
+    }, [activeTab])
+
+    const handleProcessPull = async (pullReq: any, index: number) => {
+        if (!publicKey || !requestRecords) return
+        setIsTransacting(true)
+        try {
+            toast.info("1/3: Locating Admin TreasuryRecord...")
+            const records = await requestRecords(PROGRAM_ID, true)
+            const treasuryRec = (records as any[]).filter((rec: any) =>
+                !rec.spent && rec.recordName === 'TreasuryRecord'
+            ).pop()
+
+            if (!treasuryRec) {
+                toast.error("No active TreasuryRecord found. Did you Deposit Funds?")
+                setIsTransacting(false)
+                return
+            }
+            let treasuryStr = treasuryRec.plaintext || treasuryRec.recordPlaintext || treasuryRec.ciphertext;
+            if (typeof treasuryStr === 'string') treasuryStr = treasuryStr.replace(/\n/g, '').replace(/ /g, '');
+
+            toast.info("2/3: Locating Admin's Native Credits backing the Treasury...")
+            const creditRecords = await requestRecords('credits.aleo', true)
+            const certStr = pullReq.certificateRecord.replace(/\n/g, '').replace(/ /g, '');
+            const amountMatch = certStr.match(/amount:([\d_]+)u64/);
+            const reqAmount = amountMatch ? parseInt(amountMatch[1].replace(/_/g, '')) : 0;
+
+            let payRecordStr: string | null = null;
+            if (creditRecords && Array.isArray(creditRecords)) {
+                for (const r of (creditRecords as any[])) {
+                    if (r.spent) continue;
+                    const rAmt = getMicrocredits(r);
+                    if (rAmt >= reqAmount) {
+                        let text = r.plaintext || r.recordPlaintext || r.ciphertext;
+                        if (typeof text === 'string') {
+                            payRecordStr = text.replace(/\\n/g, '').replace(/ /g, '');
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!payRecordStr) {
+                toast.error(`Insufficient Native Credits to cover ${reqAmount / 1_000_000} ALEO payout.`)
+                setIsTransacting(false)
+                return
+            }
+
+            const paymentMatch = certStr.match(/payment_id:([a-zA-Z0-9_\.]+)/);
+            let paymentId = paymentMatch ? paymentMatch[1] : null;
+
+            if (!paymentId) {
+                toast.error("Invalid Certificate: Missing payment_id. Are you using an old v20/v21 contract format?");
+                setIsTransacting(false);
+                return;
+            }
+            paymentId = paymentId.replace(/\.private|\.public/g, '');
+
+            toast.info("3/3: Executing Treasury Pull (Employee Claim)...")
+            const txId = await requestTransaction(
+                wallet?.adapter!,
+                publicKey,
+                PROGRAM_ID,
+                'claim_salary',
+                [treasuryStr, payRecordStr, pullReq.employee, reqAmount + "u64", paymentId],
+                600_000
+            )
+
+            toast.success("Pull Request Processed Successfully! Tx: " + txId)
+            const newPulls = [...pendingPulls]
+            newPulls.splice(index, 1)
+            setPendingPulls(newPulls)
+            localStorage.setItem('pending_pull_claims', JSON.stringify(newPulls))
+
+        } catch (err: any) {
+            console.error("Relayer Error:", err)
+            toast.error("Failed handling pull: " + err.message)
+        } finally {
+            setIsTransacting(false)
+        }
+    }
+
     const handleFundPayroll = async () => {
         if (!publicKey || !fundAmount) return
         setIsTransacting(true)
         try {
-            // Convert user input ALEO credits into Aleo Microcredits (support decimals)
+            toast.info("1/2: Hunting for Private Aleo Credits...")
+            const records = await requestRecords('credits.aleo', true)
+
             const microcredits = Math.floor(parseFloat(fundAmount) * 1_000_000)
+
+            let payRecordStr: string | null = null;
+            if (records && Array.isArray(records)) {
+                for (const r of (records as any[])) {
+                    if (r.spent) continue;
+                    const rAmt = getMicrocredits(r);
+                    if (rAmt >= microcredits) {
+                        let text = r.plaintext || r.recordPlaintext || r.ciphertext;
+                        if (typeof text === 'string') {
+                            payRecordStr = text.replace(/\\n/g, '').replace(/ /g, '');
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!payRecordStr) {
+                toast.error(`No private Aleo record found with >= ${fundAmount} Credits. Please convert public to private first!`)
+                setIsTransacting(false)
+                return
+            }
+
+            toast.info("2/2: Generating Treasury Pool Record...")
+
             const txId = await requestTransaction(
                 wallet?.adapter!,
                 publicKey,
                 PROGRAM_ID,
                 'fund_payroll',
-                [microcredits + 'u64', '1field'], // public amount, public payroll_id
-                300_000
+                [payRecordStr, publicKey, microcredits + 'u64', '1field'],
+                600_000
             )
-            toast.success("Funding Transaction sent! ID: " + txId)
-            fetchState() // Update state immediately after
+            toast.success("Treasury Pool Generated! Tx: " + txId)
+            fetchState()
         } catch (err: any) {
             console.error(err)
             toast.error("Error: " + err.message)
@@ -436,8 +559,46 @@ export default function AdminPage() {
             }
 
             let spentRecordStr = spentRec.plaintext || spentRec.recordPlaintext;
-            if (!spentRecordStr && spentRec.ciphertext) spentRecordStr = spentRec.ciphertext;
-            if (typeof spentRecordStr === 'string') spentRecordStr = spentRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+            if (!spentRecordStr && spentRec.ciphertext) spentRecordStr = spentRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+
+            const requiredMicrocredits = Math.floor(parseFloat(issueAmount) * 1_000_000)
+            const delayBlocks = parseInt(issueVestingDelay) || 0;
+
+            if (delayBlocks > 0) {
+                const ts = Math.floor(Date.now() / 1000);
+                const rPart = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+                const prefix = currency === 'credits' ? '1' : currency === 'usdcx' ? '2' : '3';
+                const paymentId = `${prefix}${ts}${rPart}field`;
+
+                let unlockHeight = delayBlocks;
+                try {
+                    const currentBlockHeight = await fetchBlockHeight() || 0;
+                    unlockHeight = currentBlockHeight + delayBlocks;
+                } catch (e) { console.warn(e) }
+
+                toast.info(`Issuing Vesting Record locked until block ${unlockHeight}...`)
+
+                await requestTransaction(
+                    wallet?.adapter!,
+                    publicKey,
+                    PROGRAM_ID,
+                    'issue_vested_salary',
+                    [
+                        spentRecordStr,
+                        issueRecipient,
+                        requiredMicrocredits + 'u64',
+                        paymentId,
+                        unlockHeight + 'u32'
+                    ],
+                    50_000 // Lightweight execution since no multisig/tokens are explicitly spent
+                )
+                toast.success("Vesting Record Issued Successfully!")
+                setIssueRecipient('')
+                setIssueAmount('')
+                setIssueVestingDelay('0')
+                setIsTransacting(false)
+                return;
+            }
 
             toast.info(`2/3: Searching for ${currency.toUpperCase()} Record...`)
 
@@ -445,11 +606,9 @@ export default function AdminPage() {
             const targetRecords = await (wallet as any)?.adapter?.requestRecords(targetProgramId, false)
             console.log("RAW SHIELD WALLET RECORDS:", targetRecords)
 
-            const requiredMicrocredits = Math.floor(parseFloat(issueAmount) * 1_000_000)
-
             let payRecordStr: string | null = null;
             if (targetRecords && Array.isArray(targetRecords)) {
-                for (const r of targetRecords) {
+                for (const r of (targetRecords as any[])) {
                     if (r.spent) continue;
                     let valMicrocredits = getMicrocredits(r); // val is in microcredits
 
@@ -553,7 +712,7 @@ export default function AdminPage() {
 
         try {
             const regex = /(aleo1[a-z0-9]{58})\s*,\s*([a-zA-Z]+)/gi
-            const items: BatchTransactionItem[] = []
+            const parsedRecipients: { addr: string, amountMicrocredits: number, role: string }[] = []
 
             let match;
             let i = 0;
@@ -566,64 +725,86 @@ export default function AdminPage() {
                     'senior': 1.5,
                     'executive': 2.0
                 }
-
                 const role = roleStr?.toLowerCase() || 'junior'
                 const multiplier = roles[role] || 1.0
                 const base = parseFloat(baseSalary) || 0
-                // Convert to microcredits
                 const amountMicrocredits = Math.floor(base * multiplier * 1_000_000)
-
-                // transition issue_limit(payroll_id, recipient, amount, start_height, interval)
-                // We'll use current height + 10 for start
-                const startH = currentHeight > 0 ? currentHeight + 10 : 0
-
-                items.push({
-                    id: `batch-${i}`,
-                    description: `Issuing to ${addr.slice(0, 6)}... (${role})`,
-                    functionName: 'issue_limit',
-                    inputs: [
-                        '1field',              // payroll_id
-                        addr,                  // recipient
-                        amountMicrocredits + 'u64', // amount in microcredits
-                        startH + 'u32',        // start_height
-                        bulkInterval + 'u32'   // interval
-                    ],
-                    fee: 300_000 // 0.3 credits per tx
-                })
+                
+                parsedRecipients.push({ addr, amountMicrocredits, role })
                 i++;
             }
 
-            if (items.length === 0) {
+            if (parsedRecipients.length === 0) {
                 if (bulkRecipients.trim().length > 0) {
-                    console.warn("Text found but no regex matches. Check format.")
                     toast.error("No valid 'address, role' pairs found. Please check format.")
-                    setBatchStatus("Error: Invalid format")
-                    setIsTransacting(false)
-                    return
+                } else {
+                    toast.error("Input is empty.")
+                }
+                setIsTransacting(false)
+                return
+            }
+
+            let successCount = 0;
+            let failureCount = 0;
+
+            for (let idx = 0; idx < parsedRecipients.length; idx++) {
+                const { addr, amountMicrocredits, role } = parsedRecipients[idx];
+                
+                setBatchStatus(`[${idx + 1}/${parsedRecipients.length}] Syncing UTXO state for sequential transaction...`)
+                
+                // 1. Fetch Spent Record (Fresh for this iteration)
+                const ourRecords = await (wallet as any)?.adapter?.requestRecords(PROGRAM_ID, true)
+                const spentRec = (ourRecords as any[])?.filter((rec: any) =>
+                    !rec.spent && (rec.recordName === 'SpentRecord' || (rec.plaintext && rec.plaintext.includes('total_spent')))
+                ).pop()
+
+                if (!spentRec) {
+                    throw new Error("No active SpentRecord found. UTXO chain is broken or uninitialized.");
+                }
+
+                let spentRecordStr = spentRec.plaintext || spentRec.recordPlaintext;
+                if (!spentRecordStr && spentRec.ciphertext) spentRecordStr = spentRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+
+                const ts = Math.floor(Date.now() / 1000);
+                const rPart = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+                const paymentId = `1${ts}${rPart}field`;
+                const startH = currentHeight > 0 ? currentHeight : 0;
+
+                setBatchStatus(`[${idx + 1}/${parsedRecipients.length}] Broadcasting tx to Aleo network...`)
+
+                const txId = await requestTransaction(
+                    wallet?.adapter!,
+                    publicKey,
+                    PROGRAM_ID,
+                    'issue_vested_salary',
+                    [
+                        spentRecordStr,
+                        addr,
+                        amountMicrocredits + 'u64', 
+                        paymentId,
+                        startH + 'u32'
+                    ],
+                    300_000 // 0.3 credits per tx
+                );
+                
+                setBatchStatus(`[${idx + 1}/${parsedRecipients.length}] Validating transaction confirmation on chain...`)
+                const confirmed = await waitForTransaction(txId);
+                
+                if (confirmed) {
+                    successCount++;
+                } else {
+                     throw new Error(`Transaction ${txId} timed out or failed confirmation.`);
                 }
             }
 
-            const result = await batchProcessTransactions(
-                wallet?.adapter!,
-                publicKey,
-                PROGRAM_ID,
-                items,
-                (idx, total, status) => {
-                    setBatchStatus(`[${idx}/${total}] ${status}`)
-                }
-            )
-
-            let msg = `Batch Complete.\nSuccess: ${result.success.length}\nFailed: ${result.failed.length}`
-            if (result.failed.length > 0) {
-                msg += `\nFirst Error: ${result.failed[0].error}`
-            }
-            toast.info(msg)
+            let msg = `Execution Complete.\nSuccess: ${successCount}\nFailed: ${failureCount}`
+            toast.success(msg)
             setBatchStatus(msg)
 
         } catch (err: any) {
             console.error(err)
             setBatchStatus("Error: " + err.message)
-            toast.error("Batch Error: " + err.message)
+            toast.error("Execution Error: " + err.message)
         } finally {
             setIsTransacting(false)
         }
@@ -658,64 +839,69 @@ export default function AdminPage() {
                 return
             }
 
-            const items: BatchTransactionItem[] = []
-            // Chunk into 3s
-            for (let i = 0; i < allRecipients.length; i += 3) {
-                const chunk = allRecipients.slice(i, i + 3)
+            let successCount = 0;
+            let failureCount = 0;
 
-                const startH = currentHeight > 0 ? currentHeight + 10 : 0
+            for (let idx = 0; idx < allRecipients.length; idx++) {
+                const { addr, amount, role } = allRecipients[idx];
+                
+                setBatchStatus(`[${idx + 1}/${allRecipients.length}] Syncing UTXO state for ZK batch...`)
+                
+                // Fetch unspent record
+                const ourRecords = await (wallet as any)?.adapter?.requestRecords(PROGRAM_ID, true)
+                const spentRec = (ourRecords as any[])?.filter((rec: any) =>
+                    !rec.spent && (rec.recordName === 'SpentRecord' || (rec.plaintext && rec.plaintext.includes('total_spent')))
+                ).pop()
 
-                if (chunk.length === 3) {
-                    // Use Privacy Batch
-                    items.push({
-                        id: `privacy-batch-${i / 3}`,
-                        description: `Privacy Batch (3) - ${chunk.map(r => r.role).join(', ')}`,
-                        functionName: 'issue_limit_batch_3',
-                        inputs: [
-                            '1field',              // payroll_id
-                            chunk[0].addr, chunk[0].amount, startH + 'u32', bulkInterval + 'u32',
-                            chunk[1].addr, chunk[1].amount, startH + 'u32', bulkInterval + 'u32',
-                            chunk[2].addr, chunk[2].amount, startH + 'u32', bulkInterval + 'u32'
-                        ],
-                        fee: 500_000 // Higher fee for complex batch (0.5 credits)
-                    })
+                if (!spentRec) {
+                    throw new Error("No active SpentRecord found. UTXO chain is broken or uninitialized.");
+                }
+
+                let spentRecordStr = spentRec.plaintext || spentRec.recordPlaintext;
+                if (!spentRecordStr && spentRec.ciphertext) spentRecordStr = spentRecordStr.replace(/\\n/g, '').replace(/ /g, '');
+
+                const ts = Math.floor(Date.now() / 1000);
+                const rPart = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+                const paymentId = `9${ts}${rPart}field`;
+                const startH = currentHeight > 0 ? currentHeight : 0;
+
+                setBatchStatus(`[${idx + 1}/${allRecipients.length}] Submitting to network (SnarkVM fallback mode)...`)
+
+                const txId = await requestTransaction(
+                    wallet?.adapter!,
+                    publicKey,
+                    PROGRAM_ID,
+                    'issue_vested_salary',
+                    [
+                        spentRecordStr,
+                        addr,
+                        amount, 
+                        paymentId,
+                        startH + 'u32'
+                    ],
+                    300_000 
+                );
+                
+                setBatchStatus(`[${idx + 1}/${allRecipients.length}] Awaiting final block confirmation...`)
+                const confirmed = await waitForTransaction(txId);
+                
+                if (confirmed) {
+                    successCount++;
                 } else {
-                    // Fallback for remainders (< 3)
-                    chunk.forEach((r, idx) => {
-                        items.push({
-                            id: `remainder-${i + idx}`,
-                            description: `Issuing to ${r.addr.slice(0, 6)}... (${r.role})`,
-                            functionName: 'issue_limit',
-                            inputs: [
-                                '1field', r.addr, r.amount, startH + 'u32', bulkInterval + 'u32'
-                            ],
-                            fee: 300_000
-                        })
-                    })
+                     throw new Error(`Transaction ${txId} timed out or failed confirmation.`);
                 }
             }
 
-            const result = await batchProcessTransactions(
-                wallet?.adapter!,
-                publicKey,
-                PROGRAM_ID,
-                items,
-                (idx, total, status) => setBatchStatus(`[${idx}/${total}] ${status}`)
-            )
-
-            let msg = `Batch Complete.\nSuccess: ${result.success.length}\nFailed: ${result.failed.length}`
-            if (result.failed.length > 0) {
-                msg += `\nFirst Error: ${result.failed[0].error}`
-            }
-            toast.info(msg)
-            setBatchStatus(msg)
+            let msg = `ZK Batch Execution Complete.\nSuccess: ${successCount}\nFailed: ${failureCount}`;
+            toast.success(msg);
+            setBatchStatus(msg);
 
         } catch (err: any) {
-            console.error(err)
-            toast.error("Error: " + err.message)
-            setBatchStatus("Error: " + err.message)
+            console.error(err);
+            setBatchStatus("Error: " + err.message);
+            toast.error("Execution Error: " + err.message);
         } finally {
-            setIsTransacting(false)
+            setIsTransacting(false);
         }
     }
 
@@ -779,6 +965,7 @@ export default function AdminPage() {
         { id: 'deposit', title: "Deposit Fund", icon: Wallet },
         { id: 'authorize', title: "Authorize Payroll", icon: ShieldCheck },
         { id: 'batch', title: "Batch Run", icon: Layers },
+        { id: 'relayer', title: "Treasury Relayer", icon: Activity },
         { id: 'compliance', title: "Compliance & Audit", icon: FileCheck },
     ]
 
@@ -1075,8 +1262,8 @@ export default function AdminPage() {
                                                 <div className="absolute inset-0 flex items-center">
                                                     <span className="w-full border-t border-white/10" />
                                                 </div>
-                                                <div className="relative flex justify-center text-xs uppercase">
-                                                    <span className="bg-[#0a0f1c] px-2 text-muted-foreground">Self-Funding Helper</span>
+                                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+                                                    <span className="bg-black px-2 text-muted-foreground">Self-Funding Helper</span>
                                                 </div>
                                             </div>
 
@@ -1121,9 +1308,16 @@ export default function AdminPage() {
                                             <div className="space-y-2">
                                                 <Label>Currency</Label>
                                                 <select
-                                                    className="w-full bg-[#0a0f1c] border border-white/10 rounded-md p-2 text-sm text-foreground outline-none focus:border-white transition-colors"
+                                                    className="w-full bg-black border border-white/10 rounded-md p-2 text-sm text-foreground outline-none focus:border-white transition-colors"
                                                     value={currency}
-                                                    onChange={(e) => setCurrency(e.target.value as any)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value as any;
+                                                        setCurrency(val);
+                                                        if (val !== 'credits' && parseInt(issueVestingDelay) > 0) {
+                                                            setIssueVestingDelay('0');
+                                                            toast.info("Programmable Vesting is currently only supported for Native ALEO.");
+                                                        }
+                                                    }}
                                                 >
                                                     <option value="credits">Aleo Credits (Native)</option>
                                                     <option value="usdcx">USDCx (Stablecoin)</option>
@@ -1136,20 +1330,32 @@ export default function AdminPage() {
                                                     <Label>Salary Amount</Label>
                                                     <Input
                                                         type="number"
-                                                        placeholder="Credits"
+                                                        placeholder="Tokens"
                                                         value={issueAmount}
                                                         onChange={(e) => setIssueAmount(e.target.value)}
                                                         className="bg-white/5 border-white/10"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label>Interval (Blocks)</Label>
+                                                    <Label>Vesting Delay (Blocks)</Label>
                                                     <Input
                                                         type="number"
-                                                        value={issueInterval}
-                                                        onChange={(e) => setIssueInterval(e.target.value)}
-                                                        className="bg-white/5 border-white/10"
+                                                        placeholder={currency === 'credits' ? "0 for instant" : "N/A"}
+                                                        value={issueVestingDelay}
+                                                        disabled={currency !== 'credits'}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setIssueVestingDelay(val);
+                                                            if (parseInt(val) > 0 && currency !== 'credits') {
+                                                                setCurrency('credits');
+                                                                toast.info("Vesting streams automatically converted to Native ALEO.");
+                                                            }
+                                                        }}
+                                                        className={`border-white/10 ${currency !== 'credits' ? 'bg-white/5 opacity-50 cursor-not-allowed' : 'bg-white/5'}`}
                                                     />
+                                                    {currency !== 'credits' && (
+                                                        <p className="text-[10px] text-gray-500 mt-1">Vesting requires Native ALEO Credits.</p>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -1174,6 +1380,19 @@ export default function AdminPage() {
                             {/* Batch Payroll Tab */}
                             {activeTab === 'batch' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    {/* WAVE 4 DISCLAIMER */}
+                                    <div className="mb-6 p-4 border border-white/20 bg-white/5 rounded-xl">
+                                        <div className="flex gap-3">
+                                            <AlertCircle className="w-5 h-5 text-white shrink-0" />
+                                            <div className="text-sm text-gray-300">
+                                                <p className="font-semibold text-white mb-1">Wave 4 Roadmap: Advanced Batching</p>
+                                                <p className="opacity-80">
+                                                    Current execution is limited to sequential Aleo Credit Vesting. <strong>USDCx & USAD Bulk Transfers, Multisig Batch Authorization, and True ZK Parallel Rollups</strong> are actively being developed for Wave 4.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <GlassCard hover={false} className="max-w-2xl">
                                         <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-semibold text-foreground">Batch Configuration</h3>
@@ -1233,17 +1452,18 @@ export default function AdminPage() {
                                             <button
                                                 onClick={handleBulkIssue}
                                                 disabled={isTransacting}
-                                                className="flex-1 py-3 border border-white/20 rounded-lg text-foreground hover:bg-white/5 transition disabled:opacity-50 font-medium"
+                                                className="glow-btn flex-1 flex items-center justify-center gap-2 text-sm font-medium"
+                                                title="Sequentially process each employee on the blockchain one by one."
                                             >
-                                                Legacy Batch
+                                                Sequential Execution (1-by-1)
                                             </button>
                                             <button
                                                 onClick={handlePrivacyBatch}
                                                 disabled={isTransacting}
-                                                className="glow-btn flex-1 flex items-center justify-center gap-2"
+                                                className="flex-1 py-3 border border-white/20 rounded-lg text-white hover:bg-white/5 transition disabled:opacity-50 text-sm font-medium"
+                                                title="Process employees using a native ZK rollup batch (Currently falls back to Sequential due to SnarkVM constraints)."
                                             >
-                                                <Zap className="w-4 h-4" />
-                                                Private Batch Run
+                                                ZK Batch Execution (Beta)
                                             </button>
                                         </div>
 
@@ -1309,6 +1529,52 @@ export default function AdminPage() {
                                     </GlassCard>
                                 </motion.div>
                             )}
+
+                            {/* Relayer Tab */}
+                            {activeTab === 'relayer' && (
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                    <GlassCard hover={false} className="max-w-2xl">
+                                        <div className="flex items-center gap-3 mb-6 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                            <Activity className="w-6 h-6 text-blue-400" />
+                                            <div>
+                                                <h3 className="text-lg font-bold text-white">Treasury Relayer</h3>
+                                                <p className="text-xs text-blue-200">Automatically cycle Treasury UTXOs to fulfill asynchronous Pull Requests from Employee Certificates.</p>
+                                            </div>
+                                        </div>
+
+                                        {pendingPulls.length === 0 ? (
+                                            <div className="text-center py-10 border border-dashed border-white/10 rounded-xl">
+                                                <p className="text-gray-500 text-sm">No pending pull requests in queue.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {pendingPulls.map((pull, idx) => {
+                                                    const amtStr = pull.certificateRecord.match(/amount:\s*([\d_]+)u64/)?.[1] || "0";
+                                                    const amt = parseInt(amtStr.replace(/_/g, ''));
+                                                    const displayAmt = (amt / 1000000).toFixed(2);
+                                                    return (
+                                                        <div key={idx} className="flex flex-col md:flex-row items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white mb-1"><span className="text-gray-400">Employee:</span> {pull.employee.slice(0, 8)}...{pull.employee.slice(-8)}</p>
+                                                                <p className="text-xs text-gray-400">Request: {displayAmt} ALEO Credits</p>
+                                                                <p className="text-[10px] text-gray-600 mt-1">Submitted: {new Date(pull.timestamp).toLocaleString()}</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleProcessPull(pull, idx)}
+                                                                disabled={isTransacting}
+                                                                className="mt-4 md:mt-0 px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors"
+                                                            >
+                                                                {isTransacting ? "Processing..." : "Authorize Pull"}
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </GlassCard>
+                                </motion.div>
+                            )}
+
                         </div>
                     )}
                 </div>
@@ -1320,74 +1586,74 @@ export default function AdminPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-[#0a0f1c] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                        className="bg-[#050505] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,1)]"
                     >
-                        <h2 className="text-xl font-bold text-white mb-2">Multisig Authorization</h2>
-                        <p className="text-sm text-gray-400 mb-6">
+                        <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Multisig Authorization</h2>
+                        <p className="text-sm text-gray-400 mb-6 font-light">
                             This transaction requires 3 independent Administrator signatures to proceed.
                         </p>
 
                         <div className="space-y-4 mb-8">
                             {/* Step 1 */}
-                            <div className={`p-4 rounded-xl border ${sig1 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                            <div className={`p-4 rounded-xl border ${sig1 ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/50'} transition-all duration-300`}>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-gray-200">Admin 1</span>
-                                    {sig1 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                    <span className={`text-sm font-medium ${sig1 ? 'text-white' : 'text-gray-400'}`}>Admin 1</span>
+                                    {sig1 ? <span className="text-xs font-bold text-white">✓ VERIFIED</span> : <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />}
                                 </div>
                                 <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin1.slice(0, 12)}...</div>
                                 <button
-                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    className={`w-full py-2.5 text-sm rounded-lg font-medium transition-all duration-300 ${sig1 ? 'bg-white/10 text-white cursor-default' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-white disabled:cursor-not-allowed'}`}
                                     disabled={!!sig1 || (!publicKey?.includes(pendingTxPayload.admin1))}
                                     onClick={() => handleSignMessage(1)}
                                 >
-                                    {sig1 ? 'Signed' : 'Sign Message'}
+                                    {sig1 ? 'Signature Captured' : 'Sign Payload'}
                                 </button>
                             </div>
 
                             {/* Step 2 */}
-                            <div className={`p-4 rounded-xl border ${sig2 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                            <div className={`p-4 rounded-xl border ${sig2 ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/50'} transition-all duration-300`}>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-gray-200">Admin 2</span>
-                                    {sig2 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                    <span className={`text-sm font-medium ${sig2 ? 'text-white' : 'text-gray-400'}`}>Admin 2</span>
+                                    {sig2 ? <span className="text-xs font-bold text-white">✓ VERIFIED</span> : <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />}
                                 </div>
                                 <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin2.slice(0, 12)}...</div>
                                 <button
-                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    className={`w-full py-2.5 text-sm rounded-lg font-medium transition-all duration-300 ${sig2 ? 'bg-white/10 text-white cursor-default' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-white disabled:cursor-not-allowed'}`}
                                     disabled={!!sig2 || (!publicKey?.includes(pendingTxPayload.admin2))}
                                     onClick={() => handleSignMessage(2)}
                                 >
-                                    {sig2 ? 'Signed' : 'Sign Message'}
+                                    {sig2 ? 'Signature Captured' : 'Sign Payload'}
                                 </button>
                             </div>
 
                             {/* Step 3 */}
-                            <div className={`p-4 rounded-xl border ${sig3 ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'} transition-colors`}>
+                            <div className={`p-4 rounded-xl border ${sig3 ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/50'} transition-all duration-300`}>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-gray-200">Admin 3</span>
-                                    {sig3 ? <ShieldCheck className="w-4 h-4 text-green-400" /> : <div className="w-2 h-2 rounded-full bg-gray-500" />}
+                                    <span className={`text-sm font-medium ${sig3 ? 'text-white' : 'text-gray-400'}`}>Admin 3</span>
+                                    {sig3 ? <span className="text-xs font-bold text-white">✓ VERIFIED</span> : <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />}
                                 </div>
                                 <div className="text-xs text-gray-500 font-mono mb-3">{pendingTxPayload.admin3.slice(0, 12)}...</div>
                                 <button
-                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded transition"
+                                    className={`w-full py-2.5 text-sm rounded-lg font-medium transition-all duration-300 ${sig3 ? 'bg-white/10 text-white cursor-default' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-white disabled:cursor-not-allowed'}`}
                                     disabled={!!sig3 || (!publicKey?.includes(pendingTxPayload.admin3))}
                                     onClick={() => handleSignMessage(3)}
                                 >
-                                    {sig3 ? 'Signed' : 'Sign Message'}
+                                    {sig3 ? 'Signature Captured' : 'Sign Payload'}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 mt-6">
                             <button
                                 onClick={() => { setIsSigModalOpen(false) }}
-                                className="px-4 py-2 border border-white/20 hover:bg-white/5 text-white rounded transition flex-1"
+                                className="px-5 py-2.5 text-sm font-medium border border-white/20 hover:bg-white/5 hover:border-white/40 text-white rounded-lg transition-all duration-300 flex-1"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={executeIssueSalary}
                                 disabled={!sig1 || !sig2 || !sig3 || isTransacting}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded transition flex-1 flex justify-center items-center gap-2"
+                                className={`px-5 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 flex-1 flex items-center justify-center gap-2 ${(!sig1 || !sig2 || !sig3 || isTransacting) ? 'bg-white/20 text-white/50 cursor-not-allowed' : 'bg-white text-black hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-[0_0_25px_rgba(255,255,255,0.5)]'}`}
                             >
                                 {isTransacting ? 'Executing...' : 'Execute TX'}
                             </button>

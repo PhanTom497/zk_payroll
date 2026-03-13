@@ -71,34 +71,45 @@ This document outlines the strategic development plan for ZK Payroll, moving fro
 
 ---
 
-## 💰 Wave 3: The Buildathon Finale (2-Day Sprint)
+## ✅ Wave 3: The Enterprise Integrations (Completed)
 
-**Goal:** Finalize the core ZK financial primitives for the imminent Buildathon submission.
+**Status:** Complete  
+**Focus:** ARC-20 Stablecoins, Time-Delayed Vesting, and Zero-Gas Treasury Relayer
 
 ### 1. ARC-20 Token Integration (`USDCx` & `USAD` Stablecoins)
--   **Feasibility:** HIGH (Core Aleo Logic - Inspired by NullPay Architecture)
--   **Actionable:** We will integrate the official Aleo Foundation Buildathon token programs (`test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo`). Taking inspiration from NullPay, we will maintain **two parallel payment rails**:
+-   **Feasibility:** HIGH (Core Aleo Logic)
+-   **Actionable:** We will integrate the official Aleo Foundation Buildathon token programs (`test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo`). We will maintain **two parallel payment rails**:
     -   `issue_salary`: Continues to exist for native `credits.aleo` push transfers.
     -   `issue_salary_stablecoin`: Added to explicitly transfer ARC-20 `Token` records (handling both USDCx and USAD standards).
-    -   This allows the Payroll program to natively support native credits and official stablecoins simultaneously without strict type-casting conflicts.
+    -   `issue_salary_usdcx` and `issue_salary_usad` added to explicitly transfer ARC-20 `Token` records.
+    -   **✅ Implemented:** The Next.js frontend dynamically mocks the necessary Merkle Tree `FreezeList` proofs to satisfy building constraints natively.
 
 ### 2. Time-Delayed Vesting Contracts
 -   **Feasibility:** HIGH (Core Aleo Logic)
--   **Actionable:** Introduce a `VestingRecord` struct. Emploees will receive a token allocation that is cryptographically locked until `block.height >= unlock_height`. They will call `claim_vested()` to withdraw only when the network time has passed.
+-   **Actionable:** Introduced a `VestingRecord` struct. Emploees receive a token allocation cryptographically locked until `block.height >= unlock_height`.
+-   **✅ Implemented:** Added UI constraints to ensure Vesting applies natively to Aleo Credits. Employees call `claim_vested()` to mathematically unwrap the Time-Delay lock.
 
 ### 3. Treasury Lock (True Pull Model for Native Tokens)
 -   **Feasibility:** MEDIUM (Requires careful UTXO architecture)
--   **Actionable:** Rewrite `fund_payroll` to use `credits.aleo/transfer_public_to_private` (or a dedicated Multi-sig pool record), physically locking a massive lump sum of native credits into the Program's jurisdiction. Employees will use their `SalaryCertificate` to seamlessly deduct from this central Treasury.
+-   **Actionable:** Re-architected the entire system to support a massive `TreasuryPoolRecord` owned by the `MultiSigAdmin` threshold.
+-   **✅ Implemented:** Employees submit a gas-less "Pull Request" via `claimed_payments` tracking. The Admin executes the transition, paying the gas and securely routing the funds to the Employee in a single SNARK execution.
 
 ---
 
-## 🏛️ Wave 4: Automated Tax Compliance
+## 🏛️ Wave 4: The Next Frontier (Current)
 
 **Goal:** Bridge the gap to government regulations without sacrificing employee privacy.
 
 ### 1. Zero-Knowledge Tax Withholding
 -   **Mechanism:** Add a "Tax Authority" view key and a `tax_percentage` global state.
 -   **Logic:** `claim_salary` will automatically calculate $X$% of the claim, divert it to a `TaxVaultRecord`, and generate a downloadable ZK proof of "Tax Paid" for the employee to securely submit to the IRS.
+
+### 2. Advanced Batch Processing (Deferred from Wave 3)
+-   **Current State:** Batch execution is currently limited to sequential UTXO generation for Native Aleo Vesting streams due to SnarkVM constraints on parallel `SpentRecord` consumption.
+-   **Goal for Wave 4:** 
+    -   **True ZK Parallel Execution:** Re-architect the `main.leo` structure to allow `issue_salary_batch_X` to securely execute an entire array of employees inside a single, massive SNARK transition.
+    -   **Multi-Currency Batching:** Expand batch compatibility to natively aggregate and distribute ARC-20 tokens (`USDCx`, `USAD`) in bulk.
+    -   **Multisig Integration:** Require the $M$-of-$N$ admin threshold to dynamically authorize the entire batch Merkle root at once instead of individual signing.
 
 ---
 

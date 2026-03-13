@@ -82,13 +82,21 @@ export default function EmployeePage() {
 
             // Scan Certificates
             const allCerts: SalaryCertificate[] = (records as any[])
-                .filter((rec: any) => !rec.spent && rec.recordName === 'SalaryCertificate')
+                .filter((rec: any) => !rec.spent && (rec.recordName === 'SalaryCertificate' || rec.recordName === 'VestingRecord'))
                 .map((rec: any) => {
                     const amountRaw = getRecordField(rec, 'amount');
-                    const startHeightRaw = getRecordField(rec, 'start_height');
+                    const startHeightRaw = getRecordField(rec, 'start_height') || getRecordField(rec, 'unlock_height');
                     const intervalRaw = getRecordField(rec, 'interval');
                     const claimCountRaw = getRecordField(rec, 'claim_count');
                     const payrollIdRaw = getRecordField(rec, 'payroll_id');
+
+                    const plaintext = rec.recordPlaintext || rec.plaintext;
+                    let detectedRecordName = 'SalaryCertificate';
+                    if (plaintext && plaintext.includes('unlock_height')) {
+                        detectedRecordName = 'VestingRecord';
+                    } else if (rec.recordName) {
+                        detectedRecordName = rec.recordName;
+                    }
 
                     return {
                         id: rec.serialNumber || 'unknown',
@@ -97,7 +105,8 @@ export default function EmployeePage() {
                         interval: intervalRaw ? parseInt(intervalRaw.replace('u32', '')) : 0,
                         claim_count: claimCountRaw ? parseInt(claimCountRaw.replace('u32', '')) : 0,
                         payroll_id: payrollIdRaw || 'unknown',
-                        _record: rec.recordPlaintext || rec.plaintext
+                        _record: plaintext,
+                        recordName: detectedRecordName
                     };
                 })
 
@@ -142,19 +151,31 @@ export default function EmployeePage() {
         }
     }
 
-    const handleClaim = async (recordPlaintext: string) => {
+    const handleClaim = async (recordPlaintext: string, recordName?: string) => {
         if (!publicKey || !wallet) return
         setLoadingClaim(true)
         try {
-            await requestTransaction(
-                wallet?.adapter!,
-                publicKey,
-                PROGRAM_ID,
-                'claim_salary',
-                [recordPlaintext],
-                500000 // Fee (0.5 credits)
-            )
-            toast.success("Transaction submitted. Update incoming...")
+            if (recordName === 'VestingRecord') {
+                await requestTransaction(
+                    wallet?.adapter!,
+                    publicKey,
+                    PROGRAM_ID,
+                    'claim_vested',
+                    [recordPlaintext],
+                    500000 // Fee (0.5 credits)
+                )
+                toast.success("Vesting Unlocked! Please rescan your wallet to claim the resulting Salary Certificate.")
+            } else {
+                const pendingClaims = JSON.parse(localStorage.getItem('pending_pull_claims') || '[]');
+                pendingClaims.push({
+                    employee: publicKey,
+                    certificateRecord: recordPlaintext,
+                    timestamp: Date.now()
+                });
+                localStorage.setItem('pending_pull_claims', JSON.stringify(pendingClaims));
+
+                toast.success("Pull Request sent to Admin Relayer! Your funds will be processed automatically.")
+            }
         } catch (e: any) {
             console.error("Error claiming salary:", e)
             toast.error("Failed to claim: " + e.message)
@@ -230,9 +251,9 @@ export default function EmployeePage() {
                                 <div>
                                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                         <PlusCircle className="w-5 h-5 text-gray-400" />
-                                        USDCx Salary Rights
+                                        Aleo Salary Rights
                                     </h2>
-                                    <p className="text-sm text-gray-500 mt-1 ml-7">USDCx Stablecoin streams require manual claiming before arriving in your wallet.</p>
+                                    <p className="text-sm text-gray-500 mt-1 ml-7">Time-delayed vesting streams and Native Pull requests require manual claiming.</p>
                                 </div>
                                 <button
                                     onClick={scanRecords}
@@ -270,7 +291,7 @@ export default function EmployeePage() {
                                 <History className="w-5 h-5 text-white" />
                                 <div>
                                     <h2 className="text-xl font-bold text-white">Direct Push History</h2>
-                                    <p className="text-sm text-gray-500 mt-1">Aleo Credits are pushed directly to your private balance. No claiming required.</p>
+                                    <p className="text-sm text-gray-500 mt-1">Aleo Credits are pushed directly to your private balance. No claiming required. <br/><span className="italic">Note: Treasury Pulls arrive directly to your balance but do not emit a memo record here.</span></p>
                                 </div>
                             </div>
 
