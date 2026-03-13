@@ -11,6 +11,7 @@ import {
 import { Network } from '@provablehq/aleo-types'
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css'
 import { PROGRAM_ID } from '../lib/zk-utils'
+import { GlobalAutoConnect } from './GlobalAutoConnect'
 
 export default function AleoWalletProvider({
     children,
@@ -35,6 +36,7 @@ export default function AleoWalletProvider({
             programs={[PROGRAM_ID, 'credits.aleo', 'test_usdcx_stablecoin.aleo', 'test_usad_stablecoin.aleo']}
         >
             <WalletModalProvider>
+                <GlobalAutoConnect />
                 {children}
             </WalletModalProvider>
         </ProvableWalletProvider>
