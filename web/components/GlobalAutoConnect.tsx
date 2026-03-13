@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { Network } from '@provablehq/aleo-types'
 
@@ -8,55 +8,45 @@ const WALLET_LS_KEY = 'walletName'
 
 export function GlobalAutoConnect() {
     const { connect, connected, connecting, wallet, wallets, selectWallet } = useWallet() as any;
-    const attempted = useRef(false);
+
+    const tryReconnect = useCallback(async () => {
+        try {
+            const raw = localStorage.getItem(WALLET_LS_KEY);
+            if (!raw) return;
+            const savedName = JSON.parse(raw);
+            if (!savedName) return;
+
+            // If the context already has the right adapter, just call connect
+            if (wallet && wallet.adapter && wallet.adapter.name === savedName) {
+                try {
+                    await connect(Network.TESTNET);
+                } catch (e) {
+                    // Expected if wallet is locked or permission dropped
+                }
+                return;
+            }
+
+            // Otherwise re-select the wallet from the adapter list
+            if (selectWallet && wallets && wallets.length > 0) {
+                const match = wallets.find((w: any) => w.adapter && w.adapter.name === savedName);
+                if (match) {
+                    selectWallet(savedName);
+                    // The library's autoConnect effect will handle connection
+                }
+            }
+        } catch (err) {
+            // Silent failure
+        }
+    }, [wallet, wallets, selectWallet, connect]);
 
     useEffect(() => {
-        // If already connected or mid-connection, nothing to do
-        if (connected || connecting) {
-            attempted.current = true;
-            return;
-        }
+        // Only attempt reconnection when not connected and not connecting
+        if (connected || connecting) return;
 
-        // Don't re-attempt after first successful cycle
-        if (attempted.current) return;
-        attempted.current = true;
-
-        const tryReconnect = async () => {
-            try {
-                // 1. Read the persisted wallet name from localStorage
-                const raw = localStorage.getItem(WALLET_LS_KEY);
-                if (!raw) return;
-                const savedName = JSON.parse(raw);
-                if (!savedName) return;
-
-                // 2. If the wallet context already has the right adapter selected, just connect
-                if (wallet && wallet.adapter && wallet.adapter.name === savedName) {
-                    try {
-                        await connect(Network.TESTNET);
-                    } catch (e) {
-                        console.log('GlobalAutoConnect: connect() failed (expected if wallet locked):', e);
-                    }
-                    return;
-                }
-
-                // 3. Otherwise, find the adapter and re-select it via selectWallet
-                //    This triggers the library's internal effect to set the adapter,
-                //    and then the autoConnect effect in the library does the rest.
-                if (selectWallet && wallets && wallets.length > 0) {
-                    const match = wallets.find((w: any) => w.adapter && w.adapter.name === savedName);
-                    if (match) {
-                        selectWallet(savedName);
-                    }
-                }
-            } catch (err) {
-                console.log('GlobalAutoConnect: silent reconnect failed:', err);
-            }
-        };
-
-        // Delay to let wallet extensions inject into the page
-        const timer = setTimeout(tryReconnect, 800);
+        // Delay to let wallet extensions inject and library hydrate
+        const timer = setTimeout(tryReconnect, 600);
         return () => clearTimeout(timer);
-    }, [connected, connecting, wallet, wallets, selectWallet, connect]);
+    }, [connected, connecting, tryReconnect]);
 
     return null;
 }
