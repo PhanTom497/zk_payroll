@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Shield, Users, Eye, Wallet, Lock, Zap, ArrowRight } from "lucide-react";
+import { Shield, Users, Eye, Wallet, Lock, Zap, ArrowRight, ArrowUpRight, Play } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
-import WireframeBackground from "@/components/WireframeBackground";
+import FeaturesScroll from "@/components/FeaturesScroll";
 
 const title = "ZK Payroll";
 const tagline = "Privacy-Preserving DAO Payments on Aleo";
@@ -38,12 +38,6 @@ const portals = [
     },
 ];
 
-const features = [
-    { icon: Lock, title: "Zero-Knowledge Proofs", desc: "Verify without revealing sensitive data" },
-    { icon: Zap, title: "Aleo Blockchain", desc: "Built for total privacy and public verifiability" },
-    { icon: Shield, title: "Compliance Ready", desc: "Meet audit requirements while preserving privacy" },
-];
-
 export default function Home() {
     const [mounted, setMounted] = useState(false);
     const scrollRef = useScrollAnimation();
@@ -53,147 +47,155 @@ export default function Home() {
     }, []);
 
     return (
-        <div ref={scrollRef} className="relative z-10 min-h-screen overflow-hidden">
-            <WireframeBackground />
-
+        <div ref={scrollRef} className="relative z-10 min-h-screen overflow-clip bg-black">
             {/* Nav */}
-            <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/30 backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="text-lg font-bold tracking-tight text-foreground">
-                        ZK Payroll
+            <nav className="fixed top-4 left-0 right-0 z-50 px-6 flex justify-center pointer-events-none">
+                <div className="flex items-center justify-between bg-[#0a0a0a]/80 border border-white/10 rounded-full px-3 py-3 backdrop-blur-xl pointer-events-auto w-full max-w-5xl gap-6 shadow-2xl">
+
+                    {/* Logo */}
+                    <Link href="/" className="text-[17px] font-bold tracking-tight text-white flex-shrink-0 pl-5">
+                        ZK Payroll.
                     </Link>
-                    <WalletConnectButton />
+
+                    {/* Centered Links */}
+                    <div className="hidden md:flex items-center gap-8">
+                        <Link href="/admin" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Admin</Link>
+                        <Link href="/employee" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Employee</Link>
+                        <Link href="/auditor" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Auditor</Link>
+                        <Link href="/docs" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Docs</Link>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="flex-shrink-0">
+                        <WalletConnectButton />
+                    </div>
                 </div>
             </nav>
 
             {/* Hero */}
-            <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-16 relative z-10">
-                <div className="text-center max-w-4xl mx-auto">
-                    {/* Staggered letter animation */}
-                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 perspective-[1000px] text-foreground">
-                        {mounted &&
-                            title.split("").map((letter, i) => (
-                                <motion.span
-                                    key={i}
-                                    initial={{ opacity: 0, y: 40, rotateX: -90 }}
-                                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                                    transition={{ delay: i * 0.08, duration: 0.5, ease: "easeOut" }}
-                                    className="inline-block"
-                                    style={{ transformOrigin: "bottom" }}
-                                >
-                                    {letter === " " ? "\u00A0" : letter}
-                                </motion.span>
-                            ))}
-                    </h1>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8, duration: 0.6 }}
-                        className="text-xl md:text-2xl text-muted-foreground mb-4"
-                    >
-                        {tagline}
-                    </motion.p>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.0, duration: 0.6 }}
-                        className="text-sm md:text-base text-muted-foreground/70 max-w-2xl mx-auto mb-12"
-                    >
-                        {description}
-                    </motion.p>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.2, duration: 0.6 }}
-                        className="flex gap-4 justify-center"
-                    >
-                        <Link href="/admin" className="glow-btn text-sm flex items-center gap-2">
-                            Launch App <ArrowRight className="w-4 h-4" />
-                        </Link>
-                        <Link href="/docs" className="px-6 py-3 rounded-lg border border-white/20 text-foreground text-sm font-semibold hover:bg-white/5 transition-all duration-300">
-                            Learn More
-                        </Link>
-                    </motion.div>
-                </div>
-
-                {/* Scroll indicator */}
+            <section className="min-h-screen flex items-center md:items-end px-6 md:px-12 lg:px-24 pb-24 relative z-10 pt-32 overflow-hidden">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1.5 }}
-                    className="absolute bottom-10 flex flex-col items-center gap-2"
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    className="absolute inset-0 z-[-1]"
                 >
-                    <span className="text-xs text-muted-foreground">Scroll to explore</span>
-                    <div className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1">
-                        <motion.div
-                            animate={{ y: [0, 10, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="w-1.5 h-1.5 rounded-full bg-foreground"
-                        />
-                    </div>
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover opacity-60"
+                        style={{ filter: "brightness(1) contrast(1.1) saturate(1.1)" }}
+                    >
+                        <source src="/assets/hero-bg.mp4" type="video/mp4" />
+                    </video>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
                 </motion.div>
-            </section>
 
-            {/* Features */}
-            <section className="py-24 px-6 relative z-10">
-                <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {features.map((f, i) => (
-                        <div
-                            key={f.title}
-                            className="animate-in-view text-center"
-                            style={{ transitionDelay: `${i * 150}ms` }}
+                <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-12 pt-12">
+                    <div className="max-w-4xl text-left">
+                        <motion.h1
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
+                            className="text-[38px] leading-[1.05] md:text-[52px] lg:text-[66px] font-medium tracking-[-0.02em] mb-5 text-white"
                         >
-                            <div className="w-12 h-12 mx-auto mb-4 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
-                                <f.icon className="w-5 h-5 text-foreground" />
-                            </div>
-                            <h3 className="font-semibold text-foreground mb-2">{f.title}</h3>
-                            <p className="text-sm text-muted-foreground">{f.desc}</p>
+                            Privacy-Preserving DAO
+                            <br />
+                            Payments on Aleo
+                        </motion.h1>
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.9, duration: 1, ease: "easeOut" }}
+                            className="text-[16px] text-[#A1A1AA] mb-8 max-w-[440px] leading-[1.6]"
+                        >
+                            Solve the Compliance-Privacy Paradox — prove budget solvency to auditors without ever revealing individual contributor data.
+                        </motion.p>
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+                            >
+                                <Link href="/admin" className="flex items-center gap-3 bg-white text-black pl-5 pr-1.5 py-1.5 rounded-full font-medium hover:bg-white/90 transition-colors text-sm">
+                                    Get Started
+                                    <div className="bg-black text-white rounded-full p-2 flex items-center justify-center">
+                                        <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                                    </div>
+                                </Link>
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.5, duration: 0.8, ease: "easeOut" }}
+                            >
+                                <a href="https://youtu.be/4R66Od57dDc" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 bg-transparent text-[#E4E4E5] px-6 py-2.5 rounded-full font-medium border border-white/20 hover:bg-white/10 transition-colors text-sm">
+                                    <Play className="w-4 h-4 text-[#E4E4E5] flex-shrink-0" />
+                                    Watch Demo
+                                </a>
+                            </motion.div>
                         </div>
-                    ))}
+                    </div>
                 </div>
             </section>
 
-            {/* Portal Cards */}
-            <section className="py-24 px-6 relative z-10">
-                <div className="max-w-6xl mx-auto">
-                    <h2 className="animate-in-view text-3xl md:text-5xl font-bold text-center mb-4 text-foreground">
-                        Choose Your Portal
-                    </h2>
-                    <p className="animate-in-view text-center text-muted-foreground mb-16 max-w-xl mx-auto">
-                        Access the ZK Payroll system based on your role in the DAO.
-                    </p>
+            {/* Features Scroll Section */}
+            <div className="relative z-10">
+                <FeaturesScroll />
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {portals.map((portal, i) => (
-                            <Link
-                                key={portal.title}
-                                href={portal.url}
-                                className="animate-in-view block"
-                                style={{ transitionDelay: `${i * 200}ms` }}
-                            >
-                                <GlassCard className="h-full group cursor-pointer">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                            <portal.icon className="w-5 h-5 text-foreground" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-foreground">{portal.title}</h3>
+            {/* Portal Cards */}
+            <section className="py-32 px-6 relative z-10 w-full bg-black">
+                <div className="max-w-7xl mx-auto">
+
+                    {/* Header Structure exactly matching Image 1 */}
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                        <div className="max-w-3xl text-left">
+                            <div className="text-sm font-semibold tracking-wider text-[#A1A1AA] uppercase mb-6">
+                                Portals
+                            </div>
+                            <h2 className="text-4xl md:text-5xl lg:text-7xl font-sans tracking-tight text-white leading-[1.05]">
+                                Choose Your Portal
+                            </h2>
+                            <p className="text-lg md:text-xl text-[#A1A1AA] mt-8 max-w-xl font-normal leading-relaxed">
+                                Access the ZK Payroll system based on your role in the DAO.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Fanning Card Layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {portals.map((portal) => (
+                            <Link href={portal.url} key={portal.title} className="block group">
+                                <div className="relative w-full rounded-[2rem] p-8 md:p-10 transition-all duration-700 ease-out bg-[#0a0a0a] hover:bg-white overflow-hidden flex flex-col h-[520px]">
+
+                                    {/* Top Right Action Arrow (Fades in on hover) */}
+                                    <div className="absolute top-8 right-8 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 delay-75 bg-[#18181b] group-hover:bg-black opacity-0 -translate-x-4 translate-y-4 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 z-20">
+                                        <ArrowUpRight className="w-6 h-6 text-white" />
                                     </div>
-                                    <p className="text-sm text-muted-foreground mb-6">{portal.description}</p>
-                                    <div className="space-y-2">
-                                        {portal.features.map((f) => (
-                                            <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <div className="w-1 h-1 rounded-full bg-foreground/40" />
-                                                {f}
-                                            </div>
-                                        ))}
+
+                                    {/* Center Massive Icon Graphic acting as a watermark */}
+                                    <div className="flex-grow w-full flex items-center justify-center mb-10 transition-transform duration-1000 ease-out group-hover:scale-110">
+                                        <portal.icon className="w-48 h-48 text-[#18181b] transition-colors duration-700 group-hover:text-[#f4f4f5]" strokeWidth={0.5} />
                                     </div>
-                                    <div className="mt-6 flex items-center gap-2 text-sm font-medium text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Enter Portal <ArrowRight className="w-4 h-4" />
+
+                                    {/* Bottom Content (Pushes up slightly on hover) */}
+                                    <div className="mt-auto flex flex-col gap-4 relative z-10 transition-transform duration-500 ease-out group-hover:-translate-y-2">
+                                        <h3 className="text-3xl lg:text-4xl font-medium tracking-tight text-white transition-colors duration-500 group-hover:text-black">
+                                            {portal.title}
+                                        </h3>
+                                        <p className="text-[#A1A1AA] transition-colors duration-500 group-hover:text-[#52525b] text-base md:text-lg leading-relaxed max-w-[95%]">
+                                            {portal.description}
+                                        </p>
                                     </div>
-                                </GlassCard>
+
+                                </div>
                             </Link>
                         ))}
                     </div>
@@ -201,12 +203,77 @@ export default function Home() {
             </section>
 
             {/* Footer */}
-            <footer className="py-12 px-6 border-t border-white/5 relative z-10">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <span className="text-sm font-bold text-foreground">ZK Payroll</span>
-                    <span className="text-xs text-muted-foreground">
-                        Built on Aleo — Privacy by default
-                    </span>
+            <footer className="py-20 px-6 border-t border-white/10 relative z-10 bg-[#000] w-full">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16 md:gap-8 hover:opacity-100">
+
+                    {/* Left Brand Column */}
+                    <div className="flex flex-col items-start pr-8 md:w-1/3">
+                        <Link href="/" className="text-[20px] font-bold tracking-tight text-white mb-6">
+                            ZK Payroll.
+                        </Link>
+                        <p className="text-[#A1A1AA] text-lg font-medium leading-relaxed mb-8">
+                            Privacy-Preserving DAO Payments.
+                            <br />
+                            Onchain.
+                        </p>
+                        <Link href="/admin" className="inline-flex items-center gap-2.5 bg-white text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-white/90 transition-colors mb-20 md:mb-28">
+                            Get Started <ArrowRight className="w-4 h-4" />
+                        </Link>
+
+                        <p className="text-[#52525b] text-sm mt-auto font-medium">
+                            ZK Payroll © {new Date().getFullYear()} All rights reserved
+                        </p>
+                    </div>
+
+                    {/* Right Columns & Socials */}
+                    <div className="flex flex-col md:flex-row gap-16 md:gap-32 md:w-2/3 justify-start md:justify-end">
+
+                        {/* Links Grid */}
+                        <div className="flex flex-row gap-20 md:gap-24">
+                            {/* Resources */}
+                            <div className="flex flex-col">
+                                <h4 className="text-white font-semibold mb-6 text-sm tracking-wide">Resources</h4>
+                                <div className="flex flex-col gap-4">
+                                    <Link href="/docs" className="text-[#71717a] hover:text-white transition-colors text-sm font-medium">
+                                        Docs
+                                    </Link>
+                                    <a href="https://developer.aleo.org/" target="_blank" rel="noopener noreferrer" className="text-[#71717a] hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+                                        Aleo Docs <ArrowUpRight className="w-3 h-3 opacity-60" />
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Contact */}
+                            <div className="flex flex-col">
+                                <h4 className="text-white font-semibold mb-6 text-sm tracking-wide">Contact</h4>
+                                <div className="flex flex-col gap-4">
+                                    <a href="mailto:lakshaypanchal21@gmail.com" className="text-[#71717a] hover:text-white transition-colors text-sm font-medium">
+                                        Email Support
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Flat Social Icons Row perfectly matching Image 1 top-right alignment */}
+                        <div className="flex flex-row gap-6 items-start mt-2 md:mt-0">
+                            {/* X / Twitter */}
+                            <a href="https://x.com/lakshay_p007" target="_blank" rel="noopener noreferrer" className="text-[#71717a] hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                            </a>
+                            {/* Github */}
+                            <a href="https://github.com/PhanTom497" target="_blank" rel="noopener noreferrer" className="text-[#71717a] hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path></svg>
+                            </a>
+                            {/* LinkedIn */}
+                            <a href="https://www.linkedin.com/in/lakshay-panchal-778572294" target="_blank" rel="noopener noreferrer" className="text-[#71717a] hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path></svg>
+                            </a>
+                            {/* Telegram */}
+                            <a href="https://t.me/Lakshay7847" target="_blank" rel="noopener noreferrer" className="text-[#71717a] hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.12 0 .18z"></path></svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>
