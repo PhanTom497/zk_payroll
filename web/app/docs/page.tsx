@@ -22,52 +22,47 @@ export default function DocsPage() {
         setMounted(true);
     }, []);
 
-    if (!mounted) return null;
-
     return (
-        <div className="relative min-h-screen bg-black text-white selection:bg-white/30 overflow-hidden font-sans">
-            <WireframeBackground />
+        <div className="relative min-h-screen text-white bg-black selection:bg-white/30 overflow-hidden font-sans">
+            <div 
+                className="fixed inset-0 z-0 bg-[length:800px] md:bg-[length:1800px] bg-left bg-no-repeat bg-fixed opacity-40"
+                style={{ backgroundImage: "url('/assets/milad-fakurian-7W3X1dAuKqg-unsplash.jpg')" }}
+            />
+            <div className="fixed inset-0 z-0 bg-black/60 backdrop-blur-[2px]" />
 
-            {/* Nav */}
-            <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/40 backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
-                    <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
-                        <ArrowLeft className="w-4 h-4" /> Back to Home
-                    </Link>
-                    <div className="h-4 w-px bg-white/10" />
-                    <span className="text-sm font-bold tracking-tight">Documentation</span>
+            <main className="relative z-10 pt-32 pb-24 px-6 w-full flex flex-col items-center">
+                
+                {/* Main Heading */}
+                <div className="text-center mb-12 w-full">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+                        ZK Payroll <span className="text-[#06b6d4]">Ecosystem</span>
+                    </h1>
+                    <p className="text-[#a1a1aa] text-lg max-w-2xl mx-auto">
+                        Explore our vision, architecture, and roadmap for the future of private decentralized compensation.
+                    </p>
                 </div>
-            </nav>
 
-            <main className="relative z-10 pt-32 pb-24 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-12">
-
-                {/* Sidebar Navigation */}
-                <aside className="lg:w-64 shrink-0">
-                    <div className="sticky top-32 space-y-1">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-3">
-                            Contents
-                        </h3>
+                {/* Second-level Nav Pill */}
+                <div className="flex justify-center w-full mb-16">
+                    <div className="flex items-center gap-2 bg-[#0a0a0a]/80 border border-white/10 rounded-full p-2 backdrop-blur-xl overflow-x-auto max-w-full shadow-2xl">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-300 ${activeTab === tab.id
-                                    ? 'bg-white text-black font-medium shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                                    : 'text-muted-foreground hover:bg-white/5 hover:text-white'
-                                    }`}
+                                className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                                    activeTab === tab.id
+                                        ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
                             >
-                                <div className="flex items-center gap-3">
-                                    <tab.icon className="w-4 h-4" />
-                                    {tab.label}
-                                </div>
-                                {activeTab === tab.id && <ChevronRight className="w-4 h-4" />}
+                                {tab.label}
                             </button>
                         ))}
                     </div>
-                </aside>
+                </div>
 
                 {/* Content Area */}
-                <div className="flex-1 min-w-0">
+                <div className="w-full max-w-4xl mx-auto min-w-0">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
@@ -82,158 +77,228 @@ export default function DocsPage() {
                             {/* OVERVIEW TAB */}
                             {/* ============================================ */}
                             {activeTab === 'overview' && (
-                                <div className="space-y-8">
-                                    <div className="space-y-4 border-b border-white/10 pb-8">
-                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">ZK Payroll Overview</h1>
-                                        <p className="text-xl text-muted-foreground">Enterprise-grade, privacy-preserving DAO payments built natively on the Aleo Network.</p>
+                                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="space-y-6 border-b border-white/5 pb-10 text-center flex flex-col items-center">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] text-xs font-bold tracking-widest uppercase">
+                                            The Vision
+                                        </div>
+                                        <h1 className="text-5xl md:text-6xl font-black tracking-tight text-white mb-4 leading-tight">
+                                            Zero-Knowledge <br className="hidden md:block"/>
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#3b82f6]">Payroll Protocol</span>
+                                        </h1>
+                                        <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed">
+                                            Enterprise-grade, privacy-preserving DAO payments built natively on the Aleo Network.
+                                        </p>
                                     </div>
 
-                                    <div className="prose prose-invert prose-p:text-gray-400 prose-headings:text-white max-w-none">
-                                        <h2>The Compliance-Privacy Paradox</h2>
-                                        <p>
-                                            Public blockchains expose all transaction data by design. For DAO payroll, this creates a fundamental conflict: competitors can analyze your compensation structure, salaries become publicly searchable, and payment timing reveals organizational cash flow and burn rates.
-                                        </p>
-                                        <p>
-                                            Yet organizations still need to prove to auditors and stakeholders that they are solvent — that they haven&apos;t overspent their approved budget. Traditional public chains force you to choose between privacy and compliance.
-                                        </p>
-                                        <p>
-                                            <strong>ZK Payroll eliminates this tradeoff</strong> by leveraging Aleo&apos;s zero-knowledge proof system. Every salary transaction is fully encrypted and private, while a public mathematical budget ceiling is enforced on-chain. Auditors can verify solvency through cryptographic proofs without seeing any individual salary data.
-                                        </p>
+                                    {/* Vision Section */}
+                                    <div className="w-full max-w-5xl mx-auto pt-4">
+                                        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                                            {/* The Problem */}
+                                            <div className="space-y-6 flex flex-col">
+                                                <h2 className="text-3xl font-black text-white tracking-tight border-l-4 border-[#ef4444] pl-4">The Problem</h2>
+                                                <div className="flex-1 p-8 rounded-2xl border border-white/5 bg-[#0a0a0a] space-y-6 relative overflow-hidden group hover:border-[#ef4444]/20 transition-colors">
+                                                    <div className="space-y-3 relative z-10">
+                                                        <h4 className="text-[#ef4444] font-bold tracking-wide uppercase text-xs flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                                                            Transparency vs Privacy
+                                                        </h4>
+                                                        <p className="text-[#a1a1aa] leading-relaxed text-sm">
+                                                            <strong className="text-white">Public blockchains expose all data.</strong> Competitors can analyze your compensation structure, salaries become public, and payment timing reveals cash flow.
+                                                        </p>
+                                                    </div>
+                                                    <div className="h-px w-full bg-white/5" />
+                                                    <div className="space-y-3 relative z-10">
+                                                        <h4 className="text-[#ef4444] font-bold tracking-wide uppercase text-xs flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                                                            The Compliance Paradox
+                                                        </h4>
+                                                        <p className="text-[#a1a1aa] leading-relaxed text-sm">
+                                                            Organizations must prove to auditors they are solvent. <strong className="text-white">Traditional public chains force you to choose between privacy and compliance.</strong>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                        {/* Privacy Matrix */}
-                                        <div className="my-12 p-6 rounded-xl border border-white/10 bg-white/5">
-                                            <h3 className="text-lg font-bold mb-2 mt-0 border-b border-white/10 pb-2">Privacy Matrix: Who Sees What?</h3>
-                                            <p className="text-xs text-muted-foreground mb-4 mt-0">Through cryptographic selective disclosure, ZK Payroll restricts data visibility based on participant role.</p>
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm text-left">
-                                                    <thead>
-                                                        <tr className="border-b border-white/10 text-muted-foreground">
-                                                            <th className="py-3 px-4 font-medium">Data Point</th>
-                                                            <th className="py-3 px-4 font-medium">Public Observer</th>
-                                                            <th className="py-3 px-4 font-medium">Auditor</th>
-                                                            <th className="py-3 px-4 font-medium">Admin</th>
-                                                            <th className="py-3 px-4 font-medium">Employee</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-white/5">
-                                                        <tr>
-                                                            <td className="py-3 px-4">Budget Ceiling</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">—</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="py-3 px-4">Total Spent</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-white">✅ ZK-Verified</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">—</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="py-3 px-4">Individual Salaries</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-white">✅ Local History</td>
-                                                            <td className="py-3 px-4 text-white">✅ Own Only</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="py-3 px-4">Recipient Identities</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-white">✅ Own Only</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="py-3 px-4">Payment Timing</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">❌ Hidden</td>
-                                                            <td className="py-3 px-4 text-white">✅ Visible</td>
-                                                            <td className="py-3 px-4 text-white">✅ Own Only</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td className="py-3 px-4">Compliance Proof</td>
-                                                            <td className="py-3 px-4 text-white">✅ ZK-Proven</td>
-                                                            <td className="py-3 px-4 text-white">✅ ZK-Proven</td>
-                                                            <td className="py-3 px-4 text-white">✅ ZK-Proven</td>
-                                                            <td className="py-3 px-4 text-muted-foreground">—</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
+                                            {/* The Solution */}
+                                            <div className="space-y-6 flex flex-col">
+                                                <h2 className="text-3xl font-black text-white tracking-tight border-l-4 border-[#22c55e] pl-4">The Solution</h2>
+                                                <div className="flex-1 p-8 rounded-2xl border border-white/5 bg-gradient-to-b from-[#22c55e]/5 to-[#0a0a0a] relative overflow-hidden group hover:border-[#22c55e]/30 transition-colors">
+                                                    <div className="space-y-6 relative z-10">
+                                                        <h4 className="text-[#22c55e] font-bold tracking-wide text-lg leading-tight">
+                                                            ZK Payroll eliminates the tradeoff.
+                                                        </h4>
+                                                        <ul className="space-y-4">
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
+                                                                    <Lock className="w-3 h-3 text-[#22c55e]" />
+                                                                </div>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Every salary transaction is <strong className="text-white font-medium">fully encrypted and private.</strong></p>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
+                                                                    <Database className="w-3 h-3 text-[#22c55e]" />
+                                                                </div>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">A <strong className="text-white font-medium">public mathematical budget ceiling</strong> is enforced on-chain.</p>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
+                                                                    <FileCheck className="w-3 h-3 text-[#22c55e]" />
+                                                                </div>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Auditors can verify solvency through <strong className="text-white font-medium">cryptographic proofs</strong> without exposing salaries.</p>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <h2>Core Features</h2>
+                                    {/* Privacy Matrix */}
+                                    <GlassCard className="mt-12 overflow-hidden border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-0 rounded-3xl">
+                                        <div className="p-8 pb-6 text-center">
+                                            <h3 className="text-2xl font-bold text-white mb-2">The Privacy Matrix</h3>
+                                            <p className="text-sm text-[#8f8f96]">Through cryptographic selective disclosure, ZK Payroll restricts data visibility based exclusively on participant role.</p>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-black/40">
+                                                    <tr className="border-y border-white/10 text-[#a1a1aa]">
+                                                        <th className="py-4 px-8 font-medium uppercase tracking-wider text-xs">Data Point</th>
+                                                        <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Public Observer</th>
+                                                        <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Auditor</th>
+                                                        <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Admin</th>
+                                                        <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Employee</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Budget Ceiling</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-[#404040]">—</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Total Spent</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-white">✅ ZK-Verified</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-[#404040]">—</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Individual Salaries</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-white">✅ Local History</td>
+                                                        <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Recipient Identities</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Payment Timing</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors bg-[#22c55e]/[0.02]">
+                                                        <td className="py-5 px-8 font-bold text-[#22c55e]">Compliance Proof</td>
+                                                        <td className="py-5 px-4 text-[#22c55e] font-medium">✅ ZK-Proven</td>
+                                                        <td className="py-5 px-4 text-[#22c55e] font-medium">✅ ZK-Proven</td>
+                                                        <td className="py-5 px-4 text-[#22c55e] font-medium">✅ ZK-Proven</td>
+                                                        <td className="py-5 px-4 text-[#404040]">—</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </GlassCard>
 
-                                        <div className="grid md:grid-cols-2 gap-4 my-8 not-prose">
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Users className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">Enterprise Multi-Sig</h4>
+                                    {/* Core Features */}
+                                    <div className="pt-12">
+                                        <h2 className="text-3xl font-black text-white mb-8 tracking-tight border-l-4 border-[#06b6d4] pl-4">Core Protocol Features</h2>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Users className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">Enterprise Multi-Sig</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Require M-of-N wallet signatures for all payroll operations. Configured during DAO initialization and enforced cryptographically before any transaction reaches the network.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Require M-of-N wallet signatures for all payroll operations. Configured during DAO initialization and enforced cryptographically before any transaction reaches the network.</p>
                                             </div>
 
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Zap className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">Zero-Gas Treasury Relayer</h4>
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Zap className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">Zero-Gas Treasury Relayer</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Employees execute gasless Pull Requests which are fulfilled asynchronously by the Admin&apos;s Relayer. Contributors never pay Aleo network fees — the organization absorbs gas as an operational cost.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Employees execute gasless Pull Requests which are fulfilled asynchronously by the Admin&apos;s Relayer. Contributors never pay Aleo network fees — the organization absorbs gas as an operational cost.</p>
                                             </div>
 
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Layers className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">ARC-20 Stablecoin Support</h4>
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Layers className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">ARC-20 Stablecoin Support</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Native cross-program integration with Aleo&apos;s <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">test_usdcx_stablecoin.aleo</code> and <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">test_usad_stablecoin.aleo</code> for fiat-pegged salary disbursements.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Native cross-program integration with Aleo&apos;s <code className="text-white text-xs bg-white/10 px-1.5 py-0.5 rounded ml-1 mr-1">test_usdcx_stablecoin.aleo</code> and <code className="text-white text-xs bg-white/10 px-1.5 py-0.5 rounded mx-1">test_usad_stablecoin.aleo</code> for fiat-pegged salary disbursements.</p>
                                             </div>
 
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Clock className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">Time-Delayed Vesting</h4>
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Clock className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">Time-Delayed Vesting</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Cryptographically locked native Aleo credit grants that unlock only after a predefined <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">block.height</code> is reached. Enforced at the ZK circuit level.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Cryptographically locked native Aleo credit grants that unlock only after a predefined <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded mx-1">block.height</code> is reached. Enforced at the ZK circuit level.</p>
                                             </div>
 
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Database className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">Sequential ZK Batching</h4>
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Database className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">Sequential ZK Batching</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Automated UTXO-chain polling executes multiple sequential salary issuances without double-spend collisions. Each transaction waits for confirmation before proceeding.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Automated UTXO-chain polling executes multiple sequential salary issuances without double-spend collisions. Each transaction waits for confirmation before proceeding.</p>
                                             </div>
 
-                                            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><FileCheck className="w-4 h-4" /></div>
-                                                    <h4 className="font-bold text-sm">ZK Audit Reports</h4>
+                                            <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><FileCheck className="w-5 h-5" /></div>
+                                                    <h4 className="font-bold text-lg text-white">ZK Audit Reports</h4>
                                                 </div>
-                                                <p className="text-xs text-gray-400 leading-relaxed">Generate cryptographic compliance proofs with Merkle root commitments, recipient counts, and total spent — selectively disclosed to auditors without revealing individual data.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Generate cryptographic compliance proofs with Merkle root commitments, recipient counts, and total spent — selectively disclosed to auditors without revealing individual data.</p>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <h2>Program Details</h2>
-                                        <div className="not-prose my-6 p-5 rounded-xl border border-white/10 bg-white/[0.03]">
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Smart Contract</span>
-                                                    <p className="font-mono text-white mt-1">baba_zk_payroll_v22.aleo</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Language</span>
-                                                    <p className="font-mono text-white mt-1">Leo</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Network</span>
-                                                    <p className="font-mono text-white mt-1">Aleo Testnet</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Dependencies</span>
-                                                    <p className="font-mono text-white mt-1">credits.aleo, USDCx, USAD</p>
-                                                </div>
+                                    {/* Program Details Banner */}
+                                    <div className="mt-8 relative overflow-hidden rounded-3xl border border-[#06b6d4]/20 bg-gradient-to-r from-black via-[#06b6d4]/5 to-black p-8 md:p-10 shadow-2xl">
+                                        <div className="absolute -top-12 -right-12 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                                            <Globe className="w-64 h-64 text-[#06b6d4]" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-white mb-6 uppercase tracking-widest text-[#06b6d4]">Network Context</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm relative z-10">
+                                            <div>
+                                                <span className="text-[#8f8f96] text-xs uppercase tracking-wider block mb-2 font-bold">Contract ID</span>
+                                                <p className="font-mono text-white/90 text-[13px] bg-white/5 px-3 py-1.5 rounded-md inline-block">baba_zk_payroll_v24.aleo</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[#8f8f96] text-xs uppercase tracking-wider block mb-2 font-bold">Language</span>
+                                                <p className="font-mono text-white/90 text-[13px] bg-white/5 px-3 py-1.5 rounded-md inline-block">Leo v1.11</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[#8f8f96] text-xs uppercase tracking-wider block mb-2 font-bold">Network</span>
+                                                <p className="font-mono text-[#22c55e] border border-[#22c55e]/20 text-[13px] bg-[#22c55e]/10 px-3 py-1.5 rounded-md inline-block">Aleo Testnet</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[#8f8f96] text-xs uppercase tracking-wider block mb-2 font-bold">Integration</span>
+                                                <p className="font-mono flex flex-wrap gap-2">
+                                                    <span className="px-2 py-1 text-[11px] bg-white/10 rounded-md text-white/80">credits.aleo</span>
+                                                    <span className="px-2 py-1 text-[11px] bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md">USDCx</span>
+                                                    <span className="px-2 py-1 text-[11px] bg-green-500/10 border border-green-500/20 text-green-400 rounded-md">USAD</span>
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -244,139 +309,150 @@ export default function DocsPage() {
                             {/* ARCHITECTURE TAB */}
                             {/* ============================================ */}
                             {activeTab === 'architecture' && (
-                                <div className="space-y-8">
-                                    <div className="space-y-4 border-b border-white/10 pb-8">
-                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">Architecture</h1>
-                                        <p className="text-xl text-muted-foreground">Dual payment models designed for privacy, flexibility, and scale.</p>
+                                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="space-y-6 border-b border-white/5 pb-10 text-center flex flex-col items-center">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase">
+                                            Architecture
+                                        </div>
+                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">
+                                            Dual Payment <br className="hidden md:block"/>
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Execution Engines</span>
+                                        </h1>
+                                        <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed mt-4">
+                                            ZK Payroll supports two fundamentally different payment flows, each optimized for distinct operational requirements.
+                                        </p>
                                     </div>
 
-                                    <div className="prose prose-invert prose-p:text-gray-400 max-w-none">
-                                        <h2>System Overview</h2>
-                                        <p>ZK Payroll is built as a Next.js 14 frontend communicating with a Leo smart contract deployed on the Aleo Testnet. The architecture supports two fundamentally different payment flows, each optimized for distinct operational requirements.</p>
-
-                                        <h2>Payment Model 1: Push (Direct Settlement)</h2>
-                                        <div className="grid md:grid-cols-1 gap-6 my-8 not-prose">
-                                            <GlassCard hover={false} className="p-6 border-white/20">
-                                                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                                    Direct Push Payments
+                                    {/* Push Model */}
+                                    <div className="space-y-6">
+                                        <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#06b6d4] to-[#3b82f6]">01.</span> Push Model
+                                        </h2>
+                                        <GlassCard hover={false} className="p-0 overflow-hidden border-white/5 bg-[#050505] rounded-3xl">
+                                            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-[#06b6d4]/10 to-transparent">
+                                                <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 text-white">
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shadow-[0_0_10px_#06b6d4] animate-pulse" />
+                                                    Direct Settlement
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground mb-4">Immediate settlement for native Aleo credits and ARC-20 stablecoins (USDCx, USAD).</p>
-                                                <div className="grid md:grid-cols-3 gap-4">
-                                                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-                                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Step 1: Authorization</p>
-                                                        <p className="text-sm text-gray-300">Admin signs payment via the Multi-Sig authorization modal. All M-of-N wallet signatures are verified cryptographically.</p>
+                                                <p className="text-sm text-[#a1a1aa]">Immediate settlement for native Aleo credits and ARC-20 stablecoins (USDCx, USAD).</p>
+                                            </div>
+                                            <div className="p-8">
+                                                <div className="grid md:grid-cols-3 gap-6 relative">
+                                                    {/* Connecting Line for md+ screens */}
+                                                    <div className="hidden md:block absolute top-[28px] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-[#06b6d4]/10 via-[#06b6d4]/40 to-[#06b6d4]/10 z-0" />
+                                                    
+                                                    <div className="relative z-10 bg-[#0a0a0a] p-6 rounded-2xl border border-white/10 shadow-xl group hover:border-[#06b6d4]/30 transition-colors">
+                                                        <div className="w-10 h-10 rounded-full bg-black border border-white/20 flex items-center justify-center font-bold text-white mb-4 shadow-[0_0_15px_rgba(255,107,43,0.15)] group-hover:bg-[#06b6d4]/10 transition-colors z-10 mx-auto md:mx-0">1</div>
+                                                        <h4 className="text-white font-bold mb-2 text-center md:text-left">Authorization</h4>
+                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">Admin signs payment via the Multi-Sig modal. All M-of-N signatures verified cryptographically.</p>
                                                     </div>
-                                                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-                                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Step 2: Execution</p>
-                                                        <p className="text-sm text-gray-300">The smart contract executes <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary</code>, <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary_usdcx</code>, or <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary_usad</code> and verifies the budget ceiling.</p>
+                                                    
+                                                    <div className="relative z-10 bg-[#0a0a0a] p-6 rounded-2xl border border-white/10 shadow-xl group hover:border-[#06b6d4]/30 transition-colors">
+                                                        <div className="w-10 h-10 rounded-full bg-black border border-white/20 flex items-center justify-center font-bold text-white mb-4 shadow-[0_0_15px_rgba(255,107,43,0.15)] group-hover:bg-[#06b6d4]/10 transition-colors z-10 mx-auto md:mx-0">2</div>
+                                                        <h4 className="text-white font-bold mb-2 text-center md:text-left">Execution</h4>
+                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">Contract executes <code className="text-white text-[11px] bg-white/10 px-1 py-0.5 rounded mx-1">issue_salary</code> and verifies the mathematical budget ceiling.</p>
                                                     </div>
-                                                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-                                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Step 3: Delivery</p>
-                                                        <p className="text-sm text-gray-300">A private <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SalaryRecord</code> is delivered directly to the employee&apos;s wallet. Funds appear instantly.</p>
+                                                    
+                                                    <div className="relative z-10 bg-[#0a0a0a] p-6 rounded-2xl border border-[#06b6d4]/20 bg-gradient-to-b from-[#06b6d4]/[0.02] to-transparent shadow-xl group hover:border-[#06b6d4]/40 transition-colors">
+                                                        <div className="w-10 h-10 rounded-full bg-[#06b6d4]/20 border border-[#06b6d4]/50 text-[#06b6d4] flex items-center justify-center font-bold mb-4 shadow-[0_0_15px_rgba(255,107,43,0.3)] z-10 mx-auto md:mx-0">3</div>
+                                                        <h4 className="text-white font-bold mb-2 text-center md:text-left">Delivery</h4>
+                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">A private <code className="text-white text-[11px] bg-white/10 px-1 py-0.5 rounded mx-1">SalaryRecord</code> is delivered directly to the employee&apos;s wallet instantly.</p>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 p-3 bg-white/5 rounded-lg text-xs text-gray-400">
-                                                    <strong className="text-white">Use Cases:</strong> Independent contractors, one-off bonuses, immediate stablecoin settlements, any payment where the admin wants direct control.
+                                                
+                                                <div className="mt-8 p-4 bg-white/[0.02] border border-white/5 rounded-xl text-sm text-[#a1a1aa] flex gap-3 items-start">
+                                                    <div className="mt-0.5 text-[#06b6d4]"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                    <div>
+                                                        <strong className="text-white">Optimal Use Cases:</strong> Independent contractors, one-off bonuses, immediate stablecoin settlements, and any payment where the admin desires direct, immediate execution control.
+                                                    </div>
                                                 </div>
-                                            </GlassCard>
-                                        </div>
+                                            </div>
+                                        </GlassCard>
+                                    </div>
 
-                                        <h2>Payment Model 2: Pull (Zero-Gas Treasury Relayer)</h2>
-                                        <div className="grid md:grid-cols-1 gap-6 my-8 not-prose">
-                                            <GlassCard hover={false} className="p-6">
-                                                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-white/40" />
-                                                    Gasless Pull Model
+                                    {/* Pull Model */}
+                                    <div className="space-y-6 pt-6">
+                                        <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-400">02.</span> Pull Model
+                                        </h2>
+                                        <GlassCard hover={false} className="p-0 overflow-hidden border-white/5 bg-[#050505] rounded-3xl">
+                                            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-blue-500/10 to-transparent">
+                                                <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 text-white">
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]" />
+                                                    Zero-Gas Treasury Relayer
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground mb-4">Time-locked vesting with asynchronous employee claiming and zero gas costs for contributors.</p>
-                                                <div className="space-y-3">
-                                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">01</span>
-                                                        <div>
-                                                            <p className="text-sm text-white font-medium">Admin issues a VestingRecord</p>
-                                                            <p className="text-xs text-gray-400 mt-1">The admin calls <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_vested_salary</code> with a specified <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">unlock_height</code>. The employee receives a time-locked record.</p>
-                                                        </div>
+                                                <p className="text-sm text-[#a1a1aa]">Time-locked vesting with asynchronous employee claiming and zero gas costs for contributors.</p>
+                                            </div>
+                                            
+                                            <div className="p-8 grid md:grid-cols-5 gap-4">
+                                                <div className="md:col-span-2 space-y-4">
+                                                    <div className="p-5 border border-white/5 bg-white/[0.02] rounded-2xl relative overflow-hidden group hover:bg-white/[0.04] transition-colors">
+                                                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30 group-hover:bg-blue-500 transition-colors" />
+                                                        <span className="text-xs font-mono text-blue-400 mb-2 block tracking-wider">PHASE 1 : ORIGINATION</span>
+                                                        <h4 className="text-white font-bold text-sm mb-2">Time-Locked Vesting</h4>
+                                                        <p className="text-xs text-[#8f8f96]">Admin issues a <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">VestingRecord</code> at a specified <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">unlock_height</code>. Funds mathematically inaccessible until the network reaches this block.</p>
                                                     </div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">02</span>
-                                                        <div>
-                                                            <p className="text-sm text-white font-medium">Employee waits for block height</p>
-                                                            <p className="text-xs text-gray-400 mt-1">The Employee Portal shows a live block countdown timer. The funds are mathematically inaccessible until the Aleo network reaches the target block.</p>
-                                                        </div>
+                                                    
+                                                    <div className="p-5 border border-white/5 bg-white/[0.02] rounded-2xl relative overflow-hidden group hover:bg-white/[0.04] transition-colors">
+                                                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30 group-hover:bg-blue-500 transition-colors" />
+                                                        <span className="text-xs font-mono text-blue-400 mb-2 block tracking-wider">PHASE 2 : CONVERSION</span>
+                                                        <h4 className="text-white font-bold text-sm mb-2">Employee Claims</h4>
+                                                        <p className="text-xs text-[#8f8f96]">Employee calls <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">claim_vested</code> to convert to a <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">SalaryCertificate</code> once block unlocks. Zero gas cost.</p>
                                                     </div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">03</span>
-                                                        <div>
-                                                            <p className="text-sm text-white font-medium">Employee claims the vesting</p>
-                                                            <p className="text-xs text-gray-400 mt-1">Once the countdown reaches zero, the employee calls <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">claim_vested</code>. The ZK circuit asserts <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">block.height &gt;= unlock_height</code> and converts the VestingRecord into a SalaryCertificate.</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">04</span>
-                                                        <div>
-                                                            <p className="text-sm text-white font-medium">Zero-Gas Pull Request</p>
-                                                            <p className="text-xs text-gray-400 mt-1">The employee clicks Withdraw — <strong>no wallet popup appears</strong>. A gasless off-chain pull request is sent to the Admin&apos;s Treasury Relayer.</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">05</span>
-                                                        <div>
-                                                            <p className="text-sm text-white font-medium">Admin fulfills via Treasury Relayer</p>
-                                                            <p className="text-xs text-gray-400 mt-1">The Admin sees the pending request in the Treasury Relayer tab, authorizes it with Multi-Sig, and <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">claim_salary</code> routes native Aleo credits from the treasury to the employee.</p>
+                                                </div>
+                                                
+                                                <div className="hidden md:flex flex-col items-center justify-center">
+                                                    <ArrowRight className="w-8 h-8 text-white/10" />
+                                                    <div className="h-full w-px bg-gradient-to-b from-transparent via-white/10 to-transparent my-4" />
+                                                </div>
+                                                
+                                                <div className="md:col-span-2 space-y-4 flex flex-col justify-center">
+                                                    <div className="p-6 border border-blue-500/20 bg-blue-500/5 rounded-2xl relative overflow-hidden group shadow-[0_0_30px_rgba(59,130,246,0.05)]">
+                                                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
+                                                        <span className="text-xs font-mono text-blue-400 mb-2 block tracking-wider">PHASE 3 : RELAY</span>
+                                                        <h4 className="text-white font-bold mb-2">Relayer Fulfillment</h4>
+                                                        <p className="text-sm text-[#8f8f96] mb-4">Employee signs an off-chain Pull Request. Admin fulfills via <code className="text-white bg-white/10 px-1 py-0.5 rounded text-xs mx-1">claim_salary</code>.</p>
+                                                        <div className="flex items-center gap-2 text-xs font-mono bg-black/40 p-2 rounded text-white/60">
+                                                            <span className="text-blue-400">TreasuryRecord</span> → <span className="text-green-400">Employee</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 p-3 bg-white/5 rounded-lg text-xs text-gray-400">
-                                                    <strong className="text-white">Use Cases:</strong> Core team salaries, recurring payments, cliff/vesting schedules, maximum employee privacy where timing of claim is fully private.
+                                                
+                                                <div className="md:col-span-5 mt-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl text-sm text-[#a1a1aa] flex gap-3 items-start">
+                                                    <div className="mt-0.5 text-blue-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                    <div>
+                                                        <strong className="text-white">Optimal Use Cases:</strong> Core team salaries, recurring payments, cliff/vesting schedules, and scenarios demanding maximum employee privacy where claim timing is fully private.
+                                                    </div>
                                                 </div>
-                                            </GlassCard>
-                                        </div>
+                                            </div>
+                                        </GlassCard>
+                                    </div>
 
-                                        <h2>Key Smart Contract Records</h2>
-                                        <div className="space-y-3 not-prose text-sm text-gray-300">
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> SpentRecord</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: Admin</span>
+                                    {/* Smart Contract Records */}
+                                    <div className="pt-12">
+                                        <h2 className="text-3xl font-black text-white mb-8 tracking-tight border-l-4 border-white pl-4">Key Smart Contract Records</h2>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            {[
+                                                { name: "SpentRecord", owner: "Admin", desc: "Tracks cumulative spending privately. Consumed and re-created mapping total_spent to maintain an immutable loop." },
+                                                { name: "TreasuryRecord", owner: "MultiSig Admin", desc: "Central pool of native Aleo credits owned by the DAO. Consumed during pull fulfillment." },
+                                                { name: "VestingRecord", owner: "Employee", desc: "Time-locked grant parameter. Inaccessible until the Aleo network reaches the specified block." },
+                                                { name: "SalaryCertificate", owner: "Employee", desc: "Unlocked right to pull salary. Used to submit a gasless Pull Request to the Treasury Relayer." },
+                                                { name: "SalaryRecord", owner: "Employee", desc: "The final encrypted payment voucher delivered to the employee. Contains amount and payment_id." },
+                                                { name: "AuditReport", owner: "Auditor", desc: "Compliance proof containing merkle_root and pay_period_hash. Proves solvency." },
+                                            ].map(record => (
+                                                <div key={record.name} className="p-6 border border-white/5 bg-[#0a0a0a] rounded-2xl hover:bg-white/[0.02] transition-colors group">
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="font-mono text-white text-lg flex items-center gap-2">
+                                                            <span className="text-white/30 text-xs tracking-widest uppercase">record</span> 
+                                                            <span className="group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/50 transition-all">{record.name}</span>
+                                                        </div>
+                                                        <span className="text-[10px] uppercase tracking-wider text-[#8f8f96] bg-white/5 px-2 py-1 rounded-full border border-white/5">
+                                                            {record.owner}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-[#8f8f96] leading-relaxed">{record.desc}</p>
                                                 </div>
-                                                <p className="text-xs text-gray-400">Tracks cumulative spending privately. Fields: <code className="text-white/70">total_spent</code>, <code className="text-white/70">recipient_count</code>, <code className="text-white/70">auditor</code>. Consumed and re-created with each salary issuance to maintain an immutable spending chain.</p>
-                                            </div>
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> TreasuryRecord</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: MultiSig Admin</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400">Central pool of native Aleo credits owned by the DAO. Created via <code className="text-white/70">fund_payroll</code> and consumed by <code className="text-white/70">claim_salary</code> during pull fulfillment.</p>
-                                            </div>
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> VestingRecord</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: Employee</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400">Time-locked grant with <code className="text-white/70">unlock_height</code> parameter. Cannot be redeemed until the Aleo network reaches the specified block. Converted to SalaryCertificate via <code className="text-white/70">claim_vested</code>.</p>
-                                            </div>
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> SalaryCertificate</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: Employee</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400">Unlocked right to pull salary. Generated from a VestingRecord after time-lock expiry. Used to submit a gasless Pull Request to the Treasury Relayer.</p>
-                                            </div>
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> SalaryRecord</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: Employee</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400">The final encrypted payment voucher delivered to the employee. Contains <code className="text-white/70">amount</code>, <code className="text-white/70">payment_id</code>, and <code className="text-white/70">payroll_id</code> — only visible to the recipient.</p>
-                                            </div>
-                                            <div className="p-4 border border-white/5 bg-white/5 rounded-lg">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="font-mono text-white"><span className="text-muted-foreground">record</span> AuditReport</div>
-                                                    <span className="text-xs text-muted-foreground">Owner: Auditor</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400">Compliance proof containing <code className="text-white/70">total_spent</code>, <code className="text-white/70">recipient_count</code>, <code className="text-white/70">merkle_root</code>, and <code className="text-white/70">pay_period_hash</code>. Proves solvency without revealing individual salary data.</p>
-                                            </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -386,78 +462,119 @@ export default function DocsPage() {
                             {/* SECURITY TAB */}
                             {/* ============================================ */}
                             {activeTab === 'security' && (
-                                <div className="space-y-8">
-                                    <div className="space-y-4 border-b border-white/10 pb-8">
-                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">Security Model</h1>
-                                        <p className="text-xl text-muted-foreground">Multi-layered cryptographic protection for every transaction.</p>
+                                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="space-y-6 border-b border-white/5 pb-10 text-center flex flex-col items-center">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold tracking-widest uppercase">
+                                            Security Model
+                                        </div>
+                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
+                                            Cryptographic <br className="hidden md:block"/>
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">Defense-in-Depth</span>
+                                        </h1>
+                                        <p className="text-xl text-[#a1a1aa] max-w-3xl leading-relaxed mt-4">
+                                            ZK Payroll&apos;s security is enforced at multiple layers — on-chain ZK circuit constraints, off-chain signature verification, and Aleo&apos;s native UTXO model.
+                                            <strong className="text-white font-medium ml-1">No single layer can be bypassed without invalidating the mathematical proof.</strong>
+                                        </p>
                                     </div>
 
-                                    <div className="prose prose-invert prose-p:text-gray-400 max-w-none">
-                                        <p>ZK Payroll&apos;s security is enforced at multiple layers — on-chain ZK circuit constraints, off-chain signature verification, and Aleo&apos;s native UTXO model. No single layer can be bypassed without invalidating the cryptographic proof.</p>
-                                    </div>
-
-                                    <div className="grid gap-4">
-                                        <GlassCard hover={false} className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0"><Shield className="w-5 h-5" /></div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">Budget Ceiling Enforcement</h3>
-                                                    <p className="text-sm text-gray-400 mb-3">Every salary transition asserts <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">new_total_spent &lt;= budget_ceiling</code> on-chain. This check is embedded in the ZK circuit — the Aleo validator network will reject any proof that violates this constraint. It is mathematically impossible to overspend the approved budget.</p>
-                                                    <div className="p-3 bg-white/5 rounded-lg text-xs font-mono text-gray-500">
-                                                        finalize: assert(new_total_spent &lt;= Mapping::get(payroll_budgets, payroll_id))
-                                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-6 pt-4">
+                                        <GlassCard hover={true} className="p-8 border-white/5 bg-[#050505] group">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent flex items-center justify-center mb-6 border border-green-500/20 group-hover:bg-green-500/30 transition-colors">
+                                                <Shield className="w-6 h-6 text-green-400" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white mb-3">Budget Ceiling Enforcement</h3>
+                                            <p className="text-sm text-[#8f8f96] mb-6 leading-relaxed">
+                                                Every salary transition asserts <code className="text-white/80 bg-white/5 px-1.5 py-0.5 rounded text-[11px] font-mono mx-1 border border-white/10">new_total_spent &lt;= budget_ceiling</code> on-chain. This check is embedded in the ZK circuit — the Aleo validator network will drop any transaction that violates this mathematical constraint.
+                                            </p>
+                                            <div className="p-4 bg-[#0a0a0a] rounded-xl border border-white/5 font-mono text-xs text-green-400/80 shadow-inner overflow-hidden">
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">1 |</span> 
+                                                    <span><span className="text-purple-400">assert</span>(new_total_spent &lt;= </span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">2 |</span> 
+                                                    <span className="pl-4">Mapping::<span className="text-blue-400">get</span>(payroll_budgets, id))</span>
                                                 </div>
                                             </div>
                                         </GlassCard>
 
-                                        <GlassCard hover={false} className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0"><Lock className="w-5 h-5" /></div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">M-of-N Enterprise Multi-Sig</h3>
-                                                    <p className="text-sm text-gray-400 mb-3">Critical payroll actions require M-of-N wallet signatures. During <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">initialize_payroll</code>, three admin addresses and a threshold are registered on-chain. The frontend verifies Ed25519 signatures from each required admin before releasing the transaction payload.</p>
-                                                    <div className="p-3 bg-white/5 rounded-lg text-xs font-mono text-gray-500">
-                                                        Mapping: admin_1, admin_2, admin_3 per payroll_id | threshold via multisig_threshold
-                                                    </div>
+                                        <GlassCard hover={true} className="p-8 border-white/5 bg-[#050505] group">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#06b6d4]/20 to-transparent flex items-center justify-center mb-6 border border-[#06b6d4]/20 group-hover:bg-[#06b6d4]/30 transition-colors">
+                                                <Lock className="w-6 h-6 text-[#06b6d4]" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white mb-3">M-of-N Enterprise Multi-Sig</h3>
+                                            <p className="text-sm text-[#8f8f96] mb-6 leading-relaxed">
+                                                Critical payroll actions require M-of-N wallet signatures natively. During initialization, multiple admin addresses and a threshold are registered on-chain. The Ed25519 signatures are verified before releasing payload.
+                                            </p>
+                                            <div className="p-4 bg-[#0a0a0a] rounded-xl border border-white/5 font-mono text-xs text-[#06b6d4]/80 shadow-inner overflow-hidden">
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">1 |</span> 
+                                                    <span><span className="text-purple-400">Mapping</span>: admin_1, admin_2, admin_3</span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">2 |</span> 
+                                                    <span className="pl-4">threshold <span className="text-purple-400">=</span> multisig_threshold</span>
                                                 </div>
                                             </div>
                                         </GlassCard>
 
-                                        <GlassCard hover={false} className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0"><Eye className="w-5 h-5" /></div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">Double-Spend Prevention</h3>
-                                                    <p className="text-sm text-gray-400 mb-3">ZK Payroll uses two independent mechanisms to prevent double spending. First, Aleo&apos;s native UTXO model ensures every record can only be consumed once — when a <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">SpentRecord</code> is used in a transition, it is permanently destroyed. Second, the <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">claimed_payments</code> mapping explicitly tracks every pull claim by payment ID.</p>
-                                                    <div className="p-3 bg-white/5 rounded-lg text-xs font-mono text-gray-500">
-                                                        finalize: assert_eq(Mapping::get_or_use(claimed_payments, payment_id, false), false)
-                                                    </div>
+                                        <GlassCard hover={true} className="p-8 border-white/5 bg-[#050505] group">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-transparent flex items-center justify-center mb-6 border border-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+                                                <Eye className="w-6 h-6 text-blue-400" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white mb-3">Double-Spend Prevention</h3>
+                                            <p className="text-sm text-[#8f8f96] mb-6 leading-relaxed">
+                                                Two independent defense mechanisms: Aleo&apos;s native UTXO model ensures every <code className="text-white bg-white/10 px-1 py-0.5 rounded text-[10px]">SpentRecord</code> is permanently destroyed upon consumption. Additionally, explicit payment claim mapping tracking.
+                                            </p>
+                                            <div className="p-4 bg-[#0a0a0a] rounded-xl border border-white/5 font-mono text-xs text-blue-400/80 shadow-inner overflow-hidden">
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">1 |</span> 
+                                                    <span><span className="text-purple-400">assert_eq</span>(</span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">2 |</span> 
+                                                    <span className="pl-4">Mapping::<span className="text-blue-400">get_or_use</span>(claimed, id), <span className="text-yellow-400">false</span></span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">3 |</span> 
+                                                    <span>)</span>
                                                 </div>
                                             </div>
                                         </GlassCard>
 
-                                        <GlassCard hover={false} className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0"><Clock className="w-5 h-5" /></div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">Time-Lock Isolation</h3>
-                                                    <p className="text-sm text-gray-400 mb-3">Vesting records include an <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">unlock_height</code> parameter. The <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">claim_vested</code> transition enforces <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">block.height &gt;= unlock_height</code> inside the ZK constraint network. This is not a software rule — it is a mathematical assertion that the Aleo validator network must verify before the proof is accepted.</p>
-                                                    <div className="p-3 bg-white/5 rounded-lg text-xs font-mono text-gray-500">
-                                                        finalize_claim_vested: assert(block.height &gt;= unlock_height)
-                                                    </div>
+                                        <GlassCard hover={true} className="p-8 border-white/5 bg-[#050505] group">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-transparent flex items-center justify-center mb-6 border border-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+                                                <Clock className="w-6 h-6 text-purple-400" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white mb-3">Time-Lock Isolation</h3>
+                                            <p className="text-sm text-[#8f8f96] mb-6 leading-relaxed">
+                                                Vesting asserts <code className="text-white/80 bg-white/5 px-1 py-0.5 rounded text-[11px] font-mono border border-white/10 mx-1">block.height &gt;= unlock_height</code> inside the ZK constraint network. This is not a software rule; it is a mathematical assertion forced upon validators.
+                                            </p>
+                                            <div className="p-4 bg-[#0a0a0a] rounded-xl border border-white/5 font-mono text-xs text-purple-400/80 shadow-inner overflow-hidden">
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">1 |</span> 
+                                                    <span className="text-white/50">{"// ZK Circuit Constraint"}</span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="text-white/30 truncate select-none">2 |</span> 
+                                                    <span><span className="text-purple-400">assert</span>(block.height &gt;= unlock_height)</span>
                                                 </div>
                                             </div>
                                         </GlassCard>
-
-                                        <GlassCard hover={false} className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0"><Layers className="w-5 h-5" /></div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">ARC-20 Compliance Proofs</h3>
-                                                    <p className="text-sm text-gray-400">For stablecoin transfers, the frontend dynamically generates Merkle Tree FreezeList proofs required by the ARC-20 token standard. These proofs are passed as private inputs to <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary_usdcx</code> and <code className="text-white text-xs bg-white/10 px-1 py-0.5 rounded">issue_salary_usad</code>, ensuring the transfer satisfies all compliance constraints natively.</p>
+                                        
+                                        <div className="md:col-span-2">
+                                            <GlassCard hover={true} className="p-8 border-white/5 bg-[#050505] bg-gradient-to-r from-transparent via-white/[0.02] to-transparent group flex flex-col md:flex-row items-center gap-8">
+                                                <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center border border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                                                    <Layers className="w-8 h-8 text-white" />
                                                 </div>
-                                            </div>
-                                        </GlassCard>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white mb-2">ARC-20 Compliance Proofs</h3>
+                                                    <p className="text-sm text-[#8f8f96] leading-relaxed max-w-3xl">
+                                                        For stablecoin transfers, the frontend dynamically generates Merkle Tree FreezeList proofs required by the ARC-20 token standard. These proofs are passed as private inputs to <code className="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs border border-white/10">issue_salary_usdcx</code> and <code className="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs border border-white/10">issue_salary_usad</code>, ensuring the transfer satisfies all organizational compliance constraints natively within the zero-knowledge execution environment.
+                                                    </p>
+                                                </div>
+                                            </GlassCard>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -466,98 +583,133 @@ export default function DocsPage() {
                             {/* ROADMAP TAB */}
                             {/* ============================================ */}
                             {activeTab === 'roadmap' && (
-                                <div className="space-y-8">
-                                    <div className="space-y-4 border-b border-white/10 pb-8">
-                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">Development Roadmap</h1>
-                                        <p className="text-xl text-muted-foreground">From proof-of-concept to enterprise-grade privacy infrastructure.</p>
+                                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+                                    <div className="space-y-6 border-b border-white/5 pb-10 text-center flex flex-col items-center">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] text-xs font-bold tracking-widest uppercase">
+                                            Roadmap
+                                        </div>
+                                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
+                                            Development <br className="hidden md:block"/>
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-indigo-400">Timeline</span>
+                                        </h1>
+                                        <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed mt-4">
+                                            From proof-of-concept to enterprise-grade protocol. Our trajectory bridging the gap between Web3 privacy and Web2 institutional scale.
+                                        </p>
                                     </div>
 
-                                    <div className="space-y-8 pb-12">
-                                        {/* Wave 1 */}
-                                        <div className="relative pl-8 border-l border-white/10">
-                                            <div className="absolute w-3 h-3 bg-white/30 rounded-full -left-[7px] top-1.5" />
-                                            <h2 className="text-xl font-bold mb-1 text-white/60">Wave 1: Foundation</h2>
-                                            <span className="inline-block px-2 py-0.5 bg-white/10 text-white/40 text-xs font-bold rounded mb-3 tracking-widest uppercase">Complete</span>
-                                            <ul className="space-y-1.5 text-sm text-gray-500 list-disc list-inside">
-                                                <li>Core Leo smart contract with private SalaryRecord issuance</li>
-                                                <li>Public budget ceiling enforcement via on-chain mappings</li>
-                                                <li>Encrypted audit reports for selective disclosure</li>
-                                                <li>Testnet deployment and CLI-based testing</li>
-                                            </ul>
-                                        </div>
+                                    <div className="relative pt-8">
+                                        {/* Central Timeline Line */}
+                                        <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[#06b6d4]/50 via-white/10 to-transparent -translate-x-1/2" />
 
-                                        {/* Wave 2 */}
-                                        <div className="relative pl-8 border-l border-white/10">
-                                            <div className="absolute w-3 h-3 bg-white/30 rounded-full -left-[7px] top-1.5" />
-                                            <h2 className="text-xl font-bold mb-1 text-white/60">Wave 2: Security &amp; Scale</h2>
-                                            <span className="inline-block px-2 py-0.5 bg-white/10 text-white/40 text-xs font-bold rounded mb-3 tracking-widest uppercase">Complete</span>
-                                            <ul className="space-y-1.5 text-sm text-gray-500 list-disc list-inside">
-                                                <li>M-of-N Multi-Signature admin control with on-chain threshold</li>
-                                                <li>Full Next.js 14 production frontend with wallet adapter</li>
-                                                <li>Admin, Employee, and Auditor Portal dashboards</li>
-                                                <li>Pull payment model with SalaryCertificate claiming</li>
-                                                <li>Batch processing with automated UTXO management</li>
-                                                <li>Payroll templates for recurring configurations</li>
-                                            </ul>
-                                        </div>
-
-                                        {/* Wave 3 - Current */}
-                                        <div className="relative pl-8 border-l border-white/20">
-                                            <div className="absolute w-4 h-4 bg-white rounded-full -left-[9px] top-1 shadow-[0_0_10px_#fff]" />
-                                            <h2 className="text-2xl font-bold mb-1">Wave 3: Enterprise Integrations</h2>
-                                            <span className="inline-block px-2 py-1 bg-white text-black text-xs font-bold rounded mb-4 tracking-widest uppercase">Current Submission</span>
-                                            <p className="text-gray-400 text-sm mb-4">Bridging the gap between Web3 privacy and Web2 enterprise operational requirements.</p>
-                                            <div className="grid md:grid-cols-2 gap-3 not-prose">
-                                                <div className="p-4 rounded-lg border border-white/10 bg-white/[0.03]">
-                                                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                                                        <Layers className="w-3.5 h-3.5" /> ARC-20 Token Integration
-                                                    </h4>
-                                                    <p className="text-xs text-gray-400">Native support for <code className="text-white/70">USDCx</code> and <code className="text-white/70">USAD</code> stablecoins via cross-program calls to official Aleo Buildathon token programs with dynamic Merkle Tree FreezeList proof generation.</p>
+                                        <div className="space-y-16">
+                                            {/* Wave 1 */}
+                                            <div className="relative flex flex-col md:flex-row items-start md:items-center w-full group">
+                                                <div className="md:w-1/2 md:pr-16 text-left md:text-right order-2 md:order-1 pl-20 md:pl-0 mt-4 md:mt-0">
+                                                    <h2 className="text-2xl font-bold text-white mb-2">Wave 1: Foundation</h2>
+                                                    <p className="text-[#8f8f96] text-sm mb-4">Initial testnet deployment and core privacy mechanics.</p>
+                                                    <div className="inline-flex flex-wrap gap-2 md:justify-end">
+                                                        {['Core Leo Contract', 'Budget Ceilings', 'Audit Proofs', 'CLI Testing'].map((item) => (
+                                                            <span key={item} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] text-white/60">{item}</span>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="p-4 rounded-lg border border-white/10 bg-white/[0.03]">
-                                                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                                                        <Clock className="w-3.5 h-3.5" /> Time-Delayed Vesting
-                                                    </h4>
-                                                    <p className="text-xs text-gray-400">Cryptographically enforced unlock schedules tied to <code className="text-white/70">block.height</code>. Employees receive VestingRecords with live countdown timers and call <code className="text-white/70">claim_vested</code> to unlock.</p>
+                                                <div className="absolute left-[39px] md:left-1/2 top-0 md:top-1/2 -translate-x-1/2 md:-translate-y-1/2 w-6 h-6 rounded-full bg-black border-2 border-white/20 z-10 flex items-center justify-center group-hover:border-white/50 transition-colors">
+                                                    <div className="w-2 h-2 rounded-full bg-white/20 group-hover:bg-white/50 transition-colors" />
                                                 </div>
-                                                <div className="p-4 rounded-lg border border-white/10 bg-white/[0.03]">
-                                                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                                                        <Zap className="w-3.5 h-3.5" /> Zero-Gas Treasury Relayer
-                                                    </h4>
-                                                    <p className="text-xs text-gray-400">True Pull Model where employees execute salary claims without paying any Aleo network gas. The Admin Relayer fulfills requests asynchronously from the Treasury pool.</p>
-                                                </div>
-                                                <div className="p-4 rounded-lg border border-white/10 bg-white/[0.03]">
-                                                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                                                        <Shield className="w-3.5 h-3.5" /> Multi-Sig &amp; Auditing
-                                                    </h4>
-                                                    <p className="text-xs text-gray-400">End-to-end ZK solvency proofs with Merkle root commitments. Threshold management ensures no single admin can compromise the treasury.</p>
+                                                <div className="md:w-1/2 md:pl-16 order-1 md:order-2 pl-20 md:pl-0">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-white/60 text-xs font-bold rounded-full tracking-widest uppercase mb-2 md:mb-0">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                        Complete
+                                                    </span>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Wave 4 - Next */}
-                                        <div className="relative pl-8 border-l border-white/10">
-                                            <div className="absolute w-4 h-4 border-2 border-white bg-black rounded-full -left-[9px] top-1" />
-                                            <h2 className="text-2xl font-bold mb-1 text-white/80">Wave 4: The Next Frontier</h2>
-                                            <span className="inline-block px-2 py-1 border border-white/20 text-white/50 text-xs font-bold rounded mb-4 tracking-widest uppercase">Coming Next</span>
-                                            <p className="text-gray-500 text-sm mb-4">Targeting mass institutional adoption, advanced tax regulations, and processing scale.</p>
-                                            <ul className="space-y-2 text-sm text-gray-500 list-disc list-inside">
-                                                <li><strong className="text-gray-400">Zero-Knowledge Tax Withholding:</strong> Automatically calculate tax percentages during claims, divert to a TaxVaultRecord, and generate downloadable ZK proofs for IRS/government submission.</li>
-                                                <li><strong className="text-gray-400">True ZK Parallel Batch Rollups:</strong> Re-architect Leo contract to allow entire payroll arrays inside a single, massive SNARK transition.</li>
-                                                <li><strong className="text-gray-400">Multi-Currency Batch Rollups:</strong> Bulk process and distribute ARC-20 stablecoins (USDCx, USAD) across multiple employees in one transaction.</li>
-                                                <li><strong className="text-gray-400">Multisig Batch Authorization:</strong> Dynamic M-of-N threshold authorization for entire batch Merkle roots instead of individual signing.</li>
-                                            </ul>
-                                        </div>
+                                            {/* Wave 2 */}
+                                            <div className="relative flex flex-col md:flex-row items-start md:items-center w-full group">
+                                                <div className="md:w-1/2 md:pr-16 text-left md:text-right order-2 md:order-1 pl-20 md:pl-0 mt-4 md:mt-0">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-white/60 text-xs font-bold rounded-full tracking-widest uppercase mb-2 md:mb-0">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                        Complete
+                                                    </span>
+                                                </div>
+                                                <div className="absolute left-[39px] md:left-1/2 top-0 md:top-1/2 -translate-x-1/2 md:-translate-y-1/2 w-8 h-8 rounded-full bg-black border-2 border-white/30 z-10 flex items-center justify-center group-hover:border-white/60 transition-colors">
+                                                    <div className="w-3 h-3 rounded-full bg-white/40 group-hover:bg-white/80 transition-colors" />
+                                                </div>
+                                                <div className="md:w-1/2 md:pl-16 order-1 md:order-2 pl-20 md:pl-0 text-left">
+                                                    <h2 className="text-2xl font-bold text-white mb-2">Wave 2: Security &amp; Scale</h2>
+                                                    <p className="text-[#8f8f96] text-sm mb-4">Adding M-of-N authorization and production frontend interfaces.</p>
+                                                    <div className="inline-flex flex-wrap gap-2 text-left">
+                                                        {['Multi-Sig Thresholds', 'Next.js 14 Frontend', 'Pull Model Alpha', 'UTXO Batching'].map((item) => (
+                                                            <span key={item} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] text-white/60">{item}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                        {/* Wave 5-6 */}
-                                        <div className="relative pl-8 border-l border-white/5">
-                                            <div className="absolute w-3 h-3 border border-white/20 bg-black rounded-full -left-[7px] top-1.5" />
-                                            <h2 className="text-xl font-bold mb-1 text-white/50">Wave 5-6: Mass Adoption</h2>
-                                            <span className="inline-block px-2 py-0.5 border border-white/10 text-white/30 text-xs font-bold rounded mb-3 tracking-widest uppercase">Future Vision</span>
-                                            <ul className="space-y-1.5 text-sm text-gray-600 list-disc list-inside">
-                                                <li><strong className="text-gray-500">Decentralized HR Oracles:</strong> Privacy-preserving sync with BambooHR, Deel, and other SaaS platforms for automatic proof-of-employment credentials.</li>
-                                                <li><strong className="text-gray-500">Fiat On/Off-Ramps:</strong> Partner with MoonPay, Stripe Crypto, or Banxa to allow administrators to fund treasuries directly via bank wire.</li>
-                                            </ul>
+                                            {/* Wave 3 */}
+                                            <div className="relative flex flex-col md:flex-row items-center w-full group">
+                                                <div className="md:w-1/2 md:pr-16 text-left md:text-right order-2 md:order-1 pl-20 md:pl-0 mt-4 md:mt-0 w-full hidden md:block">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-white/60 text-xs font-bold rounded-full tracking-widest uppercase mb-2 md:mb-0">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                        Complete
+                                                    </span>
+                                                </div>
+                                                <div className="absolute left-[39px] md:left-1/2 top-0 md:top-1/2 -translate-x-1/2 md:-translate-y-1/2 w-8 h-8 rounded-full bg-black border-2 border-white/30 z-10 flex items-center justify-center group-hover:border-white/60 transition-colors">
+                                                    <div className="w-3 h-3 rounded-full bg-white/40 group-hover:bg-white/80 transition-colors" />
+                                                </div>
+                                                <div className="md:w-1/2 md:pl-16 order-1 md:order-2 pl-20 md:pl-0 text-left">
+                                                    <h2 className="text-2xl font-bold text-white mb-2">Wave 3: Integrations</h2>
+                                                    <p className="text-[#8f8f96] text-sm mb-4">Bridging the gap between Web3 privacy capabilities and Web2 enterprise operational requirements.</p>
+                                                    <div className="inline-flex flex-wrap gap-2 text-left">
+                                                        {['ARC-20 Stablecoins', 'Time-Delayed Vesting', 'Gasless Treasuries'].map((item) => (
+                                                            <span key={item} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] text-white/60">{item}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Wave 4 - Current */}
+                                            <div className="relative flex flex-col md:flex-row items-center w-full group">
+                                                <div className="md:w-1/2 md:pr-16 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0 mt-4 md:mt-0 w-full hidden md:block">
+                                                    <span className="inline-flex flex-col items-end opacity-20">
+                                                        <span className="text-6xl font-black italic -ml-4">W4</span>
+                                                    </span>
+                                                </div>
+                                                
+                                                <div className="absolute left-[39px] md:left-1/2 top-0 md:top-9 -translate-x-1/2 w-12 h-12 rounded-full bg-black border-2 border-[#06b6d4] shadow-[0_0_20px_rgba(255,107,43,0.3)] z-10 flex items-center justify-center">
+                                                    <div className="w-4 h-4 rounded-full bg-[#06b6d4] animate-pulse" />
+                                                </div>
+                                                
+                                                <div className="md:w-1/2 md:pl-16 order-1 md:order-2 pl-20 md:pl-0 w-full">
+                                                    <GlassCard hover={true} className="p-6 md:p-8 border-[#06b6d4]/30 bg-gradient-to-br from-[#06b6d4]/5 to-black relative overflow-hidden group-hover:border-[#06b6d4]/50">
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#06b6d4] opacity-5 blur-[80px]" />
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#06b6d4]/20 text-[#06b6d4] text-xs font-bold rounded-full tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(255,107,43,0.2)]">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] animate-pulse" /> Current Focus
+                                                        </span>
+                                                        <h2 className="text-3xl font-black text-white mb-2">Wave 4: Expanding Horizons</h2>
+                                                        <p className="text-[#a1a1aa] text-sm mb-6 max-w-sm">Bridge the gap to government regulations, enhance user experience for non-technical users, and optimize execution.</p>
+                                                        
+                                                        <div className="space-y-4">
+                                                            {[
+                                                                { icon: <Globe className="text-[#06b6d4] w-4 h-4"/>, title: "Frontend Upgrades", desc: "Refine UI components across all portals with unified pill-based navigation." },
+                                                                { icon: <Database className="text-[#06b6d4] w-4 h-4"/>, title: "Dashboard & Analytics", desc: "Implement a comprehensive, privacy-preserving analytics dashboard for Admins." },
+                                                                { icon: <Users className="text-[#06b6d4] w-4 h-4"/>, title: "HR User Experience", desc: "Redesign complex ZK interactions to feel entirely seamless to a traditional HR admin." },
+                                                                { icon: <Layers className="text-[#06b6d4] w-4 h-4"/>, title: "Advanced Batching", desc: "Push advanced batch processing constraints for the next wave." }
+                                                            ].map((feature, i) => (
+                                                                <div key={i} className="flex gap-3 items-start p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 group/item">
+                                                                    <div className="mt-1 bg-black p-1.5 rounded-md border border-white/10 group-hover/item:border-[#06b6d4]/30 transition-colors">
+                                                                        {feature.icon}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="text-white text-sm font-bold">{feature.title}</h4>
+                                                                        <p className="text-xs text-[#8f8f96] mt-0.5">{feature.desc}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </GlassCard>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

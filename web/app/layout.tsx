@@ -4,6 +4,7 @@ import './globals.css'
 import dynamic from 'next/dynamic'
 import ReactQueryProvider from '@/components/ReactQueryProvider'
 import { Toaster } from "@/components/ui/sonner"
+import GlobalNav from '@/components/GlobalNav'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,6 +28,7 @@ export default function RootLayout({
             <body className={inter.className}>
                 <ReactQueryProvider>
                     <AleoWalletProvider>
+                        <GlobalNav />
                         {children}
                         <Toaster />
                     </AleoWalletProvider>

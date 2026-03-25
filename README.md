@@ -92,7 +92,7 @@ graph TB
         DOC["Documentation"]
     end
 
-    subgraph SmartContract["baba_zk_payroll_v22.aleo"]
+    subgraph SmartContract["baba_zk_payroll_v24.aleo"]
         INIT["initialize_payroll"]
         FUND["fund_payroll"]
         IS["issue_salary"]
@@ -188,7 +188,7 @@ sequenceDiagram
 
 ## 📜 Smart Contract Design
 
-**Program:** `baba_zk_payroll_v22.aleo` | **Language:** Leo | **Network:** Aleo Testnet
+**Program:** `baba_zk_payroll_v24.aleo` | **Language:** Leo | **Network:** Aleo Testnet
 
 ### Record Types
 
@@ -301,7 +301,7 @@ Automated UTXO-chain polling enables sequential multi-employee payroll runs with
 
 | Layer | Technology |
 |:---|:---|
-| **Smart Contract** | Leo (Aleo) — `baba_zk_payroll_v22.aleo` |
+| **Smart Contract** | Leo (Aleo) — `baba_zk_payroll_v24.aleo` |
 | **Frontend** | Next.js 14 (App Router) |
 | **Wallet** | `@provablehq/aleo-wallet-adaptor` (Leo / Puzzle Wallet) |
 | **Stablecoins** | `test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo` |

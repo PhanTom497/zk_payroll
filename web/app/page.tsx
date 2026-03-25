@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { Shield, Users, Eye, Wallet, Lock, Zap, ArrowRight, ArrowUpRight, Play } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { WalletConnectButton } from "@/components/WalletConnectButton";
 import FeaturesScroll from "@/components/FeaturesScroll";
 
 const title = "ZK Payroll";
@@ -48,29 +47,7 @@ export default function Home() {
 
     return (
         <div ref={scrollRef} className="relative z-10 min-h-screen overflow-clip bg-black">
-            {/* Nav */}
-            <nav className="fixed top-4 left-0 right-0 z-50 px-6 flex justify-center pointer-events-none">
-                <div className="flex items-center justify-between bg-[#0a0a0a]/80 border border-white/10 rounded-full px-3 py-3 backdrop-blur-xl pointer-events-auto w-full max-w-5xl gap-6 shadow-2xl">
 
-                    {/* Logo */}
-                    <Link href="/" className="text-[17px] font-bold tracking-tight text-white flex-shrink-0 pl-5">
-                        ZK Payroll.
-                    </Link>
-
-                    {/* Centered Links */}
-                    <div className="hidden md:flex items-center gap-8">
-                        <Link href="/admin" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Admin</Link>
-                        <Link href="/employee" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Employee</Link>
-                        <Link href="/auditor" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Auditor</Link>
-                        <Link href="/docs" className="text-[13px] font-medium text-white/60 hover:text-white transition-colors">Docs</Link>
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="flex-shrink-0">
-                        <WalletConnectButton />
-                    </div>
-                </div>
-            </nav>
 
             {/* Hero */}
             <section className="min-h-screen flex items-center md:items-end px-6 md:px-12 lg:px-24 pb-24 relative z-10 pt-32 overflow-hidden">

@@ -2,7 +2,7 @@ import credits.aleo;
 import test_usdcx_stablecoin.aleo;
 import test_usad_stablecoin.aleo;
 
-program baba_zk_payroll_v22.aleo {
+program baba_zk_payroll_v24.aleo {
 
     // ========================================================================
     // RECORDS
@@ -60,6 +60,28 @@ program baba_zk_payroll_v22.aleo {
         payroll_id: field,   // Links to specific payroll instance
     }
 
+    /// TaxPaidProof: Employee-side private proof of withholding
+    record TaxPaidProof {
+        owner: address,         // Employee recipient
+        gross_amount: u64,      // Claimed gross amount
+        tax_amount: u64,        // Withheld tax amount
+        net_amount: u64,        // Net amount delivered to employee
+        payroll_id: field,      // Payroll reference
+        payment_id: field,      // Payment identifier
+        tax_authority: address, // Tax authority wallet
+    }
+
+    /// TaxVaultRecord: Tax authority-side private withholding receipt
+    record TaxVaultRecord {
+        owner: address,         // Tax authority
+        employee: address,      // Employee who was paid
+        gross_amount: u64,      // Claimed gross amount
+        tax_amount: u64,        // Withheld tax amount
+        net_amount: u64,        // Net amount delivered
+        payroll_id: field,      // Payroll reference
+        payment_id: field,      // Payment identifier
+    }
+
     // ... existing AuditReport ...
 
     // ========================================================================
@@ -80,7 +102,7 @@ program baba_zk_payroll_v22.aleo {
             payroll_id: payroll_id,
         };
 
-        let (remaining, transferred): (credits.aleo/credits, credits.aleo/credits) = 
+        let (transferred, remaining): (credits.aleo/credits, credits.aleo/credits) = 
             credits.aleo/transfer_private(pay_record, admin_multisig, amount);
 
         let f: Future = finalize_fund_payroll(payroll_id, amount);
@@ -122,6 +144,11 @@ program baba_zk_payroll_v22.aleo {
     // Prevents double-pulling a salary certificate
     mapping claimed_payments: field => bool;
 
+    // Global tax policy per payroll
+    mapping tax_percentage_bps: field => u16;
+    mapping tax_authority: field => address;
+    mapping tax_collected_total: field => u64;
+
     // ========================================================================
     // TRANSITIONS
     // ========================================================================
@@ -162,6 +189,38 @@ program baba_zk_payroll_v22.aleo {
         Mapping::set(admin_1, payroll_id, a1);
         Mapping::set(admin_2, payroll_id, a2);
         Mapping::set(admin_3, payroll_id, a3);
+        Mapping::set(tax_percentage_bps, payroll_id, 0u16);
+        Mapping::set(tax_authority, payroll_id, a1);
+        Mapping::set(tax_collected_total, payroll_id, 0u64);
+    }
+
+    /// set_tax_policy: Configure withholding policy for a payroll
+    async transition set_tax_policy(
+        public payroll_id: field,
+        public tax_bps: u16,
+        public authority: address
+    ) -> Future {
+        assert(tax_bps <= 10000u16);
+        let f: Future = finalize_set_tax_policy(payroll_id, tax_bps, authority, self.caller);
+        return f;
+    }
+
+    async function finalize_set_tax_policy(
+        payroll_id: field,
+        tax_bps: u16,
+        authority: address,
+        caller: address
+    ) {
+        let a1: address = Mapping::get(admin_1, payroll_id);
+        let a2: address = Mapping::get(admin_2, payroll_id);
+        let a3: address = Mapping::get(admin_3, payroll_id);
+        let is_admin: bool = caller == a1 || caller == a2 || caller == a3;
+        assert_eq(is_admin, true);
+        assert(tax_bps > 0u16);
+        assert(tax_bps <= 10000u16);
+
+        Mapping::set(tax_percentage_bps, payroll_id, tax_bps);
+        Mapping::set(tax_authority, payroll_id, authority);
     }
 
 
@@ -177,7 +236,7 @@ program baba_zk_payroll_v22.aleo {
 
         let new_total_spent: u64 = spent_record.total_spent + salary_amount;
         // Perform the private transfer to the employee
-        let (remaining_credits, transferred_credits): (credits.aleo/credits, credits.aleo/credits) = 
+        let (transferred_credits, remaining_credits): (credits.aleo/credits, credits.aleo/credits) = 
             credits.aleo/transfer_private(pay_record, recipient, salary_amount);
 
         let new_spent_record: SpentRecord = SpentRecord {
@@ -223,7 +282,7 @@ program baba_zk_payroll_v22.aleo {
         let new_total_spent: u64 = spent_record.total_spent + salary_amount_u64;
 
         // Perform the private transfer of USDCx to the employee
-        let (compliance_record, remaining_tokens, transferred_tokens, transfer_future): (test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, test_usdcx_stablecoin.aleo/Token, Future) = 
+        let (compliance_record, transferred_tokens, remaining_tokens, transfer_future): (test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, test_usdcx_stablecoin.aleo/Token, Future) = 
             test_usdcx_stablecoin.aleo/transfer_private(recipient, salary_amount, pay_record, proofs);
 
         let new_spent_record: SpentRecord = SpentRecord {
@@ -271,7 +330,7 @@ program baba_zk_payroll_v22.aleo {
         let new_total_spent: u64 = spent_record.total_spent + salary_amount_u64;
 
         // Perform the private transfer of USAD to the employee
-        let (compliance_record, remaining_tokens, transferred_tokens, transfer_future): (test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, test_usad_stablecoin.aleo/Token, Future) = 
+        let (compliance_record, transferred_tokens, remaining_tokens, transfer_future): (test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, test_usad_stablecoin.aleo/Token, Future) = 
             test_usad_stablecoin.aleo/transfer_private(recipient, salary_amount, pay_record, proofs);
 
         let new_spent_record: SpentRecord = SpentRecord {
@@ -373,12 +432,23 @@ program baba_zk_payroll_v22.aleo {
         treasury_tokens: credits.aleo/credits,
         public employee: address,
         public amount: u64,
-        public payment_id: field
-    ) -> (credits.aleo/credits, credits.aleo/credits, TreasuryRecord, Future) {
+        public payment_id: field,
+        public tax_bps: u16,
+        public authority: address
+    ) -> (credits.aleo/credits, credits.aleo/credits, credits.aleo/credits, TreasuryRecord, TaxPaidProof, TaxVaultRecord, Future) {
         
         // Assert treasury constraints
         assert(treasury.balance >= amount);
-        
+
+        // Compute withholding (in basis points)
+        let gross_amount_u128: u128 = amount as u128;
+        let tax_amount_u128: u128 = (gross_amount_u128 * (tax_bps as u128)) / 10000u128;
+        let tax_floor: u64 = tax_amount_u128 as u64;
+        let tax_amount: u64 = (tax_bps > 0u16 && amount > 0u64 && tax_floor == 0u64) ? 1u64 : tax_floor;
+        assert(tax_amount > 0u64);
+        assert(amount > tax_amount);
+        let net_amount: u64 = amount - tax_amount;
+
         // Deduct from TreasuryRecord budget
         let new_treasury: TreasuryRecord = TreasuryRecord {
             owner: treasury.owner,
@@ -386,18 +456,62 @@ program baba_zk_payroll_v22.aleo {
             payroll_id: treasury.payroll_id,
         };
 
-        // Physically transfer the Native Aleo Credits from the Treasury token record
-        let (remaining_tokens, transferred_tokens): (credits.aleo/credits, credits.aleo/credits) = 
-            credits.aleo/transfer_private(treasury_tokens, employee, amount);
+        // Split transfer: net to employee, tax to authority
+        let (employee_tokens, post_employee_tokens): (credits.aleo/credits, credits.aleo/credits) =
+            credits.aleo/transfer_private(treasury_tokens, employee, net_amount);
+        let (tax_tokens, remaining_tokens): (credits.aleo/credits, credits.aleo/credits) =
+            credits.aleo/transfer_private(post_employee_tokens, authority, tax_amount);
 
-        let f: Future = finalize_claim_salary(treasury.payroll_id, amount, payment_id);
-        return (remaining_tokens, transferred_tokens, new_treasury, f);
+        let employee_proof: TaxPaidProof = TaxPaidProof {
+            owner: employee,
+            gross_amount: amount,
+            tax_amount: tax_amount,
+            net_amount: net_amount,
+            payroll_id: treasury.payroll_id,
+            payment_id: payment_id,
+            tax_authority: authority,
+        };
+
+        let tax_vault_record: TaxVaultRecord = TaxVaultRecord {
+            owner: authority,
+            employee: employee,
+            gross_amount: amount,
+            tax_amount: tax_amount,
+            net_amount: net_amount,
+            payroll_id: treasury.payroll_id,
+            payment_id: payment_id,
+        };
+
+        let f: Future = finalize_claim_salary(treasury.payroll_id, amount, payment_id, tax_bps, authority, tax_amount);
+        return (remaining_tokens, employee_tokens, tax_tokens, new_treasury, employee_proof, tax_vault_record, f);
     }
 
-    async function finalize_claim_salary(payroll_id: field, amount: u64, payment_id: field) {
+    async function finalize_claim_salary(
+        payroll_id: field,
+        amount: u64,
+        payment_id: field,
+        tax_bps: u16,
+        authority: address,
+        tax_amount: u64
+    ) {
+        let expected_bps: u16 = Mapping::get(tax_percentage_bps, payroll_id);
+        let expected_authority: address = Mapping::get(tax_authority, payroll_id);
+        assert(expected_bps > 0u16);
+        assert_eq(tax_bps, expected_bps);
+        assert_eq(authority, expected_authority);
+
+        let recomputed_tax_u128: u128 = ((amount as u128) * (tax_bps as u128)) / 10000u128;
+        let recomputed_floor: u64 = recomputed_tax_u128 as u64;
+        let recomputed_tax: u64 = (tax_bps > 0u16 && amount > 0u64 && recomputed_floor == 0u64) ? 1u64 : recomputed_floor;
+        assert_eq(tax_amount, recomputed_tax);
+        assert(tax_amount > 0u64);
+
         // Decrease global public budget safely
         let current_budget: u64 = Mapping::get(payroll_budgets, payroll_id);
         Mapping::set(payroll_budgets, payroll_id, current_budget - amount);
+
+        let current_collected: u64 = Mapping::get_or_use(tax_collected_total, payroll_id, 0u64);
+        Mapping::set(tax_collected_total, payroll_id, current_collected + tax_amount);
         
         // Prevent double pulling by asserting the payment was not already claimed
         let is_claimed: bool = Mapping::get_or_use(claimed_payments, payment_id, false);

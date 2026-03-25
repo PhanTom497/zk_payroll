@@ -27,7 +27,8 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
     const [canClaim, setCanClaim] = useState(false)
 
     // Clean display values
-    const displayAmount = certificate.amount.replace(/u64|u32|field|\.private/g, '')
+    const rawMicro = Number(certificate.amount.replace(/u64|u32|field|\.private|_/g, '')) || 0
+    const displayAmount = (rawMicro / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 })
 
     // Calculate details
     const nextClaimHeight = certificate.start_height + (certificate.claim_count * certificate.interval)

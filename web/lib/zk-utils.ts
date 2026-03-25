@@ -1,7 +1,7 @@
 import { Network, TransactionOptions } from '@provablehq/aleo-types';
 
 export const NETWORK_URL = 'https://api.explorer.provable.com/v1';
-export const PROGRAM_ID = 'baba_zk_payroll_v22.aleo'; // Replace with deployed ID
+export const PROGRAM_ID = 'baba_zk_payroll_v24.aleo'; // Replace with deployed ID
 
 export async function fetchMappingValue(mappingName: string, key: string): Promise<string | null> {
     try {
@@ -48,15 +48,51 @@ export async function requestTransaction(
 
     console.log("Requesting transaction:", JSON.stringify(transaction, null, 2));
 
-    // @provablehq adapter uses executeTransaction instead of requestTransaction
-    if (walletAdapter.executeTransaction) {
-        const result = await walletAdapter.executeTransaction(transaction);
-        return result.transactionId;
-    } else if (walletAdapter.requestTransaction) {
-        // Fallback for older adapters or if naming differs, though executeTransaction is standard in provablehq
-        return await walletAdapter.requestTransaction(transaction);
-    } else {
+    const extractTxId = (result: any): string | null => {
+        if (!result) return null;
+        if (typeof result === 'string') return result;
+        if (typeof result.transactionId === 'string') return result.transactionId;
+        if (typeof result.transaction_id === 'string') return result.transaction_id;
+        if (typeof result.id === 'string') return result.id;
+        return null;
+    };
+
+    const isRetryableWalletError = (err: any): boolean => {
+        const msg = String(err?.message || err || '').toLowerCase();
+        if (!msg) return false;
+        return (
+            msg.includes('no response') ||
+            msg.includes('disconnected port') ||
+            msg.includes('not connected') ||
+            msg.includes('network changed')
+        );
+    };
+
+    const executeOnce = async (): Promise<string> => {
+        if (walletAdapter.executeTransaction) {
+            const result = await walletAdapter.executeTransaction(transaction);
+            const txId = extractTxId(result);
+            if (!txId) throw new Error("No response");
+            return txId;
+        }
+
+        if (walletAdapter.requestTransaction) {
+            const result = await walletAdapter.requestTransaction(transaction);
+            const txId = extractTxId(result);
+            if (!txId) throw new Error("No response");
+            return txId;
+        }
+
         throw new Error("Wallet adapter does not support executeTransaction");
+    };
+
+    try {
+        return await executeOnce();
+    } catch (err: any) {
+        if (!isRetryableWalletError(err)) throw err;
+        console.warn("Transient wallet error, retrying once:", err);
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return await executeOnce();
     }
 }
 

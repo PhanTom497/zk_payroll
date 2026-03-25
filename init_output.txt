@@ -1,34 +1,45 @@
-⚠️ No network specified, defaulting to 'testnet'.
-⚠️ No endpoint specified, defaulting to 'https://api.explorer.provable.com/v1'.
-       Leo     174 statements before dead code elimination.
-       Leo     174 statements after dead code elimination.
-       Leo     The program checksum is: '[242u8, 140u8, 162u8, 241u8, 199u8, 91u8, 22u8, 184u8, 180u8, 151u8, 108u8, 209u8, 186u8, 0u8, 65u8, 158u8, 128u8, 130u8, 75u8, 131u8, 159u8, 63u8, 246u8, 2u8, 70u8, 89u8, 145u8, 214u8, 95u8, 210u8, 200u8, 43u8]'.
-       Leo     Program size: 7.95 KB / 97.66 KB
-       Leo ✅ Compiled 'baba_zk_payroll_v4.aleo' into Aleo instructions.
-⚠️ No network specified, defaulting to 'testnet'.
+📢 Loading environment variables from a `.env` file in the directory tree.
+  - PRIVATE_KEY=APrivateKey1zkp7Ut7qtZRmMjPWij2puVMuewB86gS8mwVjK8EpxoebVeN
+  - NETWORK=testnet
+  - ENDPOINT=https://api.explorer.provable.com/v1
+
+🟢 A new version is available! Run `leo update` to update to v3.5.0.
+       Leo     219 statements before dead code elimination.
+       Leo     219 statements after dead code elimination.
+       Leo     The program checksum is: '[235u8, 236u8, 157u8, 183u8, 5u8, 197u8, 172u8, 84u8, 210u8, 32u8, 233u8, 174u8, 72u8, 134u8, 183u8, 162u8, 214u8, 50u8, 137u8, 37u8, 151u8, 196u8, 181u8, 69u8, 160u8, 250u8, 56u8, 85u8, 24u8, 138u8, 140u8, 42u8]'.
+       Leo     Program size: 12.79 KB / 97.66 KB
+       Leo ✅ Compiled 'baba_zk_payroll_v23.aleo' into Aleo instructions.
 
 ➕Adding programs to the VM in the following order:
-  - baba_zk_payroll_v4.aleo (local)
+  - credits.aleo (already included)
+  - merkle_tree.aleo (edition: 1)
+  - test_usdcx_multisig_core.aleo (edition: 0)
+  - test_usdcx_freezelist.aleo (edition: 0)
+  - test_usdcx_stablecoin.aleo (edition: 2)
+  - test_usad_multisig_core.aleo (edition: 0)
+  - test_usad_freezelist.aleo (edition: 0)
+  - test_usad_stablecoin.aleo (edition: 2)
+  - baba_zk_payroll_v23.aleo (local)
 
 ➡️  Outputs
 
  • {
-  owner: aleo1aj3dlzcv0rw940gppups8qhyhsf5txqp9grgxmz7rk77g4h285zs2f5czr.private,
+  owner: aleo1t085kcqltj67773vddqjup2zk9vfumytlx67u978h2hswjl6tcqq4j6tg9.private,
   total_spent: 0u64.private,
   payroll_id: 1field.private,
   auditor: aleo1dcm8zcart6z5tm2fzl95fj0cxtrxztquz00egkq9xpxafgjg4gpsgf5vgv.private,
   recipient_count: 0u32.private,
-  _nonce: 7700868527249052602583229774767788652342091113308178988728248716813569078780group.public,
+  _nonce: 4172325311310433371594075632950658368298525712319131338338148710079226033534group.public,
   _version: 1u8.public
 }
  • {
-  program_id: baba_zk_payroll_v4.aleo,
+  program_id: baba_zk_payroll_v23.aleo,
   function_name: initialize_payroll,
   arguments: [
     1field,
     1000u64,
     2u64,
-    aleo1aj3dlzcv0rw940gppups8qhyhsf5txqp9grgxmz7rk77g4h285zs2f5czr,
+    aleo1t085kcqltj67773vddqjup2zk9vfumytlx67u978h2hswjl6tcqq4j6tg9,
     aleo1q56xwucee45w6f2zwzhx9askc2evz9lhxc3rlwym2cu4y67w2sxq4ggplc,
     aleo1s0hc0xtpmpma9gtyps023d4mr4l0wfufkdmuhak8f3fsuh7g7v9snv2t4c
   ]

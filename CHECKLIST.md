@@ -9,7 +9,7 @@ These steps will guide you through manually testing the new **Push Payment archi
    ```bash
    leo deploy --network testnet --endpoint "https://api.explorer.provable.com/v1" --private-key "YOUR_PRIVATE_KEY" --priority-fees 300000000 --broadcast --yes
    ```
-   *Note: `baba_zk_payroll_v21.aleo` is now correctly configured in `program.json`.*
+   *Note: `baba_zk_payroll_v24.aleo` is now correctly configured in `program.json`.*
 
 2. **Start the Frontend**:
    ```bash
@@ -56,3 +56,19 @@ Since we shifted to the Direct Push Model, you must test paying an employee usin
    - Open `localhost:3000/employee` and connect with the Employee's wallet.
    - You should see a new `SalaryRecord` appear in the history, proving the funds were pushed privately.
    - Your wallet balance (for either Credits or USDCx depending on which transition was tested) will have incremented privately!
+
+## Phase 5: Tax Withholding (Wave 4.1)
+
+1. **Configure Tax Policy (Admin Tab → Add Budget)**:
+   - Set **Tax Rate (%)** and **Tax Authority Wallet**.
+   - Click **Save Tax Policy** and confirm transaction.
+
+2. **Run a Relayer Claim**:
+   - Have employee submit a pull request from `/employee`.
+   - Approve from Admin **Employee Claims** tab.
+   - Confirm claim executes with tax split.
+
+3. **Verify Tax Records**:
+   - Employee scans records and sees `TaxPaidProof` entries.
+   - Employee downloads JSON proof from **Tax Withholding Proofs**.
+   - Check on-chain `tax_collected_total` increased.

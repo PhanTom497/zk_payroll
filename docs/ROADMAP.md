@@ -96,20 +96,32 @@ This document outlines the strategic development plan for ZK Payroll, moving fro
 
 ---
 
-## 🏛️ Wave 4: The Next Frontier (Current)
+## 🏗️ Wave 4: The Next Frontier (Current Focus)
 
-**Goal:** Bridge the gap to government regulations without sacrificing employee privacy.
+**Goal:** Bridge the gap to government regulations, enhance user experience for non-technical users, and optimize execution.
 
 ### 1. Zero-Knowledge Tax Withholding
 -   **Mechanism:** Add a "Tax Authority" view key and a `tax_percentage` global state.
 -   **Logic:** `claim_salary` will automatically calculate $X$% of the claim, divert it to a `TaxVaultRecord`, and generate a downloadable ZK proof of "Tax Paid" for the employee to securely submit to the IRS.
 
-### 2. Advanced Batch Processing (Deferred from Wave 3)
--   **Current State:** Batch execution is currently limited to sequential UTXO generation for Native Aleo Vesting streams due to SnarkVM constraints on parallel `SpentRecord` consumption.
+### 2. Advanced Batch Processing
+-   **Current State:** Batch execution is sequential UTXO generation.
 -   **Goal for Wave 4:** 
     -   **True ZK Parallel Execution:** Re-architect the `main.leo` structure to allow `issue_salary_batch_X` to securely execute an entire array of employees inside a single, massive SNARK transition.
     -   **Multi-Currency Batching:** Expand batch compatibility to natively aggregate and distribute ARC-20 tokens (`USDCx`, `USAD`) in bulk.
     -   **Multisig Integration:** Require the $M$-of-$N$ admin threshold to dynamically authorize the entire batch Merkle root at once instead of individual signing.
+
+### 3. Frontend Upgrades & Ecosystem Polish
+-   **Mechanism:** Refine UI components across all portals (Admin, Employee, Auditor) with a focus on modern aesthetics, smooth transitions, and intuitive layouts.
+-   **Logic:** Implement unified pill-based navigation, high-fidelity responsive components, and consistent branding.
+
+### 4. Dashboard & Analytics
+-   **Mechanism:** Implement a comprehensive, privacy-preserving analytics dashboard for Admins.
+-   **Logic:** Aggregate data across multiple `AuditReport` and `SpentRecord` entities to display total payroll volume, token distribution breakdowns, and historic trends without compromising individual employee privacy.
+
+### 5. Non-Technical HR User Experience
+-   **Mechanism:** Redesign complex ZK and blockchain interactions to feel entirely seamless to a traditional Web2 HR administrator.
+-   **Logic:** Convert technical blockchain jargon into human-readable actions, abstract UTXO management, and create templates that mimic familiar multi-step traditional payroll systems.
 
 ---
 

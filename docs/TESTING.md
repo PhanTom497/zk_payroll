@@ -97,3 +97,31 @@ leo execute generate_audit_report "[SPENT_RECORD]" <TIMESTAMP> <PAY_PERIOD_HASH>
 | **Valid Payment** | Salary issued, spent updated | ✅ PASS |
 | **Invalid Payment** | Transaction rejected | ✅ PASS |
 | **Audit Report** | Auditor receives report | ✅ PASS |
+
+---
+
+## Wave 4.1 Tax Withholding (MVP)
+
+### 6. Configure Tax Policy
+
+**Purpose:** Configure global withholding policy per payroll before relayer claim processing.
+
+**Command:**
+```bash
+leo execute set_tax_policy 1field 1000u16 <TAX_AUTHORITY_ADDRESS> --network testnet ...
+```
+
+**Outcome:**
+- `tax_percentage_bps[1field] = 1000u16`
+- `tax_authority[1field] = <TAX_AUTHORITY_ADDRESS>`
+
+### 7. Process Taxed Claim
+
+**Purpose:** Verify `claim_salary` splits gross payout into employee net + authority tax.
+
+**Checks:**
+- Employee receives `net_amount`.
+- Tax authority receives `tax_amount`.
+- Employee gets `TaxPaidProof`.
+- Authority gets `TaxVaultRecord`.
+- `tax_collected_total[1field]` increments.
