@@ -1,127 +1,164 @@
-# Testing Guide
+# ZK Payroll Testing Guide
 
-This guide details how to verify the **ZK Payroll** smart contract on the Aleo Testnet.
+This guide covers the current manual and contract-level test surface for `baba_zk_payroll_v24.aleo`.
 
-## Quick Test
+## Recommended Testing Order
 
-Run the automated test suite to verify core functionality in one command:
+1. Build the Leo program.
+2. Start the Next.js frontend.
+3. Run end-to-end role testing through the portals.
+4. Use CLI checks only for focused contract validation.
+
+## 1. Contract Build
 
 ```bash
-chmod +x test.sh && ./test.sh
+leo build
 ```
 
----
+Expected:
+- program builds successfully for `baba_zk_payroll_v24.aleo`
 
-### 1. Initialize Payroll & Budget
+## 2. Frontend Run
 
-**Purpose:** Set up a new payroll instance with a strict budget ceiling and multi-sig parameters.
-
-**Command:**
 ```bash
-leo execute initialize_payroll 1000u64 1field 1u64 <ADMIN1> <ADMIN2> <ADMIN3> <AUDITOR> --network testnet ...
+cd web
+npm install
+npm run dev
 ```
 
-**Outcome:**
-- **On-chain State:** `payroll_budgets[1field] = 1000u64`
-- **Private Records:** `SpentRecord` created (total_spent: 0)
+Expected:
+- app loads at `http://localhost:3000`
+- admin, employee, auditor, tax-authority, and docs routes render
 
----
+## 3. Core Frontend Validation Areas
 
-### 2. Note on Manual Testing (v7)
+### Payroll Initialization
+Validate:
+- admin wallet can initialize payroll
+- mappings are written
+- initial `SpentRecord` exists
+- admin portal exits setup state
 
-**Purpose:** With the introduction of Multi-Sig in Wave 2 (v7), transitions like `issue_salary` and `create_recipient_ticket` require valid signature structs (`Signatures`) to execute. 
+### Funding
+Validate:
+- public-to-private conversion works for supported token flows exposed in the UI
+- payroll funding succeeds for native ALEO
+- spend limit / budget context updates after funding
 
-**Recommendation:** It is highly recommended to test the full lifecycle (Creating Tickets, Issuing Salaries, Claiming Salaries, and Batching) using the **Frontend Web Application** (`/web`), which automatically handles the complex cryptography and formatting required for the Aleo SDK. Manual CLI testing requires constructing valid offline signatures.
+### Direct Push Payouts
+Validate:
+- native ALEO push payout works
+- USDCx push payout works when required token records are available
+- USAD push payout works when required token records are available
+- employee history updates after successful pushes
 
----
+### Vesting and Claim Flow
+Validate:
+- delayed payout creates `VestingRecord`
+- employee can unlock with `claim_vested`
+- employee can submit pull request
+- admin can approve request
+- employee receives net claim amount
+- tax authority receives withheld amount
 
-### 3. Salary Payment (Success Case)
+### Audit Reporting
+Validate:
+- admin can generate `AuditReport`
+- auditor portal can scan and render reports
+- totals and metadata are visible only to the auditor wallet
 
-**Purpose:** Pay an employee within the available budget.
+### Tax Withholding
+Validate:
+- admin can save tax policy
+- native `claim_salary` respects stored tax rate and authority
+- employee gets `TaxPaidProof`
+- tax authority gets `TaxVaultRecord`
+- `tax_collected_total` increases correctly
 
-**Scenario:** Budget: 1000, Current Spent: 0, Pay Amount: 500.
+### Analytics
+Validate:
+- admin charts update after successful payroll events
+- range filters change aggregate values
+- analytics persist across refresh through local ledger storage
+- no raw employee-recipient analytics table is exposed
 
-**Command:**
+## 4. Current Contract Behaviors Worth Testing Explicitly
+
+### Budget semantics
+Current behavior:
+- `initialize_payroll` sets initial budget ceiling
+- `fund_payroll` adds to `payroll_budgets`
+
+Test:
+- initialize with one value
+- fund with additional ALEO
+- verify the mapping increases rather than staying fixed
+
+### Tax scope
+Current behavior:
+- withholding is applied only inside `claim_salary`
+
+Test:
+- direct push ALEO payout should not generate tax receipts
+- native claim payout should generate tax receipts and update totals
+
+### Claim replay protection
+Current behavior:
+- `claimed_payments` blocks duplicate native claim settlement
+
+Test:
+- attempt a second approval for the same claim id
+- expect rejection
+
+## 5. CLI Examples for Focused Contract Checks
+
+### Initialize payroll
 ```bash
-leo execute issue_salary "[ADMIN_CAP]" "[SPENT_RECORD]" "[TICKET]" 500u64 101field --network testnet ...
+leo execute initialize_payroll <BUDGET_U64> 1field <THRESHOLD_U64> <ADMIN1> <ADMIN2> <ADMIN3> <AUDITOR> --network testnet ...
 ```
 
-**Outcome:**
-- **Transaction Status:** `Accepted` on-chain.
-- **Private Records:**
-  - `SpentRecord` updated: `total_spent = 500u64`
-  - `SalaryRecord` created for employee: `amount = 500u64`
+Expected:
+- payroll mappings are created
+- initial `SpentRecord` is returned
 
----
-
-### 4. Over-Budget Rejection (Failure Case)
-
-**Purpose:** Verify that payments exceeding the budget are rejected by the network.
-
-**Scenario:** Budget: 1000, Current Spent: 500, Pay Amount: 600.
-**Total:** 500 + 600 = 1100 > 1000.
-
-**Command:**
-```bash
-leo execute issue_salary ... 600u64 ...
-```
-
-**Outcome:**
-- **Transaction Status:** `Rejected` on-chain.
-- **Reason:** `finalize` assertion failed: `1100u64 <= 1000u64` is false.
-
----
-
-### 5. Audit Report Generation
-
-**Purpose:** Prove total spending to an auditor without revealing individual salaries.
-
-**Command:**
-```bash
-leo execute generate_audit_report "[SPENT_RECORD]" <TIMESTAMP> <PAY_PERIOD_HASH> <MERKLE_ROOT> --network testnet ...
-```
-
-**Outcome:**
-- **Private Record:** `AuditReport` created, owned by the auditor.
-- **Content:** Contains `total_spent` and can be decrypted only by the auditor.
-
----
-
-## Test Results Summary
-
-| Test Case | Expected Result | Status |
-|-----------|-----------------|--------|
-| **Deployment** | Contract deployed to testnet | ✅ PASS |
-| **Initialize** | Budget mapping set on-chain | ✅ PASS |
-| **Ticket Creation** | Recipient receives ticket | ✅ PASS |
-| **Valid Payment** | Salary issued, spent updated | ✅ PASS |
-| **Invalid Payment** | Transaction rejected | ✅ PASS |
-| **Audit Report** | Auditor receives report | ✅ PASS |
-
----
-
-## Wave 4.1 Tax Withholding (MVP)
-
-### 6. Configure Tax Policy
-
-**Purpose:** Configure global withholding policy per payroll before relayer claim processing.
-
-**Command:**
+### Set tax policy
 ```bash
 leo execute set_tax_policy 1field 1000u16 <TAX_AUTHORITY_ADDRESS> --network testnet ...
 ```
 
-**Outcome:**
+Expected:
 - `tax_percentage_bps[1field] = 1000u16`
 - `tax_authority[1field] = <TAX_AUTHORITY_ADDRESS>`
 
-### 7. Process Taxed Claim
+### Generate audit report
+```bash
+leo execute generate_audit_report "[SPENT_RECORD]" <TIMESTAMP_U32> <PAY_PERIOD_HASH> <MERKLE_ROOT> --network testnet ...
+```
 
-**Purpose:** Verify `claim_salary` splits gross payout into employee net + authority tax.
+Expected:
+- auditor receives private `AuditReport`
 
-**Checks:**
-- Employee receives `net_amount`.
-- Tax authority receives `tax_amount`.
-- Employee gets `TaxPaidProof`.
-- Authority gets `TaxVaultRecord`.
-- `tax_collected_total[1field]` increments.
+## 6. Regression Checklist
+
+When making changes, verify these still work:
+- admin initialization
+- private funding path
+- direct ALEO payout
+- vested payout issuance
+- employee unlock flow
+- employee pull request
+- admin claim approval
+- audit report generation
+- analytics rendering
+- tax authority receipt scanning
+
+## 7. Known Testing Notes
+
+- Wallet adapters may occasionally fail on the first interaction; the frontend now includes retry-safe helpers for record reads and transaction submissions.
+- Stablecoin payout success depends on valid wallet-visible token records and proof assumptions in the frontend path.
+- Batch payroll is sequential and should be tested as a sequence of approvals, not as a single parallel execution.
+
+## 8. Recommended Human QA Reference
+
+For a full end-to-end manual runbook, use:
+- [../CHECKLIST.md](../CHECKLIST.md)

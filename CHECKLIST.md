@@ -1,74 +1,140 @@
-# Manual Verification Checklist (Push Payment & ARC-20 Model)
+# ZK Payroll Manual QA Checklist
 
-These steps will guide you through manually testing the new **Push Payment architecture** (incorporating `credits.aleo` and the mock `test_usdcx_stablecoin.aleo`) on your local machine using the Aleo Testnet.
+Use this checklist when validating the full system after contract or frontend changes.
 
-## Phase 1: Deployment
+## Pre-Flight
 
-1. **Deploy Contract `v18`**:
-   Open a terminal, navigate to your `/zk_payroll` directory, and run the following deployment command:
-   ```bash
-   leo deploy --network testnet --endpoint "https://api.explorer.provable.com/v1" --private-key "YOUR_PRIVATE_KEY" --priority-fees 300000000 --broadcast --yes
-   ```
-   *Note: `baba_zk_payroll_v24.aleo` is now correctly configured in `program.json`.*
+- Deploy or connect to the intended `baba_zk_payroll_v24.aleo` instance.
+- Start the frontend with `npm run dev` inside `web/`.
+- Make sure you have wallets for:
+  - admin
+  - employee
+  - auditor
+  - tax authority
+- Clear stale browser local storage if you want a clean analytics and pending-claim run.
 
-2. **Start the Frontend**:
-   ```bash
-   cd web 
-   npm run dev
-   ```
+## 1. Landing Page and Navigation
 
-## Phase 2: System Setup
+Check:
+- landing page renders correctly
+- main navigation routes work
+- portals visible: admin, employee, auditor, tax, docs
+- wallet connection status appears consistently
 
-1. **Initialize Payroll**:
-   - Open `localhost:3000/admin`.
-   - Connect your testnet wallet.
-   - Enter your Budget Ceiling and fill in the 3 Admin Addresses and Auditor Address.
-   - Click "Initialize System". Wait for the success notification.
+## 2. Admin Portal
 
-2. **Deposit Funds (Public Budget Accounting)**:
-   - Go to the **Deposit Fund** tab.
-   - Enter an amount (e.g., `50000000` for 50 credits).
-   - Click "Deposit Funds". This executes the updated `fund_payroll` which only updates the on-chain max ceiling (no longer attempts cross-program public transfers).
+### 2.1 Setup
+Check:
+- admin wallet can initialize payroll
+- budget, threshold, admin addresses, and auditor save correctly
+- setup state disappears after successful initialization
 
-## Phase 3: Push Payment (The Core Update)
+### 2.2 Add Budget
+Check:
+- tax policy form saves successfully
+- current spend / budget context updates
+- public-to-private token preparation flow works in UI
+- native ALEO funding increases payroll budget context
 
-Since we shifted to the Direct Push Model, you must test paying an employee using a completely valid set of records.
+### 2.3 Pay One Employee
+Check:
+- direct native ALEO payout works
+- direct USDCx payout path works when suitable token records exist
+- direct USAD payout path works when suitable token records exist
+- optional vesting delay creates delayed native payout instead of instant push
 
-1. **Verify Your Wallet Records**:
-   To successfully execute `issue_salary`, your wallet extension must possess at least two records:
-   - **Admin Pay Record**: A valid `credits.aleo/credits` (or `test_usdcx_stablecoin.aleo/Token`) record owned by the Admin with sufficient balance.
-   - **Spent Record**: The record generated when you initialized the payroll.
+### 2.4 Run Payroll Cycle
+Check:
+- template presets populate values correctly
+- saved templates reload correctly
+- sequential payroll cycle opens wallet approvals one by one
+- status text updates during run
+- no stale-record double-spend errors appear during normal run
 
-   *Tip: If you do not have a private `credits.aleo` record, go to the **Deposit Fund** tab and use the **Convert Public to Private** button to generate one before attempting an issue.*
+### 2.5 Employee Claims
+Check:
+- employee pull requests appear in queue
+- admin can approve request
+- claim settles successfully
+- queue item disappears or updates after success
 
-2. **Execute the Push automatically**:
-   - Go to the **Authorize Payroll** tab.
-   - Enter the Employee Address and Salary Amount.
-   - Click **Authorize Payroll**. 
-   - A visual **Multi-Signature Authorization Modal** will appear.
-   - Click **"Sign Message"** for Admin 1, Admin 2, and Admin 3. Your Aleo Wallet will pop up 3 separate times requesting you to cryptographically sign a `payment_id` hash. 
-   *(For testing, you may assign your single wallet address to all 3 Admin slots during initialization. If so, simply click all 3 buttons.)*
-   - Once all 3 signatures are collected, the UI will *automatically* construct the transaction and prompt you to approve the final transfer in your wallet extension.
+### 2.6 Reports and Audit
+Check:
+- generate audit report action succeeds
+- new report is later visible in auditor portal
 
-## Phase 4: Employee Verification
+### 2.7 Analytics
+Check:
+- charts render without exposing raw employee lists
+- time filters update totals and charts
+- KPI cards update after payroll activity
+- analytics survive page refresh via local storage
 
-1. **Verify Receipt**:
-   - Open `localhost:3000/employee` and connect with the Employee's wallet.
-   - You should see a new `SalaryRecord` appear in the history, proving the funds were pushed privately.
-   - Your wallet balance (for either Credits or USDCx depending on which transition was tested) will have incremented privately!
+## 3. Employee Portal
 
-## Phase 5: Tax Withholding (Wave 4.1)
+### 3.1 Record Scan
+Check:
+- scan succeeds on first click
+- available salary rights appear in credits, not raw microcredits
+- direct push history renders
 
-1. **Configure Tax Policy (Admin Tab → Add Budget)**:
-   - Set **Tax Rate (%)** and **Tax Authority Wallet**.
-   - Click **Save Tax Policy** and confirm transaction.
+### 3.2 Vesting and Claim
+Check:
+- unlocked vesting entries can be withdrawn
+- employee can submit pull request for admin approval
+- success and error states are understandable
 
-2. **Run a Relayer Claim**:
-   - Have employee submit a pull request from `/employee`.
-   - Approve from Admin **Employee Claims** tab.
-   - Confirm claim executes with tax split.
+### 3.3 Tax Proofs
+Check:
+- taxed native claim creates employee-side proof entry
+- JSON download works
+- JSON includes gross, tax, net, payment id, payroll id, and authority
 
-3. **Verify Tax Records**:
-   - Employee scans records and sees `TaxPaidProof` entries.
-   - Employee downloads JSON proof from **Tax Withholding Proofs**.
-   - Check on-chain `tax_collected_total` increased.
+## 4. Auditor Portal
+
+Check:
+- auditor wallet can scan `AuditReport` records
+- no-report empty state works
+- report cards show total spent, recipient count, period hash, and merkle root
+- scan action works without repeated first-click failures
+
+## 5. Tax Authority Portal
+
+Check:
+- only configured authority wallet gets access
+- tax receipts scan successfully
+- aggregate metrics render correctly
+- receipt JSON download works
+
+## 6. Cross-Portal End-to-End Run
+
+Recommended path:
+1. Initialize payroll.
+2. Save tax policy.
+3. Fund payroll.
+4. Issue one delayed native payout.
+5. Unlock from employee side.
+6. Submit employee pull request.
+7. Approve claim from admin side.
+8. Verify employee net receipt.
+9. Verify employee tax proof.
+10. Verify tax authority receipt.
+11. Generate audit report.
+12. Verify auditor visibility.
+13. Verify analytics update.
+
+## 7. Current Known Product Constraints
+
+Remember during QA:
+- tax withholding currently applies only to native `claim_salary`
+- budget ceiling currently grows when payroll funding is added
+- analytics are local-ledger and wallet-context based, not globally indexed
+- batch payroll is sequential, not single-transition parallel batching
+
+## 8. Release Sign-Off Questions
+
+Before calling a build ready, confirm:
+- do all wallet-triggered actions work on first click or recover automatically?
+- do all portals show only the records appropriate to that role?
+- do taxed claims create both employee and authority receipts?
+- do docs match the currently deployed contract behavior?

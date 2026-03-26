@@ -1,337 +1,439 @@
-# 🔐 ZK Payroll
+# ZK Payroll
 
-**Enterprise-Grade, Privacy-Preserving DAO Payments on the Aleo Network**
+**Privacy-preserving payroll infrastructure for modern teams, built on Aleo.**
 
-> **Solve the Compliance-Privacy Paradox** — prove budget solvency to auditors via zero-knowledge proofs without ever exposing individual salaries, payment timing, or contributor identities.
+> ZK Payroll helps organizations run payroll without exposing salaries, recipients, treasury operations, or compliance-sensitive metadata as public blockchain activity.
 
-[![Aleo](https://img.shields.io/badge/Built%20on-Aleo-blue?style=for-the-badge)](https://aleo.org)
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js_14-black?style=for-the-badge)](https://nextjs.org/)
-[![Leo](https://img.shields.io/badge/Smart_Contract-Leo-purple?style=for-the-badge)](https://developer.aleo.org/leo/)
-[![Status](https://img.shields.io/badge/Status-Testnet_Live-brightgreen?style=for-the-badge)](#)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Built on Aleo](https://img.shields.io/badge/Built%20on-Aleo-1f6feb?style=for-the-badge)](https://aleo.org)
+[![Frontend](https://img.shields.io/badge/Frontend-Next.js%2014-black?style=for-the-badge)](https://nextjs.org/)
+[![Contract](https://img.shields.io/badge/Contract-Leo-5b21b6?style=for-the-badge)](https://developer.aleo.org/leo/)
+[![Status](https://img.shields.io/badge/Status-Testnet%20Live-16a34a?style=for-the-badge)](#)
+[![License](https://img.shields.io/badge/License-MIT-facc15?style=for-the-badge)](LICENSE)
 
 ---
 
-## 🌐 Live Demos
+## 🌐 Live Links
 
-- **Live Application:** [https://zk-payroll.vercel.app/](https://zk-payroll.vercel.app/)
-- **Demo Video:** [Watch on YouTube](https://youtu.be/4R66Od57dDc)
-- **Documentation:** [Learn More](https://zk-payroll.vercel.app/docs)
+- **Live app:** [https://zk-payroll.vercel.app/](https://zk-payroll.vercel.app/)
+- **Demo video:** [https://youtu.be/4R66Od57dDc](https://youtu.be/4R66Od57dDc)
+- **Frontend docs:** [https://zk-payroll.vercel.app/docs](https://zk-payroll.vercel.app/docs)
 
 ---
 
 ## 📋 Table of Contents
 
-- [The Problem](#-the-problem)
-- [The Solution](#-the-solution)
-- [Privacy Matrix](#-privacy-matrix-who-sees-what)
-- [Architecture Overview](#-architecture-overview)
-- [Payment Models](#-payment-models)
-- [Smart Contract Design](#-smart-contract-design)
-- [Key Features](#-key-features)
-- [Tech Stack](#-tech-stack--project-structure)
-- [Getting Started](#-getting-started)
-- [Roadmap](#-development-roadmap)
-- [Security](#-security-guarantees)
-- [License](#-license)
+- [🚀 Key Features at a Glance](#-key-features-at-a-glance)
+- [🎯 Why ZK Payroll](#-why-zk-payroll)
+- [✅ What the Product Does Today](#-what-the-product-does-today)
+- [👁️ Privacy Matrix](#-privacy-matrix)
+- [🏗️ System Architecture](#️-system-architecture)
+- [🔄 Payroll Flows](#-payroll-flows)
+- [🧾 Tax Withholding Model](#-tax-withholding-model)
+- [📊 Analytics Model](#-analytics-model)
+- [📜 Smart Contract Surface](#-smart-contract-surface)
+- [🧑‍💼 Portal Overview](#-portal-overview)
+- [📁 Project Structure](#-project-structure)
+- [🚀 Getting Started](#-getting-started)
+- [🧪 Testing and Docs](#-testing-and-docs)
+- [🗺️ Roadmap Snapshot](#️-roadmap-snapshot)
+- [🔒 Security Notes](#-security-notes)
+- [📄 License](#-license)
 
 ---
 
-## 🎯 The Problem
+## 🚀 Key Features at a Glance
 
-Public blockchains inherently expose all transaction data. When managing payroll on-chain:
-
-| Risk | Impact |
-|------|--------|
-| 💸 **Salary Exposure** | Competitors analyze your entire compensation structure |
-| 👀 **Identity Tracking** | Contributor addresses are linked to payment amounts |
-| 📊 **Cash Flow Leaks** | Payment timing reveals burn rate and runway |
-| ⚖️ **Compliance Gap** | Without disclosure, auditors cannot verify solvency |
-
-**The core paradox:** Organizations need privacy for salaries but transparency for compliance. You cannot have both on a regular blockchain.
-
----
-
-## 💡 The Solution
-
-ZK Payroll leverages **Zero-Knowledge Proofs** on the **Aleo Network** to deliver:
-
-- **Fully private** salary transactions — amounts, recipients, timing are all encrypted
-- **Publicly verifiable** budget solvency — auditors prove compliance without seeing salaries
-- **Multi-currency support** — Native Aleo credits + ARC-20 stablecoins (USDCx, USAD)
-- **Enterprise governance** — M-of-N multi-signature authorization for all payments
-- **Zero-gas employee claims** — Contributors withdraw without paying network fees
+| Area                          | Current State         | Why it matters                                                                    |
+| ----------------------------- | --------------------- | --------------------------------------------------------------------------------- |
+| **Private payroll records**   | **Live**              | salary and treasury records stay private to the right wallet                      |
+| **Direct payouts**            | **Live**              | supports `credits.aleo`, `USDCx`, and `USAD` push payments                        |
+| **Delayed vesting**           | **Live**              | enables unlock-based native payroll workflows                                     |
+| **Relayer-backed claims**     | **Live**              | employees can request native claim settlement without managing treasury execution |
+| **Tax withholding MVP**       | **Live**              | native `claim_salary` splits gross, tax, and net automatically                    |
+| **Audit reporting**           | **Live**              | auditors receive private aggregate reports instead of raw salary data             |
+| **Admin analytics**           | **Live**              | aggregate payroll insights without exposing raw employee tables                   |
+| **Tax authority portal**      | **Live**              | authority wallet can review private withholding receipts                          |
+| **Advanced batch processing** | **Planned next wave** | current payroll cycle runner is sequential, not full parallel batching            |
 
 ---
 
-## 👁️ Privacy Matrix: Who Sees What?
+## 🎯 Why ZK Payroll
 
-ZK Payroll uses cryptographic selective disclosure to dynamically restrict data visibility per role:
+Traditional payroll systems assume a trusted internal database. Public blockchains do not. Without privacy protections, on-chain payroll leaks:
 
-| Data Point | Public Observer | Auditor | Admin | Employee |
-|:---|:---:|:---:|:---:|:---:|
-| Budget Ceiling | ✅ Visible | ✅ Visible | ✅ Visible | — |
-| Total Spent | ❌ Hidden | ✅ ZK-Verified | ✅ Visible | — |
-| Individual Salaries | ❌ Hidden | ❌ Hidden | ✅ Visible | Own Only |
-| Recipient Identities | ❌ Hidden | ❌ Hidden | ✅ Visible | Own Only |
-| Payment Timing | ❌ Hidden | ❌ Hidden | ✅ Visible | Own Only |
-| Compliance Proof | ✅ ZK-Proven | ✅ ZK-Proven | ✅ ZK-Proven | — |
-| Vesting Schedule | ❌ Hidden | ❌ Hidden | ✅ Visible | Own Only |
+| Risk                        | What leaks                                 | Why it matters                                        |
+| --------------------------- | ------------------------------------------ | ----------------------------------------------------- |
+| **Salary exposure**         | compensation amounts                       | reveals compensation bands and negotiation leverage   |
+| **Treasury visibility**     | payout timing and burn pattern             | exposes runway and operating behavior                 |
+| **Identity linkage**        | recipient addresses and payment history    | maps contributors to financial activity               |
+| **Weak compliance options** | either reveal everything or reveal nothing | makes private operations difficult to audit correctly |
+
+ZK Payroll solves that tradeoff with **private Aleo records**, **public constraint mappings**, and **role-specific disclosure**:
+
+- **private salary and treasury records**
+- **auditable aggregate reporting**
+- **role-based access to sensitive outputs**
+- **native support for direct payouts, vesting, relayer-backed claims, and tax receipts**
 
 ---
 
-## 🏗️ Architecture Overview
+## ✅ What the Product Does Today
+
+ZK Payroll currently runs as a **multi-portal payroll workflow on Aleo Testnet**.
+
+### Core capabilities
+
+- **private payroll initialization** with admin and auditor setup
+- **native ALEO funding** and payroll budget tracking
+- **direct push payments** in `credits.aleo`, `USDCx`, and `USAD`
+- **delayed native ALEO vesting** through `VestingRecord`
+- **employee unlock flow** through `claim_vested`
+- **relayer-backed claim settlement** through `claim_salary`
+- **tax withholding** on native claim settlement
+- **auditor-only** private `AuditReport` generation and review
+- **tax-authority-only** private `TaxVaultRecord` review
+- **frontend analytics** using wallet context plus local portal event history
+
+### Current deployed program
+
+- **Program ID:** `baba_zk_payroll_v24.aleo`
+- **Network:** Aleo Testnet
+- **Frontend stack:** Next.js 14
+- **Contract language:** Leo
+
+---
+
+## 👁️ Privacy Matrix
+
+| Data / Capability        | Public Observer |               Admin                | Employee |        Auditor        |     Tax Authority      |
+| ------------------------ | :-------------: | :--------------------------------: | :------: | :-------------------: | :--------------------: |
+| Budget ceiling mapping   |       Yes       |                Yes                 |    No    |          Yes          |           No           |
+| Private salary records   |       No        |   Operationally originates them    | Own only |          No           |           No           |
+| Vesting records          |       No        | Operational visibility in workflow | Own only |          No           |           No           |
+| Audit reports            |       No        |            Can generate            |    No    | Assigned reports only |           No           |
+| Tax paid proof           |       No        |                 No                 | Own only |          No           |           No           |
+| Tax vault receipt        |       No        |                 No                 |    No    |          No           | Assigned receipts only |
+| Aggregate analytics      |       No        |                Yes                 |    No    |          No           |           No           |
+| Tax policy configuration |       No        |                Yes                 |    No    |          No           |           No           |
+
+The key design principle is simple: **ownership of private records determines what a wallet can decrypt**.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
-graph TB
-    subgraph Frontend["Next.js 14 Frontend"]
-        HP["Landing Page"]
-        AP["Admin Portal"]
-        EP["Employee Portal"]
-        AU["Auditor Portal"]
-        DOC["Documentation"]
+flowchart TD
+    subgraph UI["Frontend Portals"]
+        A[Admin]
+        E[Employee]
+        U[Auditor]
+        T[Tax Authority]
     end
 
-    subgraph SmartContract["baba_zk_payroll_v24.aleo"]
-        INIT["initialize_payroll"]
-        FUND["fund_payroll"]
-        IS["issue_salary"]
-        ISU["issue_salary_usdcx"]
-        ISA["issue_salary_usad"]
-        IVS["issue_vested_salary"]
-        CV["claim_vested"]
-        CS["claim_salary"]
-        GAR["generate_audit_report"]
+    subgraph P["Payroll Program"]
+        I[Initialize]
+        F[Fund]
+        X[Tax Policy]
+        D[Direct Payout]
+        V[Vesting]
+        K[Unlock]
+        C[Claim]
+        R[Audit Report]
     end
 
-    subgraph External["Aleo Network Programs"]
-        CR["credits.aleo"]
-        UX["test_usdcx_stablecoin.aleo"]
-        UA["test_usad_stablecoin.aleo"]
+    subgraph N["External Programs"]
+        CR[credits.aleo]
+        ST[USDCx / USAD]
     end
 
-    AP --> INIT
-    AP --> FUND
-    AP --> IS
-    AP --> ISU
-    AP --> ISA
-    AP --> IVS
-    AP --> GAR
-    AP --> CS
-    EP --> CV
-    AU --> GAR
-
-    IS --> CR
-    ISU --> UX
-    ISA --> UA
-    FUND --> CR
-    CS --> CR
+    A --> I
+    A --> F
+    A --> X
+    A --> D
+    A --> V
+    A --> C
+    A --> R
+    E --> K
+    E --> C
+    U --> R
+    T --> C
+    F --> CR
+    D --> CR
+    D --> ST
+    C --> CR
 ```
+
+### Architectural split
+
+- **Contract layer** enforces payroll rules, claim protection, tax policy, and private record transitions.
+- **Frontend layer** handles wallet UX, record scanning, role-specific views, and analytics aggregation.
+- **Wallet layer** is responsible for decrypting records owned by the connected user.
 
 ---
 
-## 🔄 Payment Models
+## 🔄 Payroll Flows
 
-ZK Payroll supports two distinct payment architectures, each optimized for different operational needs.
+ZK Payroll supports **immediate payouts** and **delayed native claim flows**.
 
-### Push Model — Direct Instant Payments
+### 1. Instant Push Payroll
 
-Best for contractors, one-off payments, immediate settlements in ALEO / USDCx / USAD.
+**Best for:**
+
+- **one-off payments**
+- **contractor payouts**
+- **instant compensation**
+- **stablecoin transfers**
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant MultiSig
-    participant Contract
-    participant Network
-    participant Employee
+    participant A as Admin
+    participant U as UI
+    participant C as Contract
+    participant T as Token Program
+    participant E as Employee
 
-    Admin->>MultiSig: Sign payment authorization
-    MultiSig->>Contract: issue_salary or issue_salary_usdcx
-    Contract->>Contract: Verify budget ceiling
-    Contract->>Network: credits.aleo transfer_private
-    Network-->>Employee: Private SalaryRecord delivered
-    Contract-->>Admin: Updated SpentRecord returned
-    Note over Employee: Funds appear instantly in wallet
+    A->>U: enter payout
+    U->>C: submit payout
+    C->>T: private transfer
+    T-->>E: payment record
+    C-->>A: updated state
 ```
 
-### Pull Model — Zero-Gas Treasury Relayer
+### 2. Delayed Native Payroll + Claim Flow
 
-Best for core team salaries, recurring payments, maximum employee privacy.
+**Best for:**
+
+- **salary unlock schedules**
+- **admin-reviewed native claims**
+- **payroll paths that require withholding at claim time**
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant Contract
-    participant Employee
-    participant Relayer
+    participant A as Admin
+    participant C as Contract
+    participant E as Employee
+    participant R as Relayer
+    participant T as Tax Authority
 
-    Admin->>Contract: issue_vested_salary
-    Contract-->>Employee: VestingRecord - time locked
-
-    Note over Employee: Waits for block height to reach unlock_height
-
-    Employee->>Contract: claim_vested
-    Contract->>Contract: assert block.height >= unlock_height
-    Contract-->>Employee: SalaryCertificate - unlocked
-
-    Employee->>Relayer: Pull Request - ZERO GAS
-    Note over Employee: No wallet popup, gasless claim
-
-    Relayer->>Admin: Pending pull notification
-    Admin->>Contract: claim_salary from treasury
-    Contract->>Contract: Verify not double-claimed
-    Contract-->>Employee: Native Aleo Credits delivered
+    A->>C: issue vested payout
+    C-->>E: VestingRecord
+    E->>C: claim_vested
+    C-->>E: SalaryCertificate
+    E->>R: submit pull request
+    R->>A: review request
+    A->>C: claim_salary
+    C-->>E: net ALEO
+    C-->>E: TaxPaidProof
+    C-->>T: TaxVaultRecord + tax
 ```
 
----
-
-## 📜 Smart Contract Design
-
-**Program:** `baba_zk_payroll_v24.aleo` | **Language:** Leo | **Network:** Aleo Testnet
-
-### Record Types
+### 3. Audit Reporting Flow
 
 ```mermaid
-classDiagram
-    class SpentRecord {
-        address owner
-        u64 total_spent
-        field payroll_id
-        address auditor
-        u32 recipient_count
-    }
+sequenceDiagram
+    participant A as Admin
+    participant C as Contract
+    participant U as Auditor
 
-    class SalaryRecord {
-        address owner
-        u64 amount
-        field payment_id
-        field payroll_id
-    }
-
-    class VestingRecord {
-        address owner
-        u64 amount
-        field payment_id
-        field payroll_id
-        u32 unlock_height
-    }
-
-    class SalaryCertificate {
-        address owner
-        u64 amount
-        u32 start_height
-        u32 interval
-        u32 claim_count
-        field payroll_id
-        field payment_id
-    }
-
-    class TreasuryRecord {
-        address owner
-        u64 balance
-        field payroll_id
-    }
-
-    class AuditReport {
-        address owner
-        u64 total_spent
-        field payroll_id
-        u32 timestamp
-        u32 recipient_count
-        field pay_period_hash
-        field merkle_root
-    }
-
-    SpentRecord --> SalaryRecord : issue_salary
-    SpentRecord --> VestingRecord : issue_vested_salary
-    VestingRecord --> SalaryCertificate : claim_vested
-    TreasuryRecord --> SalaryRecord : claim_salary
-    SpentRecord --> AuditReport : generate_audit_report
+    A->>C: generate_audit_report
+    C-->>U: AuditReport
+    U->>U: decrypt and review
 ```
-
-### Transition Overview
-
-| Transition | Purpose | Caller |
-|:---|:---|:---:|
-| `initialize_payroll` | Create DAO with M-of-N admins and budget ceiling | Admin |
-| `fund_payroll` | Deposit native credits into Treasury pool | Admin |
-| `issue_salary` | Push native Aleo credits privately to employee | Admin |
-| `issue_salary_usdcx` | Push USDCx stablecoin privately to employee | Admin |
-| `issue_salary_usad` | Push USAD stablecoin privately to employee | Admin |
-| `issue_vested_salary` | Create time-locked VestingRecord for employee | Admin |
-| `claim_vested` | Unlock VestingRecord into SalaryCertificate | Employee |
-| `claim_salary` | Treasury Relayer fulfills employee pull request | Admin |
-| `generate_audit_report` | Produce ZK compliance report for auditor | Admin |
-
-### On-Chain Mappings
-
-| Mapping | Type | Purpose |
-|:---|:---|:---|
-| `payroll_budgets` | `field => u64` | Tracks maximum budget ceiling per DAO |
-| `multisig_threshold` | `field => u64` | Stores the M-of-N signature requirement |
-| `admin_1` / `admin_2` / `admin_3` | `field => address` | Registered admin wallet addresses |
-| `claimed_payments` | `field => bool` | Prevents double-spend on pull claims |
 
 ---
 
-## 🌟 Key Features
+## 🧾 Tax Withholding Model
 
-### 🔑 Enterprise Multi-Signature Authorization
-Require M-of-N wallet signatures before any payroll action. Admin threshold is configured during `initialize_payroll` and enforced cryptographically via client-side signature verification before on-chain execution.
+**Wave 4** is implemented as an **MVP** on the native `claim_salary` path.
 
-### 💱 ARC-20 Stablecoin Support
-Native cross-program calls to `test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo`. The frontend dynamically generates Merkle Tree FreezeList proofs required by the ARC-20 standard.
+### What happens during a taxed claim
 
-### ⏳ Time-Delayed Vesting
-Issue `VestingRecord` grants locked until `block.height >= unlock_height`. The unlock condition is enforced at the ZK circuit level — mathematically impossible to bypass.
+1. Admin sets a payroll-level tax policy with `set_tax_policy`.
+2. Employee reaches the native claim path through vesting unlock and relayer approval.
+3. `claim_salary` calculates:
+   - `gross_amount`
+   - `tax_amount`
+   - `net_amount`
+4. Employee receives net ALEO.
+5. Employee also receives a private `TaxPaidProof` record.
+6. Tax authority receives withheld ALEO plus a `TaxVaultRecord`.
+7. The contract increments `tax_collected_total`.
 
-### ⚡ Zero-Gas Treasury Relayer
-Employees sign gasless off-chain Pull Requests. The admin Treasury Relayer processes these asynchronously, paying all network gas on behalf of the employee.
+### Withholding flow diagram
 
-### 📊 ZK Audit Reports
-Generate cryptographic compliance proofs containing `total_spent`, `recipient_count`, `merkle_root`, and `pay_period_hash` — selectively disclosed to auditors without revealing individual salary data.
+```mermaid
+flowchart TD
+    G[Gross Claim]
+    C[claim_salary]
+    N[Net Payment]
+    P[TaxPaidProof]
+    T[Withheld Tax]
+    V[TaxVaultRecord]
+    M[tax_collected_total]
 
-### 🔄 Sequential Batch Processing
-Automated UTXO-chain polling enables sequential multi-employee payroll runs without double-spend collisions.
+    G --> C
+    C --> N
+    N --> P
+    C --> T
+    T --> V
+    T --> M
+```
+
+### Important current limitation
+
+**Tax withholding currently applies only to the native `claim_salary` path.**
+
+It does **not** yet apply to:
+
+- direct ALEO push payouts
+- USDCx push payouts
+- USAD push payouts
 
 ---
 
-## 💻 Tech Stack & Project Structure
+## 📊 Analytics Model
 
-| Layer | Technology |
-|:---|:---|
-| **Smart Contract** | Leo (Aleo) — `baba_zk_payroll_v24.aleo` |
-| **Frontend** | Next.js 14 (App Router) |
-| **Wallet** | `@provablehq/aleo-wallet-adaptor` (Leo / Puzzle Wallet) |
-| **Stablecoins** | `test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo` |
-| **Cryptography** | `@provablehq/sdk` (client-side signature verification) |
-| **Network** | Aleo Testnet |
-| **Deployment** | Vercel |
+The admin analytics dashboard is **privacy-preserving** and **frontend-scoped**.
 
-```
+### Data sources
+
+- **wallet-visible `SpentRecord` snapshots**
+- **wallet-visible `AuditReport` context**
+- **local analytics events** captured after successful admin actions
+
+### What it shows
+
+- **payout trend** over time
+- **token distribution mix**
+- **total payout** in selected range
+- **active employees** in selected range
+- **last payout time**
+- **budget context**
+
+### What it does not do
+
+- **no explorer-wide global indexing**
+- **no raw employee recipient table** in analytics UI
+- **no public disclosure** of individual compensation
+
+---
+
+## 📜 Smart Contract Surface
+
+### Primary private records
+
+| Record              | Purpose                                             |
+| ------------------- | --------------------------------------------------- |
+| `SpentRecord`       | private cumulative payroll accounting               |
+| `SalaryRecord`      | private direct payment record                       |
+| `VestingRecord`     | delayed native payout wrapper                       |
+| `SalaryCertificate` | unlocked right to proceed through native claim flow |
+| `TreasuryRecord`    | treasury-side accounting for funded payroll         |
+| `AuditReport`       | auditor-owned private compliance snapshot           |
+| `TaxPaidProof`      | employee-owned withholding proof                    |
+| `TaxVaultRecord`    | tax-authority-owned withholding receipt             |
+| `RecipientTicket`   | legacy helper record retained in codebase           |
+
+### Public mappings
+
+| Mapping                         | Purpose                                                 |
+| ------------------------------- | ------------------------------------------------------- |
+| `payroll_budgets`               | public payroll ceiling currently recognized by contract |
+| `multisig_threshold`            | configured threshold value                              |
+| `admin_1`, `admin_2`, `admin_3` | admin wallet identities                                 |
+| `claimed_payments`              | duplicate claim protection                              |
+| `tax_percentage_bps`            | withholding rate in basis points                        |
+| `tax_authority`                 | authority wallet for withheld tax                       |
+| `tax_collected_total`           | aggregate withheld amount                               |
+
+### Transition overview
+
+| Transition              | Purpose                                          | Primary actor |
+| ----------------------- | ------------------------------------------------ | ------------- |
+| `initialize_payroll`    | bootstrap payroll config and first `SpentRecord` | Admin         |
+| `fund_payroll`          | fund treasury path and increase budget mapping   | Admin         |
+| `set_tax_policy`        | configure payroll-level withholding rule         | Admin         |
+| `issue_salary`          | direct native ALEO push payout                   | Admin         |
+| `issue_salary_usdcx`    | direct private USDCx payout                      | Admin         |
+| `issue_salary_usad`     | direct private USAD payout                       | Admin         |
+| `issue_vested_salary`   | create delayed native payout                     | Admin         |
+| `claim_vested`          | unlock vested record into `SalaryCertificate`    | Employee      |
+| `claim_salary`          | settle native claim with tax split               | Admin relayer |
+| `generate_audit_report` | create auditor-owned private report              | Admin         |
+
+---
+
+## 🧑‍💼 Portal Overview
+
+### Admin Portal
+
+**Used for payroll operations.**
+
+Includes:
+
+- setup and payroll initialization
+- tax policy configuration
+- private funding flow
+- pay one employee
+- payroll cycle runner
+- employee claim approval queue
+- audit report generation
+- analytics dashboard
+
+### Employee Portal
+
+**Used for employee-side private record workflows.**
+
+Includes:
+
+- record scanning
+- vesting unlock flow
+- pull-request submission
+- direct payment history
+- tax proof download
+
+### Auditor Portal
+
+**Used for selective-disclosure compliance review.**
+
+Includes:
+
+- wallet-based `AuditReport` scan
+- aggregate report rendering
+- period commitment fields
+
+### Tax Authority Portal
+
+**Used for authority-side withholding visibility.**
+
+Includes:
+
+- access check against configured authority wallet
+- `TaxVaultRecord` scan
+- aggregate withheld totals
+- downloadable receipt JSON
+
+---
+
+## 📁 Project Structure
+
+```text
 zk_payroll/
 ├── src/
-│   └── main.leo                  # Core Leo smart contract (446 lines)
-├── web/
-│   ├── app/
-│   │   ├── page.tsx              # Landing page
-│   │   ├── admin/page.tsx        # Admin Portal (Multi-Sig, Batch, Relayer, Audit)
-│   │   ├── employee/page.tsx     # Employee Portal (Scan, Claim, Withdraw)
-│   │   ├── auditor/page.tsx      # Auditor Portal (Fetch and Verify Reports)
-│   │   └── docs/page.tsx         # Documentation (Overview, Architecture, Security)
-│   ├── components/
-│   │   ├── AleoWalletProvider.tsx # Global wallet context with auto-connect
-│   │   ├── WalletConnectButton.tsx
-│   │   ├── GlassCard.tsx         # Reusable glassmorphism UI component
-│   │   └── GlobalAutoConnect.tsx  # Persistent wallet reconnection logic
-│   └── lib/
-│       └── zk-utils.ts           # Transaction helpers, UTXO polling, record parsing
+│   └── main.leo                  # Leo payroll program
+├── program.json                  # Program metadata and dependencies
 ├── docs/
-│   └── ROADMAP.md                # Full development roadmap (Waves 1-6)
-├── imports/                      # Aleo program dependencies
-├── build/                        # Compiled Aleo artifacts
-└── program.json                  # Program manifest with dependencies
+│   ├── ARCHITECTURE.md           # Internal architecture notes
+│   ├── ROADMAP.md                # Roadmap and future direction
+│   └── TESTING.md                # Testing guide
+├── web/
+│   ├── app/                      # Next.js routes and portals
+│   ├── components/               # Shared UI and workflow components
+│   ├── lib/                      # Wallet helpers, analytics helpers, zk utils
+│   └── README.md                 # Frontend-specific notes
+├── CHECKLIST.md                  # Manual QA checklist
+└── README.md                     # Project overview
 ```
 
 ---
@@ -340,106 +442,87 @@ zk_payroll/
 
 ### Prerequisites
 
-- **Node.js** 18 or higher
-- **Leo Wallet** or **Puzzle Wallet** browser extension
-- Wallet configured for **Aleo Testnet**
+- Node.js and npm
+- Leo
+- Aleo-compatible wallet
+- Access to Aleo Testnet
 
-### Local Development
+### 1. Build the contract
 
 ```bash
-# Clone the repository
-git clone https://github.com/PhanTom497/zk_payroll.git
-cd zk_payroll/web
+leo build
+```
 
-# Install dependencies
+### 2. Run the frontend
+
+```bash
+cd web
 npm install
-
-# Start the development server
 npm run dev
 ```
 
-The app will be running at `http://localhost:3000`
+Open `http://localhost:3000`.
 
-### Production Build
+### 3. Recommended manual flow
 
-```bash
-npm run build
-npm start
-```
-
----
-
-## 🗺️ Development Roadmap
-
-```mermaid
-timeline
-    title ZK Payroll Development Timeline
-    section Wave 1
-        Foundation : Core ZK Primitives
-                   : Private SalaryRecord issuance
-                   : Budget ceiling enforcement
-                   : Testnet deployment
-    section Wave 2
-        Security and Scale : M-of-N Multi-Sig
-                           : Next.js production frontend
-                           : Auditor Portal
-                           : Pull payment model
-                           : Batch processing
-    section Wave 3
-        Enterprise : ARC-20 Stablecoins USDCx and USAD
-                   : Time-delayed vesting
-                   : Zero-gas Treasury Relayer
-                   : Sequential UTXO batching
-    section Wave 4
-        Next Frontier : ZK Tax Withholding
-                      : True parallel batch rollups
-                      : Multi-currency batching
-                      : Multisig batch auth
-    section Wave 5-6
-        Mass Adoption : Decentralized HR Oracles
-                      : Fiat on and off ramps
-                      : Enterprise SaaS sync
-```
-
-| Wave | Focus | Status |
-|:---|:---|:---:|
-| **Wave 1** | Core ZK Primitives, Testnet Deployment | ✅ Complete |
-| **Wave 2** | Multi-Sig, Pull Payments, React Frontend, Auditor Portal | ✅ Complete |
-| **Wave 3** | ARC-20 Stablecoins, Time-Delayed Vesting, Treasury Relayer | ✅ Complete |
-| **Wave 4** | ZK Tax Withholding, Parallel Batch Rollups, Multi-Currency Batching | 🔜 Next |
-| **Wave 5** | Decentralized HR Oracles (BambooHR / Deel Sync) | 🏗️ Planned |
-| **Wave 6** | Fiat On/Off-Ramps (MoonPay / Stripe Integration) | 🏗️ Planned |
+1. Open `/admin`
+2. Initialize a payroll
+3. Configure tax policy
+4. Prepare private funds
+5. Fund payroll budget
+6. Issue a payout or delayed vesting entry
+7. Test employee-side record scan and claim flow
+8. Generate an audit report
+9. Verify tax authority receipt visibility
 
 ---
 
-## 🔒 Security Guarantees
+## 🧪 Testing and Docs
 
-```mermaid
-graph LR
-    subgraph OnChain["On-Chain Enforcement"]
-        A["Budget Ceiling Check"] --> B["assert total_spent lte budget"]
-        C["Double-Spend Prevention"] --> D["claimed_payments mapping"]
-        E["Time-Lock Enforcement"] --> F["assert block.height gte unlock"]
-    end
+Internal project docs:
 
-    subgraph OffChain["Off-Chain Verification"]
-        G["Multi-Sig Threshold"] --> H["Client-side signature verification"]
-        I["Merkle FreezeList"] --> J["Dynamic proof generation for ARC-20"]
-    end
-```
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Roadmap](./docs/ROADMAP.md)
+- [Testing Guide](./docs/TESTING.md)
+- [Manual QA Checklist](./CHECKLIST.md)
+- [Web App Notes](./web/README.md)
 
-- **Budget Enforcement:** Every `issue_salary` transition asserts `total_spent <= budget_ceiling` on-chain
-- **Double-Spend Prevention:** `claimed_payments` mapping prevents any payment ID from being redeemed twice
-- **Time-Lock:** `claim_vested` enforces `block.height >= unlock_height` at the ZK circuit level
-- **Multi-Sig:** M-of-N wallet signatures verified before any payroll execution reaches the network
-- **UTXO Isolation:** Each UTXO record is consumed exactly once via Aleo native model
+---
+
+## 🗺️ Roadmap Snapshot
+
+### Completed
+
+- **multi-portal frontend**
+- **native + stablecoin push rails**
+- **delayed vesting and employee claim flow**
+- **auditor reporting**
+- **admin analytics dashboard**
+- **tax withholding MVP**
+- **dedicated tax authority portal**
+
+### In progress / next practical steps
+
+- **expand withholding** to direct payout paths if desired
+- **strengthen batch payroll** beyond sequential execution
+- **improve stablecoin payroll ergonomics** further
+- **deepen compliance exports** and reporting
+- **continue polishing HR-style operator UX**
+
+For the detailed roadmap, see [docs/ROADMAP.md](./docs/ROADMAP.md).
+
+---
+
+## 🔒 Security Notes
+
+- **private record ownership** is the primary disclosure boundary
+- **public mappings** enforce budget, admin, tax, and replay-protection rules
+- `claimed_payments` protects against duplicate native claim settlement
+- **tax policy inputs** are validated against stored mappings during `claim_salary`
+- frontend role screens improve UX, but real confidentiality still comes from **Aleo record ownership and decryption rules**
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
-
-**Built for the Aleo Privacy Buildathon** 🏆
-
-**Grant/Funding Wallet (Aleo):** `aleo1luatvgqmdt0j662lpgh0tf3l07tkjeq6rrr6c7qzzwnmtjwvy5ps4mk6kr`
+MIT

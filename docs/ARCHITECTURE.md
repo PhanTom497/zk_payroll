@@ -2,131 +2,276 @@
 
 ## System Overview
 
-ZK Payroll is a privacy-preserving payroll management system built on Aleo. It leverages zero-knowledge proofs (ZKPs) to enable private salary payments while enforcing a public budget ceiling. This hybrid model ensures both contributor privacy and organizational transparency.
+ZK Payroll is a multi-portal payroll system built on Aleo. It combines private records, public mapping-based controls, and role-specific decryption so that payroll operators, employees, auditors, and tax authorities each see only the records meant for them.
 
----
+The live system currently centers around:
+- a Leo program: `baba_zk_payroll_v24.aleo`
+- a Next.js frontend with wallet-based role portals
+- private record workflows for salary, vesting, audit, and tax receipts
+- public mappings for budget, admins, claim protection, and tax policy
 
-## core Components
+## Architectural Principles
 
-### 1. Smart Contract (`main.leo`)
+### 1. Private by record ownership
+Sensitive payroll state is stored as private Aleo records. Access depends on record ownership and wallet decryption rather than frontend permissions alone.
 
-The heart of the system, written in Leo. It manages:
+### 2. Public controls for enforcement
+Operational guardrails such as payroll budgets, admin identities, claim tracking, and tax policy live in public mappings so contract finalizers can enforce them.
 
-- **State Records**: Encrypted data structures for admin control, spending tracking, and recipient tickets.
-- **Transitions**: Functions that execute logic and generate ZK proofs.
-- **Mappings**: Public on-chain storage for budget enforcement.
+### 3. Role-based disclosure
+The system intentionally separates what each role can see:
+- Admin sees operational controls and aggregate analytics.
+- Employee sees their own salary and tax proof records.
+- Auditor sees `AuditReport` records.
+- Tax authority sees `TaxVaultRecord` receipts.
 
-### 2. Record Structures
+## Major Components
 
-#### `SpentRecord`
-- **Owner**: Admin
-- **Purpose**: Tracking cumulative spending privately for Push payments and initialization
-- **Privacy**: `total_spent` is encrypted but proven correct via ZK
-- **Fields**:
-  - `owner`: Address of the admin
-  - `total_spent`: u64, cumulative amount paid out so far (private)
-  - `payroll_id`: Links to the payroll instance
-  - `auditor`: Address of the authorized auditor
-  - `recipient_count`: Number of private payments made
+### Contract Layer
+File: `src/main.leo`
 
-#### `SpentRecord`
-- **Owner**: Admin
-- **Purpose**: Tracking cumulative spending privately
-- **Privacy**: `total_spent` is encrypted but proven correct via ZK
-- **Fields**:
-  - `owner`: Address of the admin
-  - `total_spent`: u64, cumulative amount paid out so far (private)
-  - `payroll_id`: Links to the payroll instance
-  - `auditor`: Address of the authorized auditor
+Responsible for:
+- payroll initialization
+- native and token payout transitions
+- treasury funding
+- vesting and claim flows
+- audit report generation
+- tax withholding enforcement on native claim flow
 
-#### `RecipientTicket`
-- **Owner**: Recipient (Employee)
-- **Purpose**: Authenticating a recipient without revealing their identity during payout
-- **Privacy**: Encrypted record owned by the employee
-- **Fields**:
-  - `owner`: Address of the employee
-  - `payroll_id`: Links to the correct payroll instance
+### Frontend Layer
+Directory: `web/`
 
-#### `SalaryCertificate`
-- **Owner**: Recipient (Employee)
-- **Purpose**: Represents the right to claim a recurring salary (Pull Model)
-- **Privacy**: Only the recipient can decrypt the terms
-- **Fields**:
-  - `owner`: Address of the employee
-  - `amount`: u64, the salary amount (private)
-  - `start_height`: Block height when claiming begins
-  - `interval`: Blocks required between claims
-  - `claim_count`: Number of successful claims made
-  - `payroll_id`: Links to the payroll instance
+Portals:
+- `/admin`
+- `/employee`
+- `/auditor`
+- `/tax-authority`
+- `/docs`
 
-#### `SalaryRecord`
-- **Owner**: Recipient (Employee)
-- **Purpose**: The actual payment record/voucher
-- **Privacy**: Only the recipient can decrypt the amount
-- **Fields**:
-  - `owner`: Address of the employee
-  - `amount`: u64, the salary amount (private)
-  - `payment_id`: Unique ID for the payment transaction
-  - `payroll_id`: Links to the payroll instance
+Frontend responsibilities:
+- wallet connection
+- record scanning and parsing
+- transaction prompting
+- local analytics event tracking
+- role-specific workflow presentation
+- retry-safe wallet interaction wrappers
 
-#### `AuditReport` (Wave 2)
-- **Owner**: Auditor
-- **Purpose**: Providing proof of solvency to a designated auditor
-- **Privacy**: Encrypted for the auditor; reveals `total_spent` without individual salaries
-- **Fields**:
-  - `owner`: Auditor's address
-  - `total_spent`: u64, current total spending (private)
-  - `payroll_id`: Links to payroll instance
-  - `timestamp`: u32, time of report generation
+### External Program Dependencies
+- `credits.aleo`
+- `test_usdcx_stablecoin.aleo`
+- `test_usad_stablecoin.aleo`
 
-## Data Flow & Architecture Diagram
+## Core Records
 
-```mermaid
-graph TD
-    User[DAO Admin] -->|1. Initialize Multi-Sig| Init[initialize_payroll]
-    Init -->|Public| Budget[Mapping: payroll_budgets]
-    Init -->|Private| SR[SpentRecord]
+### SpentRecord
+Purpose:
+- private running summary of total payroll spend and recipient count
+- source for audit-report generation
+- state anchor for several admin flows
 
-    subgraph Push Model
-        User -->|Issue Direct Pay| Issue[issue_salary]
-        SR --> Issue
-        Emp1[Contractor] -->|Provide Ticket| Issue
-        Issue -->|Success| SR_New[Updated SpentRecord]
-        Issue -->|Success| Pay1[SalaryRecord]
-        Pay1 --> Emp1
-    end
+Key fields:
+- `owner`
+- `total_spent`
+- `payroll_id`
+- `auditor`
+- `recipient_count`
 
-    subgraph Pull Model
-        User -->|Set Salary Limit| Limit[issue_limit]
-        Limit -->|Private Right| SC[SalaryCertificate]
-        SC --> Emp2[Core Employee]
-        
-        Emp2 -->|Self-Claim| Claim[claim_salary]
-        SC --> Claim
-        Claim -->|Generate| Pay2[SalaryRecord]
-        Pay2 --> Emp2
-        Claim -->|Update| SC_New[Updated SalaryCertificate]
-    end
+### SalaryRecord
+Purpose:
+- private record representing a direct employee payment
 
-    User -->|Audit Generation| AuditTx[generate_audit_report]
-    SR_New --> AuditTx
-    AuditTx -->|Private Report| Auditor[Auditor]
-```
+Key fields:
+- `owner`
+- `amount`
+- `payment_id`
+- `payroll_id`
 
----
+### VestingRecord
+Purpose:
+- time-locked salary allocation before employee unlock
 
-## Key Privacy Features
+Key fields:
+- `owner`
+- `amount`
+- `payment_id`
+- `payroll_id`
+- `unlock_height`
 
-1.  **Private Salaries**: The `amount` in `SalaryRecord` is encrypted. Only the employee can see their salary.
-2.  **Hidden Total Spent**: The `total_spent` in `SpentRecord` is encrypted. The public only sees that a valid transition occurred, ensuring the total is $\le$ the budget.
-3.  **Selective Disclosure**: The `AuditReport` allows the admin to reveal the `total_spent` to a specific auditor without making it public.
-4.  **Recipient Privacy**: `RecipientTicket` allows employees to receive funds without their address being directly linked to the payout transaction in cleartext arguments.
+### SalaryCertificate
+Purpose:
+- unlocked right to proceed through the native claim flow
 
----
+Key fields:
+- `owner`
+- `amount`
+- `start_height`
+- `interval`
+- `claim_count`
+- `payroll_id`
+- `payment_id`
 
-## Security Model
+### TreasuryRecord
+Purpose:
+- private treasury accounting record produced when payroll is funded
+- used in relayer-backed native claim settlement
 
--   **Budget Enforcement**: The `finalize` blocks assert logic limits against on-chain mappings.
--   **Multi-Sig Authorization**: `issue_salary` checks a 3-of-3 or threshold signatures struct to prevent unilateral rogue admin actions.
--   **Airgapped Claims**: `claim_salary` does not modify `SpentRecord`, meaning a compromised employee claim flow cannot poison the organization's verified reporting metric.
--   **Payroll Isolation**: `payroll_id` ensures that records from one payroll instance cannot be used in another.
+Key fields:
+- `owner`
+- `balance`
+- `payroll_id`
+
+### AuditReport
+Purpose:
+- auditor-owned private solvency and reporting snapshot
+
+Key fields:
+- `owner`
+- `total_spent`
+- `payroll_id`
+- `timestamp`
+- `recipient_count`
+- `pay_period_hash`
+- `merkle_root`
+
+### TaxPaidProof
+Purpose:
+- employee-owned proof that tax was withheld during claim settlement
+
+Key fields:
+- `owner`
+- `gross_amount`
+- `tax_amount`
+- `net_amount`
+- `payroll_id`
+- `payment_id`
+- `tax_authority`
+
+### TaxVaultRecord
+Purpose:
+- tax-authority-owned receipt for withheld payroll tax
+
+Key fields:
+- `owner`
+- `employee`
+- `gross_amount`
+- `tax_amount`
+- `net_amount`
+- `payroll_id`
+- `payment_id`
+
+### RecipientTicket
+Purpose:
+- legacy / auxiliary private recipient wrapper preserved in the program codebase
+- not a primary portal workflow in the current frontend
+
+## Public Mappings
+
+### payroll_budgets
+Tracks the public payroll ceiling currently recognized by the contract.
+
+Important note:
+- In the current implementation, funding payroll through `fund_payroll` increases this value.
+- So the contract behaves like an additive available spend ceiling, not a strictly fixed one-time cap.
+
+### multisig_threshold
+Stores the threshold value configured during initialization.
+
+### admin_1 / admin_2 / admin_3
+Store the configured payroll admins.
+
+### claimed_payments
+Prevents double-claiming of a payment id.
+
+### tax_percentage_bps
+Stores the withholding rate in basis points for a payroll.
+
+### tax_authority
+Stores the authority wallet that receives withheld tax.
+
+### tax_collected_total
+Stores aggregate withheld tax total per payroll.
+
+## Operational Flows
+
+### Flow A: Initialize Payroll
+1. Admin calls `initialize_payroll`.
+2. Contract stores budget, threshold, and admin mappings.
+3. Contract returns an initial `SpentRecord`.
+4. Tax mappings are initialized with defaults.
+
+### Flow B: Fund Payroll
+1. Admin converts public ALEO to a private credits record in wallet.
+2. Admin calls `fund_payroll` using that private credits record.
+3. Contract transfers the specified amount into a payroll-owned treasury path.
+4. `finalize_fund_payroll` increases the public payroll budget mapping.
+
+### Flow C: Direct Push Payment
+1. Admin selects employee, currency, and amount.
+2. Frontend gathers required private records.
+3. Admin signs and submits the payout transition.
+4. Employee receives a private `SalaryRecord` or token equivalent immediately.
+5. `SpentRecord` is updated for native direct payroll accounting.
+
+### Flow D: Delayed Native Claim
+1. Admin issues `VestingRecord` using `issue_vested_salary`.
+2. Employee later unlocks it with `claim_vested`.
+3. Employee receives a `SalaryCertificate`.
+4. Employee submits a pull request through the frontend.
+5. Admin relayer approves `claim_salary`.
+6. Contract splits gross claim into employee net and authority tax.
+7. Employee receives `TaxPaidProof`.
+8. Authority receives `TaxVaultRecord`.
+
+### Flow E: Audit Reporting
+1. Admin reads latest `SpentRecord`.
+2. Admin calls `generate_audit_report`.
+3. Auditor receives private `AuditReport`.
+4. Auditor portal decrypts and renders aggregate report information.
+
+## Privacy Model by Role
+
+### Admin
+Can operate payroll and see aggregate context in the frontend, but admin analytics intentionally avoid listing raw recipient histories in the dashboard area.
+
+### Employee
+Can decrypt only records they own, including salary results, claim-related records, and employee-side tax proofs.
+
+### Auditor
+Can decrypt only `AuditReport` records sent to the auditor wallet.
+
+### Tax Authority
+Can decrypt only `TaxVaultRecord` receipts sent to the configured authority wallet.
+
+## Analytics Architecture
+
+The analytics dashboard is frontend-scoped rather than explorer-indexed.
+
+Data sources:
+- wallet-visible `SpentRecord` and `AuditReport` snapshots
+- local event ledger captured after successful admin actions
+
+Design choice:
+- prioritize aggregate privacy-preserving metrics over complete historical indexing
+- avoid raw recipient tables in analytics UI
+
+## Security Notes
+
+### Budget enforcement
+Budget checks occur in finalizers against public mappings.
+
+### Claim replay protection
+`claimed_payments` prevents duplicate native claim execution for the same payment id.
+
+### Role isolation
+Private records are scoped by owner address, which is stronger than frontend-only role gating.
+
+### Withholding integrity
+`claim_salary` validates that submitted tax policy inputs match the stored public tax mappings.
+
+## Known Constraints
+
+- Batch payroll is sequential, not a single parallel proof.
+- Stablecoin funding and batching remain more limited than native ALEO paths.
+- Tax withholding is only on native `claim_salary` today.
+- Budget ceiling currently increases when payroll is funded.
+- Wallet adapters may expose records inconsistently, so the frontend includes retry and normalization helpers.

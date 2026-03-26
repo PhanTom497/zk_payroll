@@ -1,144 +1,154 @@
-# 🗺️ ZK Payroll: Complete Future Roadmap
+# ZK Payroll Roadmap
 
-This document outlines the strategic development plan for ZK Payroll, moving from a proof-of-concept to an enterprise-grade, privacy-first DAO compensation platform.
+This roadmap tracks the evolution of ZK Payroll from a proof-of-concept into a role-based privacy payroll platform on Aleo.
 
----
+## Completed Waves
 
-## ✅ Wave 1: The Foundation
+### Wave 1: Core Privacy Payroll Foundation
+Status: Complete
 
-**Status:** Complete  
-**Focus:** Core Privacy Primitives & Proof of Concept
+Delivered:
+- Private `SalaryRecord` issuance.
+- Public budget ceiling enforcement through mappings.
+- Initial `SpentRecord` accounting model.
+- Basic testnet deployment and Leo-based verification.
+- Early proof-of-concept UI and tooling.
 
--   **Core Smart Contract (`src/main.leo`):**
-    -   Private `SalaryRecord` issuance.
-    -   Public `budget_ceiling` enforcement via on-chain mapping.
-    -   Encrypted `audit_report` for selective disclosure.
-    -   Testnet Deployment & Verification.
--   **Basic tooling:** CLI-based interaction scripts (`test.sh`).
--   **Demo UI:** A static simulation (mock data) demonstrating the privacy/auditor workflow.
+### Wave 2: Wallet UX, Multi-Portal Flow, and Auditor Foundations
+Status: Complete
 
----
+Delivered:
+- React / Next.js frontend with real wallet integration.
+- Admin portal connected to live Aleo transitions.
+- Auditor portal for decrypted `AuditReport` review.
+- Multi-admin payroll initialization model.
+- Improved auditor metadata such as recipient count and payroll commitments.
+- Template-based batch workflow and stronger payroll operator UX.
 
-## ✅ Wave 2: The Efficiency & Security Wave (Current Submission)
+### Wave 3: Enterprise Payroll Rails
+Status: Complete
 
-**Status:** Complete  
-**Focus:** Multi-Sig, Auditor Portal, Real Frontend, Automation & Scale
+Delivered:
+- ARC-20-style token payout rails for `USDCx` and `USAD`.
+- Native ALEO direct push payouts.
+- Time-delayed vesting with `VestingRecord` and `claim_vested`.
+- Native ALEO treasury relayer flow for employee pull requests.
+- Employee portal claim and salary history workflows.
 
-### 1. Multi-Signature Admin Control
--   **Solution:** Implement a `MultiSigAdmin` configuration natively into the React App and Blockchain structure.
-    -   Requires $M$-of-$N$ signatures to `issue_salary`.
-    -   **✅ Implemented:** `initialize_payroll` sets up a 3-of-3 threshold mapping on-chain.
-    -   **✅ Implemented (Off-Chain UX):** The React frontend leverages `@provablehq/sdk` to verify Admin Wallet hardware signatures locally before releasing the final execution payload, bypassing the SnarkVM `sig.verify()` limitations.
+## Wave 4: Productization and Operational Maturity
+Status: In Progress
 
-### 2. Real Frontend Integration (React + Wallet Adapter)
--   **Solution:** Build a production-grade dApp using:
-    -   **Framework:** Next.js / React.
-    -   **Wallet:** Aleo Wallet Adapter (Leo Wallet).
-    -   **State Management:** React hooks parsing Aleo `requestRecords` automatically handling UTXO fragmentation and consolidation logic for frictionless UX.
-    -   **SDK:** `@provablehq/sdk` handling client-side Cryptography.
-    -   **✅ Implemented:** Full Admin Dashboard deployed on `localhost:3000`.
+### 4.1 Zero-Knowledge Tax Withholding
+Status: Complete as MVP
 
-### 3. Auditor Dashboard v1
--   **Feature:** A dedicated portal where auditors can login with their wallet.
-    -   **✅ Implemented:** Auditor Portal (`/auditor`) successfully fetches assigned `AuditReports` and decrypts total spending data.
+Delivered:
+- Global tax policy configuration per payroll.
+- `TaxPaidProof` record for employees.
+- `TaxVaultRecord` for the tax authority.
+- Tax split on native `claim_salary`.
+- Employee JSON proof download.
+- Tax authority portal for receipt visibility.
+- Admin tax status and collected tax visibility.
 
-### 4. Enhanced Auditor Metadata
--   **Solution:** Enrich `AuditReport` with metadata:
-    -   `recipient_count`: Number of employees paid in this batch.
-    -   `pay_period_hash`: Verifiable link to the specific payroll cycle.
-    -   `merkle_root`: Commitment to the set of recipients (without revealing identities).
-    -   **✅ Implemented:** Smart contract updated (`v3`) to include these fields.
+Current scope limit:
+- Tax is applied only on native `claim_salary`.
+- Direct push ALEO and stablecoin payouts are not yet taxed.
 
----
+### 4.2 Operational Payroll Cycle UX
+Status: Complete for current scope
 
-### 5. "Pull" Payments (Employee Claiming via Stablecoins)
--   **Concept:** Instead of pushing volatile native tokens, Admins want to issue ARC-20 Stablecoins (`USDCx`).
--   **Mechanism:** Employees claim their own salary every $X$ blocks via `claim_salary_usdcx` using a `SalaryCertificate`.
--   **✅ Implemented:** Employees can pull their USDCx independently via the Employee Portal. Native Aleo Credits remain on a direct "Push" ledger model for immediate compensation.
+Delivered:
+- Sequential payroll-cycle runner in the admin portal.
+- Record-refresh logic to avoid stale `SpentRecord` reuse.
+- Template-driven roster and pay-cycle workflow.
+- Safer wallet-driven progression between consecutive payroll approvals.
 
-### 6. Batch Processing & UX Enhancements
--   **Problem:** Issuing 100 salaries requires 100 separate proofs and transactions.
--   **Solution:** Valid ZK aggregation or batching logic?
-    -   *Note on Aleo:* Currently, this might just mean a "Batch Runner" script that queues transactions in parallel, but true ZK batching inside one transition might hit circuit limits.
--   **✅ Implemented:** `issue_limit_batch_3` allows simultaneous payroll runs. Added automated UTXO state-refresh polling to instantly unlock consecutive transaction chains without double-spend Explorer rejections.
+### 4.3 Frontend Upgrades and Ecosystem Polish
+Status: Largely Complete
 
-### 7. Payroll Templates
--   **✅ Implemented:** Frontend supports saving and loading configuration templates for repeated batch issuances.
+Delivered:
+- Refreshed landing page and role-driven navigation.
+- Redesigned admin, employee, auditor, and tax authority experiences.
+- Improved wallet resilience for repeated onclick actions.
+- Cleaner black-and-white visual system and spacing pass.
 
-### 8. Privacy-Preserving Batching
--   **Problem:** Individual `finalize` calls reveal the exact salary amount via balance changes (`new_total - old_total`).
--   **✅ Implemented:** Addressed inherently through the Pull Model (certificates), mitigating correlation attacks on direct `issue_salary` transactions.
+Still open:
+- Continued micro-polish on responsive layouts.
+- Optional motion and visual refinement passes.
 
----
+### 4.4 Dashboard and Analytics
+Status: Complete for current frontend scope
 
-## ✅ Wave 3: The Enterprise Integrations (Completed)
+Delivered:
+- Admin analytics dashboard with time presets.
+- Aggregate-only bar and pie visualizations.
+- Total payout, active employee count, last payout time, and budget context.
+- Local analytics event ledger with wallet-context aggregation.
+- Data-scope messaging and privacy-preserving display.
 
-**Status:** Complete  
-**Focus:** ARC-20 Stablecoins, Time-Delayed Vesting, and Zero-Gas Treasury Relayer
+Current scope limit:
+- Analytics are wallet + local-ledger scoped, not global indexed analytics.
 
-### 1. ARC-20 Token Integration (`USDCx` & `USAD` Stablecoins)
--   **Feasibility:** HIGH (Core Aleo Logic)
--   **Actionable:** We will integrate the official Aleo Foundation Buildathon token programs (`test_usdcx_stablecoin.aleo` and `test_usad_stablecoin.aleo`). We will maintain **two parallel payment rails**:
-    -   `issue_salary`: Continues to exist for native `credits.aleo` push transfers.
-    -   `issue_salary_stablecoin`: Added to explicitly transfer ARC-20 `Token` records (handling both USDCx and USAD standards).
-    -   `issue_salary_usdcx` and `issue_salary_usad` added to explicitly transfer ARC-20 `Token` records.
-    -   **✅ Implemented:** The Next.js frontend dynamically mocks the necessary Merkle Tree `FreezeList` proofs to satisfy building constraints natively.
+### 4.5 Non-Technical HR User Experience
+Status: In Progress
 
-### 2. Time-Delayed Vesting Contracts
--   **Feasibility:** HIGH (Core Aleo Logic)
--   **Actionable:** Introduced a `VestingRecord` struct. Emploees receive a token allocation cryptographically locked until `block.height >= unlock_height`.
--   **✅ Implemented:** Added UI constraints to ensure Vesting applies natively to Aleo Credits. Employees call `claim_vested()` to mathematically unwrap the Time-Delay lock.
+Delivered:
+- Human-readable portal copy and role separation.
+- Guided funding flow for private balances.
+- Template-driven payroll cycle builder.
+- Admin relayer review model for employee claims.
+- Tax authority role isolated into its own portal.
 
-### 3. Treasury Lock (True Pull Model for Native Tokens)
--   **Feasibility:** MEDIUM (Requires careful UTXO architecture)
--   **Actionable:** Re-architected the entire system to support a massive `TreasuryPoolRecord` owned by the `MultiSigAdmin` threshold.
--   **✅ Implemented:** Employees submit a gas-less "Pull Request" via `claimed_payments` tracking. The Admin executes the transition, paying the gas and securely routing the funds to the Employee in a single SNARK execution.
+Still open:
+- More abstraction around token-specific record management.
+- Additional workflow guidance for first-time HR operators.
+- More explicit in-product education around claim and treasury models.
 
----
+## Wave 5: Advanced Batch Processing and Execution Scale
+Status: Planned
 
-## 🏗️ Wave 4: The Next Frontier (Current Focus)
+### 5.1 Advanced Batch Processing
 
-**Goal:** Bridge the gap to government regulations, enhance user experience for non-technical users, and optimize execution.
+Goal:
+- Move beyond the current sequential payroll runner into a stronger batch-execution model.
 
-### 1. Zero-Knowledge Tax Withholding
--   **Mechanism:** Add a "Tax Authority" view key and a `tax_percentage` global state.
--   **Logic:** `claim_salary` will automatically calculate $X$% of the claim, divert it to a `TaxVaultRecord`, and generate a downloadable ZK proof of "Tax Paid" for the employee to securely submit to the IRS.
+Planned work:
+- True single-transition parallel batch proving.
+- Native multi-currency batch execution.
+- Threshold authorization over a batch root instead of per-transaction approval.
+- Fewer repeated wallet approvals for large payroll runs.
 
-### 2. Advanced Batch Processing
--   **Current State:** Batch execution is sequential UTXO generation.
--   **Goal for Wave 4:** 
-    -   **True ZK Parallel Execution:** Re-architect the `main.leo` structure to allow `issue_salary_batch_X` to securely execute an entire array of employees inside a single, massive SNARK transition.
-    -   **Multi-Currency Batching:** Expand batch compatibility to natively aggregate and distribute ARC-20 tokens (`USDCx`, `USAD`) in bulk.
-    -   **Multisig Integration:** Require the $M$-of-$N$ admin threshold to dynamically authorize the entire batch Merkle root at once instead of individual signing.
+## Next Practical Priorities
 
-### 3. Frontend Upgrades & Ecosystem Polish
--   **Mechanism:** Refine UI components across all portals (Admin, Employee, Auditor) with a focus on modern aesthetics, smooth transitions, and intuitive layouts.
--   **Logic:** Implement unified pill-based navigation, high-fidelity responsive components, and consistent branding.
+### Priority 1: Finish operational gaps in payroll behavior
+- Expand withholding to direct ALEO payouts if desired.
+- Decide whether budget ceiling should remain additive with treasury funding or become a fixed session ceiling.
+- Improve stablecoin funding and spend ergonomics further.
 
-### 4. Dashboard & Analytics
--   **Mechanism:** Implement a comprehensive, privacy-preserving analytics dashboard for Admins.
--   **Logic:** Aggregate data across multiple `AuditReport` and `SpentRecord` entities to display total payroll volume, token distribution breakdowns, and historic trends without compromising individual employee privacy.
+### Priority 2: Make batch payroll stronger
+- Add multi-currency batching.
+- Reduce repeated wallet approvals where feasible.
+- Explore safe batched authorization models.
 
-### 5. Non-Technical HR User Experience
--   **Mechanism:** Redesign complex ZK and blockchain interactions to feel entirely seamless to a traditional Web2 HR administrator.
--   **Logic:** Convert technical blockchain jargon into human-readable actions, abstract UTXO management, and create templates that mimic familiar multi-step traditional payroll systems.
+### Priority 3: Deepen compliance workflows
+- Expand tax authority reporting.
+- Add richer export formats beyond JSON.
+- Improve auditor history and period filtering.
 
----
+## Longer-Term Waves
 
-## 🔗 Wave 5: Decentralized HR Oracles
+### Wave 6: HR / Oracle Integrations
+Status: Planned
 
-**Goal:** Eliminate manual admin data entry.
+Possible direction:
+- Privacy-preserving sync with Web2 HR systems.
+- Off-chain employment attestations converted into private on-chain salary rights.
+- Stronger automation for payroll roster updates.
 
-### 1. Privacy-Preserving Web2 Sync
--   **Integration:** Sync securely with tools like BambooHR or Deel.
--   **Mechanism:** An oracle node signs an `EmployeeCredential` off-chain. The employee submits this signature to mint their own `SalaryTicket` on-chain, proving employment status privately without the Admin manually initiating the payroll transaction.
+### Wave 7: Enterprise Funding and Fiat Rails
+Status: Planned
 
----
-
-## 🏦 Wave 6: Fiat & Enterprise On-Ramps
-
-**Goal:** Mass adoption for non-crypto native companies.
-
-### 1. Fiat On/Off-Ramps
--   **Integration:** Partner with Web2 financial providers (e.g., MoonPay, Stripe Crypto, Banxa).
--   **Mechanism:** Administrators can fund the payroll treasury directly via Bank Wire. The backend provider automatically swaps fiat to ARC-20 Stablecoins and triggers the `fund_payroll` transiton on Aleo natively.
+Possible direction:
+- Fiat on-ramp and treasury funding integrations.
+- Off-ramp support for payroll operators.
+- Back-office accounting and enterprise finance connectors.
