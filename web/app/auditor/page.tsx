@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { WalletConnectButton } from '@/components/WalletConnectButton'
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
-import { PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
+import { PROGRAM_ID, getRecordField, requestWalletRecords } from '@/lib/zk-utils'
 import GlassCard from '@/components/GlassCard'
 import WireframeBackground from '@/components/WireframeBackground'
 import Link from 'next/link'
@@ -28,7 +28,12 @@ export default function AuditorDashboard() {
         setError('')
         try {
             // true = request decrypted records
-            const records = await requestRecords(PROGRAM_ID, true)
+            const records = await requestWalletRecords(
+                requestRecords,
+                PROGRAM_ID,
+                true,
+                (wallet as any)?.adapter
+            )
 
             // Filter for AuditReport records
             const auditReports = (records as any[])
@@ -78,10 +83,10 @@ export default function AuditorDashboard() {
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-2 flex flex-col md:flex-row md:items-center gap-4">
                         <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 text-white hidden md:block" />
-                        Compliance Audit
+                        Payroll Verification
                     </h1>
                     <p className="text-[#a1a1aa] text-lg max-w-2xl mt-2">
-                        Verify zero-knowledge proofs of budget solvency without accessing private data.
+                        Inspect audit reports, spending commitments, and period proofs without gaining access to individual compensation data.
                     </p>
                 </div>
 
@@ -101,12 +106,12 @@ export default function AuditorDashboard() {
                                     {isConnected ? (
                                         <div className="flex items-center gap-3 text-sm text-[#22c55e] bg-white/5 px-4 py-4 rounded-xl border border-white/10 font-medium">
                                             <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border-2 border-black" />
-                                            Auditor Connected
+                                            Auditor wallet connected
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-3 text-sm text-[#eab308] bg-white/5 px-4 py-4 rounded-xl border border-white/10 font-medium">
                                             <div className="w-2.5 h-2.5 rounded-full bg-[#eab308] border-2 border-black" />
-                                            Wallet Disconnected
+                                            Wallet disconnected
                                         </div>
                                     )}
                                 </div>
@@ -115,8 +120,8 @@ export default function AuditorDashboard() {
 
                         {isConnected && (
                             <GlassCard className="p-8 border-white/5 bg-[#0a0a0a] rounded-3xl">
-                                <h2 className="text-xl font-bold mb-3 text-white tracking-tight">Fetch Proofs</h2>
-                                <p className="text-sm text-[#a1a1aa] mb-8">Scan your connected wallet for decrypted Audit Reports.</p>
+                                <h2 className="text-xl font-bold mb-3 text-white tracking-tight">Fetch Reports</h2>
+                                <p className="text-sm text-[#a1a1aa] mb-8">Scan the connected auditor wallet for decrypted `AuditReport` records.</p>
                                 <button
                                     onClick={fetchReports}
                                     disabled={loading}
@@ -125,12 +130,12 @@ export default function AuditorDashboard() {
                                     {loading ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                            Verifying...
+                                            Scanning...
                                         </>
                                     ) : (
                                         <>
                                             <Database className="w-5 h-5" />
-                                            Scan Records
+                                            Scan Audit Reports
                                         </>
                                     )}
                                 </button>
@@ -143,8 +148,8 @@ export default function AuditorDashboard() {
                         {!isConnected ? (
                             <GlassCard className="p-16 text-center flex flex-col items-center justify-center border-dashed border-white/5 bg-[#0a0a0a]/50 rounded-3xl min-h-[400px]">
                                 <ShieldCheck className="w-20 h-20 text-white/20 mb-8" />
-                                <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">Access Required</h3>
-                                <p className="text-[#a1a1aa] max-w-md text-lg">Connect your authorized auditor wallet to scan for compliance proofs.</p>
+                                <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">Auditor Wallet Required</h3>
+                                <p className="text-[#a1a1aa] max-w-md text-lg">Connect the configured auditor wallet to review payroll proofs and reporting records.</p>
                             </GlassCard>
                         ) : (
                             <>
@@ -158,7 +163,7 @@ export default function AuditorDashboard() {
                                     <GlassCard className="p-16 text-center flex flex-col items-center justify-center border-dashed border-white/5 bg-[#0a0a0a]/50 rounded-3xl min-h-[400px]">
                                         <Database className="w-20 h-20 text-white/20 mb-8" />
                                         <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">No Reports Found</h3>
-                                        <p className="text-[#a1a1aa] max-w-md text-lg">No decrypted Audit Reports were found for this wallet address.</p>
+                                        <p className="text-[#a1a1aa] max-w-md text-lg">No decrypted `AuditReport` records are visible to this wallet yet.</p>
                                     </GlassCard>
                                 )}
 

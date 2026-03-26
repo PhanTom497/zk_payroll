@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Shield, Users, Eye, Wallet, Lock, Zap, ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { Shield, Users, Eye, Wallet, Lock, Zap, ArrowRight, ArrowUpRight, Play, Landmark } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import FeaturesScroll from "@/components/FeaturesScroll";
@@ -11,29 +11,36 @@ import FeaturesScroll from "@/components/FeaturesScroll";
 const title = "ZK Payroll";
 const tagline = "Privacy-Preserving DAO Payments on Aleo";
 const description =
-    "Solve the Compliance-Privacy Paradox — prove budget solvency to auditors without ever revealing individual contributor data.";
+    "Run private payroll, vesting, analytics, tax withholding, and audit workflows on Aleo without exposing individual compensation.";
 
 const portals = [
     {
         title: "Admin Portal",
-        description: "Manage payroll, authorize payments, and maintain compliance proofs for your DAO.",
+        description: "Operate payroll like a modern finance console with guided funding, approvals, analytics, relayer claims, and audit exports.",
         icon: Shield,
         url: "/admin",
-        features: ["Deposit Funds", "Authorize Payroll", "Batch Processing", "Compliance Proofs"],
+        features: ["Guided Funding", "Payout Approvals", "Analytics Dashboard", "Compliance Reports"],
     },
     {
         title: "Employee Portal",
-        description: "Connect your wallet, view salary rights, and withdraw funds privately.",
+        description: "Track salary rights, unlock vesting, submit pull requests, and download private tax proofs from one place.",
         icon: Users,
         url: "/employee",
-        features: ["Wallet Connection", "Salary Rights", "Private Withdrawals", "History Tracking"],
+        features: ["Salary Rights", "Vesting Claims", "Pull Requests", "Tax Proof Downloads"],
     },
     {
         title: "Auditor Portal",
-        description: "Verify compliance proofs and audit DAO payments without accessing private data.",
+        description: "Verify payroll solvency and audit cryptographic summaries without ever seeing individual salaries.",
         icon: Eye,
         url: "/auditor",
-        features: ["Fetch Proofs", "Verify Compliance", "Budget Solvency", "Zero-Knowledge Audit"],
+        features: ["Audit Reports", "Budget Verification", "Merkle Commitments", "Selective Disclosure"],
+    },
+    {
+        title: "Tax Authority Portal",
+        description: "Review authority-owned withholding receipts, monitor collected tax, and export structured receipt files.",
+        icon: Landmark,
+        url: "/tax-authority",
+        features: ["TaxVault Records", "Authority Access", "Collected Totals", "JSON Exports"],
     },
 ];
 
@@ -71,26 +78,42 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
                 </motion.div>
 
-                <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-12 pt-12">
-                    <div className="max-w-4xl text-left">
+                <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-12 pt-8 md:pt-12">
+                    <div className="max-w-3xl text-left">
+                        <motion.div
+                            initial={{ opacity: 0, y: 24 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.45, duration: 0.9, ease: "easeOut" }}
+                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 mb-6"
+                        >
+                            <span className="h-2 w-2 rounded-full bg-white" />
+                            <span className="text-[11px] md:text-xs uppercase tracking-[0.22em] text-white/70 font-semibold">
+                                Confidential Payroll Infrastructure
+                            </span>
+                            <span className="hidden md:block text-white/25">•</span>
+                            <span className="hidden md:block text-[11px] md:text-xs uppercase tracking-[0.18em] text-white/45 font-medium">
+                                Built on Aleo
+                            </span>
+                        </motion.div>
+
                         <motion.h1
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
-                            className="text-[38px] leading-[1.05] md:text-[52px] lg:text-[66px] font-medium tracking-[-0.02em] mb-5 text-white"
+                            className="max-w-4xl text-[40px] leading-[0.98] md:text-[56px] lg:text-[68px] font-semibold tracking-[-0.04em] mb-6 text-white"
                         >
-                            Privacy-Preserving DAO
+                            Confidential Payroll.
                             <br />
-                            Payments on Aleo
+                            Verifiable Oversight.
                         </motion.h1>
 
                         <motion.p
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.9, duration: 1, ease: "easeOut" }}
-                            className="text-[16px] text-[#A1A1AA] mb-8 max-w-[440px] leading-[1.6]"
+                            className="text-[16px] md:text-[17px] text-[#b4b4bc] mb-10 max-w-[620px] leading-[1.8] font-normal"
                         >
-                            Solve the Compliance-Privacy Paradox — prove budget solvency to auditors without ever revealing individual contributor data.
+                            ZK Payroll is a privacy-first payroll system designed for modern organizations that need controlled spending, role-based visibility, and auditability without turning compensation into public data.
                         </motion.p>
 
                         <div className="flex flex-wrap items-center gap-4">
@@ -100,7 +123,7 @@ export default function Home() {
                                 transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
                             >
                                 <Link href="/admin" className="flex items-center gap-3 bg-white text-black pl-5 pr-1.5 py-1.5 rounded-full font-medium hover:bg-white/90 transition-colors text-sm">
-                                    Get Started
+                                    Open Portal
                                     <div className="bg-black text-white rounded-full p-2 flex items-center justify-center">
                                         <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
                                     </div>
@@ -132,22 +155,22 @@ export default function Home() {
                 <div className="max-w-7xl mx-auto">
 
                     {/* Header Structure exactly matching Image 1 */}
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-                        <div className="max-w-3xl text-left">
-                            <div className="text-sm font-semibold tracking-wider text-[#A1A1AA] uppercase mb-6">
+                    <div className="flex flex-col mb-20 gap-8">
+                        <div className="max-w-4xl text-left">
+                            <div className="text-[12px] font-semibold tracking-[0.18em] text-[#A1A1AA] uppercase mb-5">
                                 Portals
                             </div>
-                            <h2 className="text-4xl md:text-5xl lg:text-7xl font-sans tracking-tight text-white leading-[1.05]">
-                                Choose Your Portal
+                            <h2 className="max-w-4xl text-[42px] md:text-[58px] lg:text-[76px] font-black tracking-[-0.04em] text-white leading-[0.98]">
+                                Choose Your Role
                             </h2>
-                            <p className="text-lg md:text-xl text-[#A1A1AA] mt-8 max-w-xl font-normal leading-relaxed">
-                                Access the ZK Payroll system based on your role in the DAO.
+                            <p className="text-[18px] md:text-[20px] text-[#b4b4bc] mt-6 max-w-2xl font-normal leading-[1.65]">
+                                Every workspace is shaped around a specific participant in the payroll lifecycle, exposing only the actions, records, and context that role should see.
                             </p>
                         </div>
                     </div>
 
                     {/* Fanning Card Layout */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                         {portals.map((portal) => (
                             <Link href={portal.url} key={portal.title} className="block group">
                                 <div className="relative w-full rounded-[2rem] p-8 md:p-10 transition-all duration-700 ease-out bg-[#0a0a0a] hover:bg-white overflow-hidden flex flex-col h-[520px]">
@@ -189,9 +212,9 @@ export default function Home() {
                             ZK Payroll.
                         </Link>
                         <p className="text-[#A1A1AA] text-lg font-medium leading-relaxed mb-8">
-                            Privacy-Preserving DAO Payments.
+                            Private payroll operations.
                             <br />
-                            Onchain.
+                            Built for real teams.
                         </p>
                         <Link href="/admin" className="inline-flex items-center gap-2.5 bg-white text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-white/90 transition-colors mb-20 md:mb-28">
                             Get Started <ArrowRight className="w-4 h-4" />

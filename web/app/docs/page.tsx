@@ -11,7 +11,7 @@ const tabs = [
     { id: 'overview', label: 'Overview', icon: BookOpen },
     { id: 'architecture', label: 'Architecture', icon: Cpu },
     { id: 'security', label: 'Security Model', icon: Shield },
-    { id: 'roadmap', label: 'Future Plans', icon: MapIcon },
+    { id: 'roadmap', label: 'Roadmap & Progress', icon: MapIcon },
 ];
 
 export default function DocsPage() {
@@ -35,10 +35,10 @@ export default function DocsPage() {
                 {/* Main Heading */}
                 <div className="text-center mb-12 w-full">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-                        ZK Payroll <span className="text-[#06b6d4]">Ecosystem</span>
+                        ZK Payroll <span className="text-[#06b6d4]">Documentation</span>
                     </h1>
                     <p className="text-[#a1a1aa] text-lg max-w-2xl mx-auto">
-                        Explore our vision, architecture, and roadmap for the future of private decentralized compensation.
+                        Explore the current product, architecture, security model, and roadmap behind private payroll on Aleo.
                     </p>
                 </div>
 
@@ -87,7 +87,7 @@ export default function DocsPage() {
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#3b82f6]">Payroll Protocol</span>
                                         </h1>
                                         <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed">
-                                            Enterprise-grade, privacy-preserving DAO payments built natively on the Aleo Network.
+                                            A privacy-first payroll system for modern teams built natively on the Aleo Network.
                                         </p>
                                     </div>
 
@@ -104,7 +104,7 @@ export default function DocsPage() {
                                                             Transparency vs Privacy
                                                         </h4>
                                                         <p className="text-[#a1a1aa] leading-relaxed text-sm">
-                                                            <strong className="text-white">Public blockchains expose all data.</strong> Competitors can analyze your compensation structure, salaries become public, and payment timing reveals cash flow.
+                                                            <strong className="text-white">Traditional public rails expose too much.</strong> Compensation structure, treasury behavior, and payout timing can all leak sensitive operational information.
                                                         </p>
                                                     </div>
                                                     <div className="h-px w-full bg-white/5" />
@@ -114,7 +114,7 @@ export default function DocsPage() {
                                                             The Compliance Paradox
                                                         </h4>
                                                         <p className="text-[#a1a1aa] leading-relaxed text-sm">
-                                                            Organizations must prove to auditors they are solvent. <strong className="text-white">Traditional public chains force you to choose between privacy and compliance.</strong>
+                                                            Teams still need to satisfy finance, auditors, and now tax workflows. <strong className="text-white">Most systems force a painful tradeoff between operational privacy and institutional reporting.</strong>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -126,26 +126,26 @@ export default function DocsPage() {
                                                 <div className="flex-1 p-8 rounded-2xl border border-white/5 bg-gradient-to-b from-[#22c55e]/5 to-[#0a0a0a] relative overflow-hidden group hover:border-[#22c55e]/30 transition-colors">
                                                     <div className="space-y-6 relative z-10">
                                                         <h4 className="text-[#22c55e] font-bold tracking-wide text-lg leading-tight">
-                                                            ZK Payroll eliminates the tradeoff.
+                                                            ZK Payroll closes that gap.
                                                         </h4>
                                                         <ul className="space-y-4">
                                                             <li className="flex items-start gap-3">
                                                                 <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
                                                                     <Lock className="w-3 h-3 text-[#22c55e]" />
                                                                 </div>
-                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Every salary transaction is <strong className="text-white font-medium">fully encrypted and private.</strong></p>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Payroll payouts, claims, and receipts remain <strong className="text-white font-medium">encrypted and role-scoped.</strong></p>
                                                             </li>
                                                             <li className="flex items-start gap-3">
                                                                 <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
                                                                     <Database className="w-3 h-3 text-[#22c55e]" />
                                                                 </div>
-                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">A <strong className="text-white font-medium">public mathematical budget ceiling</strong> is enforced on-chain.</p>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">A <strong className="text-white font-medium">mathematically enforced payroll spending boundary</strong> is checked on-chain.</p>
                                                             </li>
                                                             <li className="flex items-start gap-3">
                                                                 <div className="mt-0.5 w-5 h-5 rounded-full bg-[#22c55e]/10 flex items-center justify-center shrink-0 border border-[#22c55e]/20">
                                                                     <FileCheck className="w-3 h-3 text-[#22c55e]" />
                                                                 </div>
-                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Auditors can verify solvency through <strong className="text-white font-medium">cryptographic proofs</strong> without exposing salaries.</p>
+                                                                <p className="text-[#a1a1aa] leading-relaxed text-sm">Auditors and tax authorities can receive <strong className="text-white font-medium">the exact records they need</strong> without exposing everyone else’s data.</p>
                                                             </li>
                                                         </ul>
                                                     </div>
@@ -158,7 +158,7 @@ export default function DocsPage() {
                                     <GlassCard className="mt-12 overflow-hidden border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-0 rounded-3xl">
                                         <div className="p-8 pb-6 text-center">
                                             <h3 className="text-2xl font-bold text-white mb-2">The Privacy Matrix</h3>
-                                            <p className="text-sm text-[#8f8f96]">Through cryptographic selective disclosure, ZK Payroll restricts data visibility based exclusively on participant role.</p>
+                                            <p className="text-sm text-[#8f8f96]">Through selective disclosure and private records, ZK Payroll limits what each role can see to exactly what that workflow needs.</p>
                                         </div>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm text-left">
@@ -169,6 +169,7 @@ export default function DocsPage() {
                                                         <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Auditor</th>
                                                         <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Admin</th>
                                                         <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Employee</th>
+                                                        <th className="py-4 px-4 font-medium uppercase tracking-wider text-xs">Tax Authority</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-white/5">
@@ -178,12 +179,14 @@ export default function DocsPage() {
                                                         <td className="py-5 px-4 text-white">✅ Visible</td>
                                                         <td className="py-5 px-4 text-white">✅ Visible</td>
                                                         <td className="py-5 px-4 text-[#404040]">—</td>
+                                                        <td className="py-5 px-4 text-[#404040]">—</td>
                                                     </tr>
                                                     <tr className="group hover:bg-white/[0.02] transition-colors">
                                                         <td className="py-5 px-8 font-medium text-white">Total Spent</td>
                                                         <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
                                                         <td className="py-5 px-4 text-white">✅ ZK-Verified</td>
                                                         <td className="py-5 px-4 text-white">✅ Visible</td>
+                                                        <td className="py-5 px-4 text-[#404040]">—</td>
                                                         <td className="py-5 px-4 text-[#404040]">—</td>
                                                     </tr>
                                                     <tr className="group hover:bg-white/[0.02] transition-colors">
@@ -192,6 +195,7 @@ export default function DocsPage() {
                                                         <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
                                                         <td className="py-5 px-4 text-white">✅ Local History</td>
                                                         <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
                                                     </tr>
                                                     <tr className="group hover:bg-white/[0.02] transition-colors">
                                                         <td className="py-5 px-8 font-medium text-white">Recipient Identities</td>
@@ -199,6 +203,7 @@ export default function DocsPage() {
                                                         <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
                                                         <td className="py-5 px-4 text-white">✅ Visible</td>
                                                         <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                        <td className="py-5 px-4 text-white">✅ Receipt Scope</td>
                                                     </tr>
                                                     <tr className="group hover:bg-white/[0.02] transition-colors">
                                                         <td className="py-5 px-8 font-medium text-white">Payment Timing</td>
@@ -206,6 +211,15 @@ export default function DocsPage() {
                                                         <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
                                                         <td className="py-5 px-4 text-white">✅ Visible</td>
                                                         <td className="py-5 px-4 text-white">✅ Own Only</td>
+                                                        <td className="py-5 px-4 text-white">✅ Receipt Scope</td>
+                                                    </tr>
+                                                    <tr className="group hover:bg-white/[0.02] transition-colors">
+                                                        <td className="py-5 px-8 font-medium text-white">Tax Receipts</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-[#ef4444]">❌ Hidden</td>
+                                                        <td className="py-5 px-4 text-white">✅ Totals Only</td>
+                                                        <td className="py-5 px-4 text-white">✅ Own Proof</td>
+                                                        <td className="py-5 px-4 text-white">✅ Full Receipt</td>
                                                     </tr>
                                                     <tr className="group hover:bg-white/[0.02] transition-colors bg-[#22c55e]/[0.02]">
                                                         <td className="py-5 px-8 font-bold text-[#22c55e]">Compliance Proof</td>
@@ -213,6 +227,7 @@ export default function DocsPage() {
                                                         <td className="py-5 px-4 text-[#22c55e] font-medium">✅ ZK-Proven</td>
                                                         <td className="py-5 px-4 text-[#22c55e] font-medium">✅ ZK-Proven</td>
                                                         <td className="py-5 px-4 text-[#404040]">—</td>
+                                                        <td className="py-5 px-4 text-white">✅ Tax Totals</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -221,14 +236,14 @@ export default function DocsPage() {
 
                                     {/* Core Features */}
                                     <div className="pt-12">
-                                        <h2 className="text-3xl font-black text-white mb-8 tracking-tight border-l-4 border-[#06b6d4] pl-4">Core Protocol Features</h2>
+                                        <h2 className="text-3xl font-black text-white mb-8 tracking-tight border-l-4 border-[#06b6d4] pl-4">Current Product Capabilities</h2>
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
                                                 <div className="flex items-center gap-4 mb-4">
                                                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Users className="w-5 h-5" /></div>
-                                                    <h4 className="font-bold text-lg text-white">Enterprise Multi-Sig</h4>
+                                                <h4 className="font-bold text-lg text-white">Operational Multi-Sig</h4>
                                                 </div>
-                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Require M-of-N wallet signatures for all payroll operations. Configured during DAO initialization and enforced cryptographically before any transaction reaches the network.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Require M-of-N wallet signatures for critical payroll actions. Admins configure approvers during setup and the proof flow enforces approval before execution.</p>
                                             </div>
 
                                             <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
@@ -236,7 +251,7 @@ export default function DocsPage() {
                                                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Zap className="w-5 h-5" /></div>
                                                     <h4 className="font-bold text-lg text-white">Zero-Gas Treasury Relayer</h4>
                                                 </div>
-                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Employees execute gasless Pull Requests which are fulfilled asynchronously by the Admin&apos;s Relayer. Contributors never pay Aleo network fees — the organization absorbs gas as an operational cost.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Employees submit pull requests and admins fulfill them asynchronously through the relayer path. Contributors avoid fee complexity while operations stay under treasury control.</p>
                                             </div>
 
                                             <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
@@ -244,7 +259,7 @@ export default function DocsPage() {
                                                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Layers className="w-5 h-5" /></div>
                                                     <h4 className="font-bold text-lg text-white">ARC-20 Stablecoin Support</h4>
                                                 </div>
-                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Native cross-program integration with Aleo&apos;s <code className="text-white text-xs bg-white/10 px-1.5 py-0.5 rounded ml-1 mr-1">test_usdcx_stablecoin.aleo</code> and <code className="text-white text-xs bg-white/10 px-1.5 py-0.5 rounded mx-1">test_usad_stablecoin.aleo</code> for fiat-pegged salary disbursements.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">The admin portal now guides funding and payout selection across native `credits.aleo`, `USDCx`, and `USAD` so teams can work from one smoother interface.</p>
                                             </div>
 
                                             <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
@@ -260,15 +275,15 @@ export default function DocsPage() {
                                                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><Database className="w-5 h-5" /></div>
                                                     <h4 className="font-bold text-lg text-white">Sequential ZK Batching</h4>
                                                 </div>
-                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Automated UTXO-chain polling executes multiple sequential salary issuances without double-spend collisions. Each transaction waits for confirmation before proceeding.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Batch payroll currently executes safely in sequence, refreshing state between payouts to avoid UTXO collisions while keeping the flow approachable for HR-style operations.</p>
                                             </div>
 
                                             <div className="group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 hover:scale-[1.02]">
                                                 <div className="flex items-center gap-4 mb-4">
                                                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 group-hover:text-[#06b6d4] transition-colors text-white"><FileCheck className="w-5 h-5" /></div>
-                                                    <h4 className="font-bold text-lg text-white">ZK Audit Reports</h4>
+                                                <h4 className="font-bold text-lg text-white">Audit and Tax Evidence</h4>
                                                 </div>
-                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Generate cryptographic compliance proofs with Merkle root commitments, recipient counts, and total spent — selectively disclosed to auditors without revealing individual data.</p>
+                                                <p className="text-sm text-[#8f8f96] leading-relaxed">Generate cryptographic audit reports for auditors, employee-owned tax proofs for contributors, and authority-owned `TaxVaultRecord` receipts for the tax wallet.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -278,7 +293,7 @@ export default function DocsPage() {
                                         <div className="absolute -top-12 -right-12 p-8 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
                                             <Globe className="w-64 h-64 text-[#06b6d4]" />
                                         </div>
-                                        <h3 className="text-lg font-bold text-white mb-6 uppercase tracking-widest text-[#06b6d4]">Network Context</h3>
+                                        <h3 className="text-lg font-bold text-white mb-6 uppercase tracking-widest text-[#06b6d4]">Deployment Context</h3>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm relative z-10">
                                             <div>
                                                 <span className="text-[#8f8f96] text-xs uppercase tracking-wider block mb-2 font-bold">Contract ID</span>
@@ -319,7 +334,7 @@ export default function DocsPage() {
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Execution Engines</span>
                                         </h1>
                                         <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed mt-4">
-                                            ZK Payroll supports two fundamentally different payment flows, each optimized for distinct operational requirements.
+                                            ZK Payroll supports two core payroll execution patterns, each tuned for a different operational rhythm.
                                         </p>
                                     </div>
 
@@ -334,7 +349,7 @@ export default function DocsPage() {
                                                     <div className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shadow-[0_0_10px_#06b6d4] animate-pulse" />
                                                     Direct Settlement
                                                 </h3>
-                                                <p className="text-sm text-[#a1a1aa]">Immediate settlement for native Aleo credits and ARC-20 stablecoins (USDCx, USAD).</p>
+                                                <p className="text-sm text-[#a1a1aa]">Immediate settlement for native Aleo credits and supported stablecoins when the admin wants direct execution.</p>
                                             </div>
                                             <div className="p-8">
                                                 <div className="grid md:grid-cols-3 gap-6 relative">
@@ -350,20 +365,20 @@ export default function DocsPage() {
                                                     <div className="relative z-10 bg-[#0a0a0a] p-6 rounded-2xl border border-white/10 shadow-xl group hover:border-[#06b6d4]/30 transition-colors">
                                                         <div className="w-10 h-10 rounded-full bg-black border border-white/20 flex items-center justify-center font-bold text-white mb-4 shadow-[0_0_15px_rgba(255,107,43,0.15)] group-hover:bg-[#06b6d4]/10 transition-colors z-10 mx-auto md:mx-0">2</div>
                                                         <h4 className="text-white font-bold mb-2 text-center md:text-left">Execution</h4>
-                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">Contract executes <code className="text-white text-[11px] bg-white/10 px-1 py-0.5 rounded mx-1">issue_salary</code> and verifies the mathematical budget ceiling.</p>
+                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">The contract executes the chosen payout transition and checks that the payroll stays within its configured spend boundary.</p>
                                                     </div>
                                                     
                                                     <div className="relative z-10 bg-[#0a0a0a] p-6 rounded-2xl border border-[#06b6d4]/20 bg-gradient-to-b from-[#06b6d4]/[0.02] to-transparent shadow-xl group hover:border-[#06b6d4]/40 transition-colors">
                                                         <div className="w-10 h-10 rounded-full bg-[#06b6d4]/20 border border-[#06b6d4]/50 text-[#06b6d4] flex items-center justify-center font-bold mb-4 shadow-[0_0_15px_rgba(255,107,43,0.3)] z-10 mx-auto md:mx-0">3</div>
                                                         <h4 className="text-white font-bold mb-2 text-center md:text-left">Delivery</h4>
-                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">A private <code className="text-white text-[11px] bg-white/10 px-1 py-0.5 rounded mx-1">SalaryRecord</code> is delivered directly to the employee&apos;s wallet instantly.</p>
+                                                        <p className="text-sm text-[#8f8f96] text-center md:text-left">A private payment record is delivered straight to the employee wallet with no claim step required.</p>
                                                     </div>
                                                 </div>
                                                 
                                                 <div className="mt-8 p-4 bg-white/[0.02] border border-white/5 rounded-xl text-sm text-[#a1a1aa] flex gap-3 items-start">
                                                     <div className="mt-0.5 text-[#06b6d4]"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                                                     <div>
-                                                        <strong className="text-white">Optimal Use Cases:</strong> Independent contractors, one-off bonuses, immediate stablecoin settlements, and any payment where the admin desires direct, immediate execution control.
+                                                        <strong className="text-white">Best for:</strong> one-off bonuses, direct settlements, contractor payments, and situations where finance wants immediate delivery.
                                                     </div>
                                                 </div>
                                             </div>
@@ -381,7 +396,7 @@ export default function DocsPage() {
                                                     <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]" />
                                                     Zero-Gas Treasury Relayer
                                                 </h3>
-                                                <p className="text-sm text-[#a1a1aa]">Time-locked vesting with asynchronous employee claiming and zero gas costs for contributors.</p>
+                                                <p className="text-sm text-[#a1a1aa]">Time-locked payroll rights with asynchronous employee claiming, admin relayer fulfillment, and claim-time tax withholding.</p>
                                             </div>
                                             
                                             <div className="p-8 grid md:grid-cols-5 gap-4">
@@ -397,7 +412,7 @@ export default function DocsPage() {
                                                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/30 group-hover:bg-blue-500 transition-colors" />
                                                         <span className="text-xs font-mono text-blue-400 mb-2 block tracking-wider">PHASE 2 : CONVERSION</span>
                                                         <h4 className="text-white font-bold text-sm mb-2">Employee Claims</h4>
-                                                        <p className="text-xs text-[#8f8f96]">Employee calls <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">claim_vested</code> to convert to a <code className="text-white/80 bg-white/10 px-1 py-0.5 rounded text-[10px]">SalaryCertificate</code> once block unlocks. Zero gas cost.</p>
+                                                        <p className="text-xs text-[#8f8f96]">Employee converts an unlocked vesting record into a claimable certificate once the release condition is met.</p>
                                                     </div>
                                                 </div>
                                                 
@@ -411,7 +426,7 @@ export default function DocsPage() {
                                                         <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
                                                         <span className="text-xs font-mono text-blue-400 mb-2 block tracking-wider">PHASE 3 : RELAY</span>
                                                         <h4 className="text-white font-bold mb-2">Relayer Fulfillment</h4>
-                                                        <p className="text-sm text-[#8f8f96] mb-4">Employee signs an off-chain Pull Request. Admin fulfills via <code className="text-white bg-white/10 px-1 py-0.5 rounded text-xs mx-1">claim_salary</code>.</p>
+                                                        <p className="text-sm text-[#8f8f96] mb-4">Employee submits a pull request, then admin fulfills it through `claim_salary`, where withholding and receipts are generated.</p>
                                                         <div className="flex items-center gap-2 text-xs font-mono bg-black/40 p-2 rounded text-white/60">
                                                             <span className="text-blue-400">TreasuryRecord</span> → <span className="text-green-400">Employee</span>
                                                         </div>
@@ -421,7 +436,7 @@ export default function DocsPage() {
                                                 <div className="md:col-span-5 mt-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl text-sm text-[#a1a1aa] flex gap-3 items-start">
                                                     <div className="mt-0.5 text-blue-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                                                     <div>
-                                                        <strong className="text-white">Optimal Use Cases:</strong> Core team salaries, recurring payments, cliff/vesting schedules, and scenarios demanding maximum employee privacy where claim timing is fully private.
+                                                        <strong className="text-white">Best for:</strong> recurring salaries, vesting schedules, zero-gas employee UX, and any payroll flow that benefits from claim-time receipts and withholding.
                                                     </div>
                                                 </div>
                                             </div>
@@ -438,7 +453,9 @@ export default function DocsPage() {
                                                 { name: "VestingRecord", owner: "Employee", desc: "Time-locked grant parameter. Inaccessible until the Aleo network reaches the specified block." },
                                                 { name: "SalaryCertificate", owner: "Employee", desc: "Unlocked right to pull salary. Used to submit a gasless Pull Request to the Treasury Relayer." },
                                                 { name: "SalaryRecord", owner: "Employee", desc: "The final encrypted payment voucher delivered to the employee. Contains amount and payment_id." },
-                                                { name: "AuditReport", owner: "Auditor", desc: "Compliance proof containing merkle_root and pay_period_hash. Proves solvency." },
+                                                { name: "AuditReport", owner: "Auditor", desc: "Compliance proof containing merkle_root and pay_period_hash for selective disclosure to audit teams." },
+                                                { name: "TaxPaidProof", owner: "Employee", desc: "Employee-side proof of gross, tax, and net amounts that can be downloaded from the employee portal." },
+                                                { name: "TaxVaultRecord", owner: "Tax Authority", desc: "Authority-owned withholding receipt that records employee, gross, tax, and net claim values." },
                                             ].map(record => (
                                                 <div key={record.name} className="p-6 border border-white/5 bg-[#0a0a0a] rounded-2xl hover:bg-white/[0.02] transition-colors group">
                                                     <div className="flex items-start justify-between mb-3">
@@ -593,7 +610,7 @@ export default function DocsPage() {
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-indigo-400">Timeline</span>
                                         </h1>
                                         <p className="text-xl text-[#a1a1aa] max-w-2xl leading-relaxed mt-4">
-                                            From proof-of-concept to enterprise-grade protocol. Our trajectory bridging the gap between Web3 privacy and Web2 institutional scale.
+                                            From proof-of-concept to operational payroll product. This timeline shows what is already live and where the next upgrades are headed.
                                         </p>
                                     </div>
 
@@ -687,14 +704,14 @@ export default function DocsPage() {
                                                             <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] animate-pulse" /> Current Focus
                                                         </span>
                                                         <h2 className="text-3xl font-black text-white mb-2">Wave 4: Expanding Horizons</h2>
-                                                        <p className="text-[#a1a1aa] text-sm mb-6 max-w-sm">Bridge the gap to government regulations, enhance user experience for non-technical users, and optimize execution.</p>
+                                                        <p className="text-[#a1a1aa] text-sm mb-6 max-w-sm">Wave 4 is where ZK Payroll starts to feel like a real operations suite: smoother UX, analytics, tax flows, and role-specific portals.</p>
                                                         
                                                         <div className="space-y-4">
                                                             {[
-                                                                { icon: <Globe className="text-[#06b6d4] w-4 h-4"/>, title: "Frontend Upgrades", desc: "Refine UI components across all portals with unified pill-based navigation." },
-                                                                { icon: <Database className="text-[#06b6d4] w-4 h-4"/>, title: "Dashboard & Analytics", desc: "Implement a comprehensive, privacy-preserving analytics dashboard for Admins." },
-                                                                { icon: <Users className="text-[#06b6d4] w-4 h-4"/>, title: "HR User Experience", desc: "Redesign complex ZK interactions to feel entirely seamless to a traditional HR admin." },
-                                                                { icon: <Layers className="text-[#06b6d4] w-4 h-4"/>, title: "Advanced Batching", desc: "Push advanced batch processing constraints for the next wave." }
+                                                                { icon: <Globe className="text-[#06b6d4] w-4 h-4"/>, title: "Frontend Upgrades", desc: "Live across role-based portals with clearer copy, guided flows, and smoother navigation." },
+                                                                { icon: <Database className="text-[#06b6d4] w-4 h-4"/>, title: "Admin Analytics", desc: "Live with payout trends, token mix, active employees, and payroll context cards." },
+                                                                { icon: <Users className="text-[#06b6d4] w-4 h-4"/>, title: "Tax Withholding", desc: "Live on the claim path with employee proofs and authority-side tax vault receipts." },
+                                                                { icon: <Layers className="text-[#06b6d4] w-4 h-4"/>, title: "HR-Friendly UX", desc: "Actively being refined to hide blockchain complexity behind familiar payroll language." }
                                                             ].map((feature, i) => (
                                                                 <div key={i} className="flex gap-3 items-start p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 group/item">
                                                                     <div className="mt-1 bg-black p-1.5 rounded-md border border-white/10 group-hover/item:border-[#06b6d4]/30 transition-colors">

@@ -2,7 +2,7 @@
 
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect } from 'react'
-import { fetchBlockHeight, requestTransaction, PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
+import { fetchBlockHeight, requestTransaction, requestWalletRecords, PROGRAM_ID, getRecordField } from '@/lib/zk-utils'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import GlassCard from "@/components/GlassCard"
@@ -95,7 +95,12 @@ export default function EmployeePage() {
         setIsScanning(true)
         console.log("Scanning with PROGRAM_ID:", PROGRAM_ID);
         try {
-            const records = await requestRecords(PROGRAM_ID, true)
+            const records = await requestWalletRecords(
+                requestRecords,
+                PROGRAM_ID,
+                true,
+                (wallet as any)?.adapter
+            )
 
             // Scan Certificates
             const allCerts: SalaryCertificate[] = (records as any[])
@@ -293,10 +298,10 @@ export default function EmployeePage() {
                         Employee Portal
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-2">
-                        My Dashboard
+                        My Payroll Workspace
                     </h1>
                     <p className="text-[#a1a1aa] text-lg max-w-2xl">
-                        Manage your Salary Rights, claim paycheck vesting streams, and view your on-chain deposit history.
+                        Review salary rights, unlock vesting, submit pull requests, and keep your private payout and tax records organized.
                     </p>
                 </div>
 
@@ -354,7 +359,7 @@ export default function EmployeePage() {
                                         </div>
                                         Aleo Salary Rights
                                     </h2>
-                                    <p className="text-sm text-[#a1a1aa] mt-2">Time-delayed vesting streams and Native Pull requests require manual claiming.</p>
+                                    <p className="text-sm text-[#a1a1aa] mt-2">Vesting streams and payroll pull claims appear here when your wallet has something to unlock or redeem.</p>
                                 </div>
                                 <button
                                     onClick={scanRecords}
@@ -362,7 +367,7 @@ export default function EmployeePage() {
                                     className="flex items-center justify-center md:justify-start gap-2 px-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
                                 >
                                     <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
-                                    {isScanning ? 'Scanning...' : 'Check for Paychecks'}
+                                    {isScanning ? 'Scanning...' : 'Scan Payroll Records'}
                                 </button>
                             </div>
 
@@ -380,8 +385,8 @@ export default function EmployeePage() {
                                 </div>
                             ) : (
                                 <GlassCard className="w-full border-white/5 bg-[#0a0a0a]/50 p-16 text-center border-dashed rounded-3xl">
-                                    <p className="text-[#a1a1aa] mb-4 text-lg">No salary certificates found.</p>
-                                    <button onClick={scanRecords} className="text-sm font-semibold text-white underline underline-offset-4 hover:text-gray-300 transition-colors">Scan Network</button>
+                                    <p className="text-[#a1a1aa] mb-4 text-lg">No claimable payroll rights found yet.</p>
+                                    <button onClick={scanRecords} className="text-sm font-semibold text-white underline underline-offset-4 hover:text-gray-300 transition-colors">Scan Again</button>
                                 </GlassCard>
                             )}
                         </div>
@@ -393,10 +398,10 @@ export default function EmployeePage() {
                                     <History className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-bold text-white tracking-tight">Direct Push History</h2>
+                                    <h2 className="text-2xl font-bold text-white tracking-tight">Private Payment History</h2>
                                     <p className="text-sm text-[#a1a1aa] mt-2 max-w-2xl">
-                                        Aleo Credits are pushed directly to your private balance. No claiming required.
-                                        <span className="block mt-1 italic text-gray-500">Note: Treasury Pulls arrive directly to your balance but do not emit a memo record here.</span>
+                                        Direct payroll payouts appear here as encrypted `SalaryRecord` vouchers in your wallet.
+                                        <span className="block mt-1 italic text-gray-500">Relayer-processed pull claims settle privately too, but may not always create the same history memo shape.</span>
                                     </p>
                                 </div>
                             </div>
@@ -444,7 +449,7 @@ export default function EmployeePage() {
                                 ) : (
                                     <div className="p-16 text-center text-[#a1a1aa] text-sm relative z-10">
                                         <History className="w-8 h-8 text-white/20 mx-auto mb-4" />
-                                        No withdrawal history found
+                                        No payment history found yet
                                     </div>
                                 )}
                             </GlassCard>
@@ -458,7 +463,7 @@ export default function EmployeePage() {
                                 <div>
                                     <h2 className="text-2xl font-bold text-white tracking-tight">Tax Withholding Proofs</h2>
                                     <p className="text-sm text-[#a1a1aa] mt-2 max-w-2xl">
-                                        Download private tax receipts as JSON whenever payroll claims are processed through withholding.
+                                        Whenever a taxed payroll claim is processed, you can export the employee-side proof JSON from here.
                                     </p>
                                 </div>
                             </div>
@@ -510,7 +515,7 @@ export default function EmployeePage() {
                                 ) : (
                                     <div className="p-16 text-center text-[#a1a1aa] text-sm relative z-10">
                                         <Download className="w-8 h-8 text-white/20 mx-auto mb-4" />
-                                        No tax proofs found yet. Run a taxed payroll claim and rescan.
+                                        No tax proofs found yet. Process a taxed payroll claim and scan this wallet again.
                                     </div>
                                 )}
                             </GlassCard>
@@ -524,7 +529,7 @@ export default function EmployeePage() {
                         </div>
                         <h2 className="text-2xl text-white font-bold mb-3 tracking-tight">Wallet Not Connected</h2>
                         <p className="text-[#a1a1aa] text-base max-w-md text-center mb-8">
-                            Please connect your Leo Wallet using the button in the top right to view your salary rights and claim paychecks.
+                            Please connect your Aleo wallet using the button in the top right to view salary rights, claim vesting, and manage private payroll records.
                         </p>
                     </GlassCard>
                 )}

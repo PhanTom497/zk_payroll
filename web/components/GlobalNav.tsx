@@ -21,6 +21,7 @@ export default function GlobalNav() {
                         { name: 'Admin', path: '/admin' },
                         { name: 'Employee', path: '/employee' },
                         { name: 'Auditor', path: '/auditor' },
+                        { name: 'Tax', path: '/tax-authority' },
                         { name: 'Docs', path: '/docs' }
                     ].map((link) => {
                         const isActive = pathname.startsWith(link.path);

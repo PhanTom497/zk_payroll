@@ -7,8 +7,8 @@ import { Lock, Zap, Shield } from "lucide-react";
 const features = [
     { 
         icon: Lock, 
-        title: "Zero-Knowledge Proofs", 
-        desc: "Verify without revealing sensitive data",
+        title: "Private by Default", 
+        desc: "Salary records, claims, and receipts stay encrypted to the right wallet",
         bg: "linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%)",
         textColor: "text-[#18181b]",
         descColor: "text-[#3f3f46]",
@@ -16,8 +16,8 @@ const features = [
     },
     { 
         icon: Zap, 
-        title: "Aleo Blockchain", 
-        desc: "Built for total privacy and public verifiability",
+        title: "Operational Flows", 
+        desc: "Support direct payouts, vesting claims, relayer processing, and token funding",
         bg: "linear-gradient(135deg, #ef4444 0%, #991b1b 100%)",
         textColor: "text-white",
         descColor: "text-white/80",
@@ -25,8 +25,8 @@ const features = [
     },
     { 
         icon: Shield, 
-        title: "Compliance Ready", 
-        desc: "Meet audit requirements while preserving privacy",
+        title: "Compliance Without Exposure", 
+        desc: "Analytics, audit reports, and tax receipts preserve oversight without exposing salaries",
         bg: "linear-gradient(135deg, #27272a 0%, #000000 100%)",
         textColor: "text-white",
         descColor: "text-[#a1a1aa]",
@@ -76,10 +76,11 @@ export default function FeaturesScroll() {
                 <motion.div 
                     animate={{ opacity: textOpacity, y: textY }}
                     transition={{ duration: 1.2, ease: "easeOut" }}
-                    className="absolute top-[12%] left-0 right-0 text-center z-0 px-6"
+                    className="absolute top-[14%] left-0 right-0 text-center z-0 px-6"
                 >
-                    <h2 className="text-4xl md:text-5xl lg:text-7xl font-sans tracking-tight text-white mb-2">
-                        Core Infrastructure
+                    <h2 className="max-w-5xl mx-auto text-[38px] md:text-[54px] lg:text-[68px] font-extrabold tracking-[-0.04em] text-white leading-[0.96]">
+                        Built for Real
+                        <span className="block text-white/90">Payroll Operations</span>
                     </h2>
                 </motion.div>
 
@@ -89,7 +90,7 @@ export default function FeaturesScroll() {
                     <motion.div 
                         animate={{ scale: containerScale, y: containerY }}
                         transition={{ duration: 1.5, ease: "easeInOut" }} 
-                        className="relative flex justify-center items-center w-[90vw] md:w-[75vw] max-w-6xl h-[65vh]"
+                        className="relative flex justify-center items-center w-[90vw] md:w-[75vw] max-w-6xl h-[65vh] mt-16 md:mt-20"
                     >
                         {/* 1) Solid Image Block (Fades out seamlessly) */}
                         <motion.div
@@ -115,8 +116,8 @@ export default function FeaturesScroll() {
 
                                 const fanStyles = 
                                     step >= 3 ? (
-                                        i === 0 ? { rotateZ: -6, x: "14%", y: "4%" } :
-                                        i === 2 ? { rotateZ: 6, x: "-14%", y: "4%" } :
+                                        i === 0 ? { rotateZ: -5, x: "11%", y: "4%" } :
+                                        i === 2 ? { rotateZ: 5, x: "-11%", y: "4%" } :
                                         { rotateZ: 0, x: "0%", y: "0%" }
                                     ) : { rotateZ: 0, x: "0%", y: "0%" };
 
@@ -175,12 +176,12 @@ export default function FeaturesScroll() {
                                                 <f.icon className={`w-6 h-6 ${f.iconColor}`} strokeWidth={1.5} />
                                             </div>
                                             <div className="flex-grow flex items-center mb-6">
-                                                <h3 className={`text-3xl lg:text-5xl font-medium tracking-tight pr-4 ${f.textColor} leading-[1.1]`}>
+                                                <h3 className={`text-[34px] lg:text-[52px] font-medium tracking-[-0.03em] pr-4 ${f.textColor} leading-[1.04] max-w-[92%]`}>
                                                     {f.title}
                                                 </h3>
                                             </div>
                                             <div className="mt-auto">
-                                                <p className={`text-sm lg:text-base leading-relaxed max-w-[90%] ${f.descColor}`}>
+                                                <p className={`text-[13px] lg:text-[15px] leading-[1.6] max-w-[86%] ${f.descColor}`}>
                                                     {f.desc}
                                                 </p>
                                             </div>

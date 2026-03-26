@@ -2,7 +2,7 @@
 
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react'
 import { useState, useEffect, useMemo, type ComponentType } from 'react'
-import { requestTransaction, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, getRecordField } from '@/lib/zk-utils'
+import { requestTransaction, requestWalletRecords, PROGRAM_ID, fetchBlockHeight, fetchMappingValue, getRecordField } from '@/lib/zk-utils'
 import {
     ANALYTICS_STORAGE_KEY,
     appendAnalyticsEvent,
@@ -147,18 +147,18 @@ const HR_TAB_TITLES: Record<AdminTab, string> = {
 }
 
 const HR_TAB_DESCRIPTIONS: Record<AdminTab, string> = {
-    dashboard: 'Track payroll activity, budget, and workforce health in one place.',
-    deposit: 'Add payroll budget and prepare payment funds with guided steps.',
-    authorize: 'Create and approve a payment for a single employee.',
-    batch: 'Run a full payroll cycle for multiple employees using familiar templates.',
-    relayer: 'Review and approve employee-initiated claim requests.',
-    compliance: 'Generate audit-ready payroll summaries without exposing private salaries.',
+    dashboard: 'Monitor payroll health, payout trends, budget posture, and tax activity from one operations view.',
+    deposit: 'Fund payroll, prepare private balances, and manage claim-time withholding policy.',
+    authorize: 'Create a one-off payout, stablecoin transfer, or vesting schedule for a single teammate.',
+    batch: 'Run a full payroll cycle for multiple team members using reusable HR-style templates.',
+    relayer: 'Approve employee pull requests and process the private claim path with withholding applied.',
+    compliance: 'Generate privacy-preserving payroll summaries for auditors and internal review.',
 }
 
 const HR_TEMPLATE_PRESETS: Array<{ name: string; baseSalary: string; interval: string; hint: string }> = [
-    { name: 'Monthly Salaried', baseSalary: '4000', interval: '30', hint: 'Best for fixed monthly teams.' },
-    { name: 'Biweekly Payroll', baseSalary: '2000', interval: '14', hint: 'Best for 2-week payroll cycles.' },
-    { name: 'Weekly Contractors', baseSalary: '1000', interval: '7', hint: 'Best for weekly contributor payouts.' },
+    { name: 'Monthly Salaried', baseSalary: '4000', interval: '30', hint: 'Good for fixed full-time payroll cycles.' },
+    { name: 'Biweekly Payroll', baseSalary: '2000', interval: '14', hint: 'Good for every-two-week salary operations.' },
+    { name: 'Weekly Contractors', baseSalary: '1000', interval: '7', hint: 'Good for contributor or service-based payroll.' },
 ]
 
 const FUNDING_TOKEN_META = {
@@ -259,7 +259,12 @@ export default function AdminPage() {
     const readLatestSpentRecord = async (): Promise<SpentRecordSnapshot | null> => {
         if (!requestRecords) return null
 
-        const records = await requestRecords(PROGRAM_ID, true)
+        const records = await requestWalletRecords(
+            requestRecords,
+            PROGRAM_ID,
+            true,
+            (wallet as any)?.adapter
+        )
         const candidates = (records as any[])
             .filter((rec: any) => !rec.spent && rec.recordName === 'SpentRecord')
             .map((rec: any) => {
@@ -312,14 +317,24 @@ export default function AdminPage() {
         const candidateSources: any[] = []
 
         try {
-            const adapterRecords = await (wallet as any)?.adapter?.requestRecords?.('credits.aleo', false)
+            const adapterRecords = await requestWalletRecords(
+                undefined,
+                'credits.aleo',
+                false,
+                (wallet as any)?.adapter
+            )
             if (Array.isArray(adapterRecords)) candidateSources.push(...adapterRecords)
         } catch (error) {
             console.warn('Raw credits request failed:', error)
         }
 
         try {
-            const decryptedRecords = await requestRecords?.('credits.aleo', true)
+            const decryptedRecords = await requestWalletRecords(
+                requestRecords,
+                'credits.aleo',
+                true,
+                (wallet as any)?.adapter
+            )
             if (Array.isArray(decryptedRecords)) candidateSources.push(...decryptedRecords)
         } catch (error) {
             console.warn('Decrypted credits request failed:', error)
@@ -445,7 +460,12 @@ export default function AdminPage() {
         if (!requestRecords) return
 
         try {
-            const records = await requestRecords(PROGRAM_ID, true)
+            const records = await requestWalletRecords(
+                requestRecords,
+                PROGRAM_ID,
+                true,
+                (wallet as any)?.adapter
+            )
 
             let latestSpentTotalMicro = 0
             let latestRecipientCount = 0
@@ -807,7 +827,7 @@ export default function AdminPage() {
                 title: 'Export audit report',
                 detail: 'Generate a compliant payroll summary for auditors.',
                 tab: 'compliance',
-                state: hasAuditSnapshot ? 'done' : 'pending',
+                state: hasAuditSnapshot || isInitialized ? 'done' : 'pending',
             },
         ]
 
@@ -1179,7 +1199,12 @@ export default function AdminPage() {
         try {
             toast.info("1/3: Checking current payroll totals...")
             // 1. Fetch Spent Record automatically
-            const ourRecords = await (wallet as any)?.adapter?.requestRecords(PROGRAM_ID, true)
+            const ourRecords = await requestWalletRecords(
+                requestRecords,
+                PROGRAM_ID,
+                true,
+                (wallet as any)?.adapter
+            )
             const spentRec = (ourRecords as any[])?.filter((rec: any) =>
                 !rec.spent && (rec.recordName === 'SpentRecord' || (rec.plaintext && rec.plaintext.includes('total_spent')))
             ).pop()
@@ -1244,7 +1269,12 @@ export default function AdminPage() {
             toast.info(`2/3: Locating available ${currency.toUpperCase()} funds...`)
 
             const targetProgramId = currency === 'credits' ? 'credits.aleo' : (currency === 'usdcx' ? 'test_usdcx_stablecoin.aleo' : 'test_usad_stablecoin.aleo');
-            const targetRecords = await (wallet as any)?.adapter?.requestRecords(targetProgramId, false)
+            const targetRecords = await requestWalletRecords(
+                undefined,
+                targetProgramId,
+                false,
+                (wallet as any)?.adapter
+            )
             console.log("RAW SHIELD WALLET RECORDS:", targetRecords)
 
             let payRecordStr: string | null = null;
@@ -1549,7 +1579,12 @@ export default function AdminPage() {
         setIsTransacting(true)
         try {
             // 1. Fetch Admin's SpentRecord (Total Spent Tracker)
-            const records = await requestRecords(PROGRAM_ID, true)
+            const records = await requestWalletRecords(
+                requestRecords,
+                PROGRAM_ID,
+                true,
+                (wallet as any)?.adapter
+            )
             const spentRecord = (records as any[]).filter((rec: any) =>
                 !rec.spent &&
                 rec.recordName === 'SpentRecord' // Best check if available
@@ -1607,6 +1642,27 @@ export default function AdminPage() {
         { id: 'relayer', title: HR_TAB_TITLES.relayer, icon: Activity },
         { id: 'compliance', title: HR_TAB_TITLES.compliance, icon: FileCheck },
     ]
+
+    const rosterEntries = useMemo(
+        () => bulkRecipients.split('\n').map((line) => line.trim()).filter(Boolean),
+        [bulkRecipients]
+    )
+    const pendingClaimCount = pendingPulls.length
+    const pendingClaimTotalMicro = useMemo(
+        () =>
+            pendingPulls.reduce((sum, pull) => {
+                const amtStr = pull.certificateRecord.match(/amount:\s*([\d_]+)u64/)?.[1] || '0'
+                return sum + (parseInt(amtStr.replace(/_/g, '')) || 0)
+            }, 0),
+        [pendingPulls]
+    )
+    const fundingTokenLabel = FUNDING_TOKEN_META[fundingToken].label
+    const authorizeModeSummary = currency === 'credits'
+        ? (parseInt(issueVestingDelay || '0', 10) > 0
+            ? 'This payout will create a delayed native ALEO vesting right.'
+            : 'This payout will settle immediately as a native ALEO payment.')
+        : `This payout will be delivered as ${currency === 'usdcx' ? 'USDCx' : 'USAD'} using the direct settlement path.`
+
     return (
         <div className="min-h-screen relative z-10 font-sans text-white bg-black">
             <div 
@@ -1623,7 +1679,7 @@ export default function AdminPage() {
                         Admin Portal
                     </h1>
                     <div className="flex items-center justify-center gap-4 text-[#a1a1aa] text-lg max-w-2xl mx-auto">
-                        <p>Run payroll, approve payouts, and export audit-ready reports with a familiar HR flow.</p>
+                        <p>Run private payroll end-to-end with guided funding, approvals, analytics, relayer claims, tax policy, and audit-ready exports.</p>
                     </div>
                 </div>
 
@@ -1666,7 +1722,7 @@ export default function AdminPage() {
                             </div>
                             <h2 className="text-2xl font-bold mb-2 text-foreground">Connect Your Wallet</h2>
                             <p className="text-muted-foreground mb-8">
-                                Please connect your Aleo wallet to access the Admin Portal and manage payroll.
+                                Please connect an authorized Aleo admin wallet to fund payroll, approve payouts, and manage the workspace.
                             </p>
                             <WalletConnectButton />
                         </motion.div>
@@ -1681,7 +1737,7 @@ export default function AdminPage() {
                             </div>
                             <h2 className="text-2xl font-bold mb-2 text-white">Validating Admin Access</h2>
                             <p className="text-[#a1a1aa] mb-8">
-                                Checking whether this wallet belongs to the configured payroll admin set.
+                                Confirming that this wallet belongs to the configured payroll admin set.
                             </p>
                         </motion.div>
                     ) : isAdminAuthorized === false ? (
@@ -1721,7 +1777,7 @@ export default function AdminPage() {
                                     <div>
                                         <h3 className="text-xl font-bold text-foreground">Payroll Setup Required</h3>
                                         <p className="text-muted-foreground text-sm mt-1">
-                                            Complete this one-time setup to define payroll policy, approvers, and audit access.
+                                            Complete this one-time setup to define budget controls, approvers, audit access, and the base payroll workspace.
                                         </p>
                                     </div>
                                 </div>
@@ -1729,7 +1785,7 @@ export default function AdminPage() {
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Starting Spend Limit</Label>
+                                            <Label>Initial Spend Limit</Label>
                                             <Input
                                                 type="number"
                                                 value={initBudget}
@@ -1767,7 +1823,7 @@ export default function AdminPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Audit Wallet</Label>
+                                            <Label>Auditor Wallet</Label>
                                         <Input
                                             placeholder="aleo1..."
                                             value={auditorAddr}
@@ -1809,7 +1865,7 @@ export default function AdminPage() {
                                                 <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Payroll Assistant</p>
                                                 <h3 className="text-xl font-bold text-white">Follow this HR-style payroll checklist</h3>
                                             </div>
-                                            <p className="text-sm text-gray-400">Click any step to jump directly to that workspace.</p>
+                                            <p className="text-sm text-gray-400">Each step maps to the real payroll workflow already live in this portal.</p>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
                                             {payrollAssistantSteps.map((step, idx) => (
@@ -1889,7 +1945,7 @@ export default function AdminPage() {
                                             <p className="text-lg font-bold text-white leading-tight">
                                                 {effectiveLastPayoutTs ? new Date(effectiveLastPayoutTs).toLocaleString() : 'No payout data yet'}
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-2">Fallback uses latest on-chain audit snapshot</p>
+                                            <p className="text-xs text-gray-500 mt-2">Falls back to the latest on-chain audit snapshot when local events are empty</p>
                                         </GlassCard>
                                     </div>
 
@@ -1898,7 +1954,7 @@ export default function AdminPage() {
                                             <div>
                                                 <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Tax Policy Status</p>
                                                 <p className="text-2xl font-black text-white">{activeTaxBps > 0 ? formatTaxRate(activeTaxBps) : 'Not configured'}</p>
-                                                <p className="text-xs text-gray-500 mt-2">Current withholding rate used during employee claim processing.</p>
+                                                <p className="text-xs text-gray-500 mt-2">Claim-time withholding policy currently applied in the relayer claim flow.</p>
                                             </div>
                                             <div className="md:text-right">
                                                 <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Tax Collected</p>
@@ -1945,7 +2001,7 @@ export default function AdminPage() {
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center justify-center h-48 text-[#a1a1aa] text-sm border border-white/5 rounded-2xl bg-[#050505]">
-                                                    No payout events available in this range.
+                                                    No payout activity has been captured in this range yet.
                                                 </div>
                                             )}
                                         </GlassCard>
@@ -2002,7 +2058,7 @@ export default function AdminPage() {
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center justify-center h-48 text-[#a1a1aa] text-sm border border-white/5 rounded-2xl bg-[#050505]">
-                                                    No token distribution data available in this range.
+                                                    No token mix data is available in this range yet.
                                                 </div>
                                             )}
                                         </GlassCard>
@@ -2011,7 +2067,7 @@ export default function AdminPage() {
                                     <GlassCard className="border-white/10 bg-gradient-to-b from-white/[0.04] to-[#060606] p-6 rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                                         <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Data Scope</p>
                                         <p className="text-sm text-gray-400">
-                                            Analytics are derived from this admin wallet context and local ledger events captured by this portal. Values are aggregate-only and privacy-preserving.
+                                            Analytics are derived from this admin wallet context, local portal events, and lightweight on-chain fallbacks. Values remain aggregate-only and privacy-preserving.
                                         </p>
                                         <div className="mt-4 pt-4 border-t border-white/5 text-xs text-gray-500">
                                             On-chain snapshot fallback: spent {formatCredits(dashboardContext.latestSpentTotalMicro)} credits, recipients {dashboardContext.latestRecipientCount}, latest audit{' '}
@@ -2021,12 +2077,18 @@ export default function AdminPage() {
                                         </div>
                                     </GlassCard>
 
-                                    <div className="flex justify-end">
+                                    <div className="fixed bottom-6 right-6 z-40 group">
+                                        <div className="pointer-events-none absolute bottom-full right-0 mb-3 w-64 rounded-2xl border border-white/10 bg-black/95 px-4 py-3 text-xs text-zinc-300 opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0">
+                                            Reopens the one-time payroll setup screen so you can test initialization again. Debug use only.
+                                        </div>
                                         <button
                                             onClick={() => setIsInitialized(false)}
-                                            className="text-xs text-muted-foreground hover:text-white underline transition-colors"
+                                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a]/95 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-zinc-300 shadow-2xl backdrop-blur hover:text-white hover:border-white/25 transition-colors"
+                                            aria-label="Reopen setup flow for debugging"
+                                            title="Reopen setup flow for debugging"
                                         >
-                                            Force Re-Initialize System (Debug)
+                                            <AlertCircle className="w-4 h-4" />
+                                            Setup Debug
                                         </button>
                                     </div>
                                 </div>
@@ -2035,139 +2097,144 @@ export default function AdminPage() {
                             {/* Deposit Tab */}
                             {activeTab === 'deposit' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    <GlassCard hover={false} className="max-w-xl border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
-                                        <div className="flex items-center justify-between mb-8 p-6 bg-[#050505] rounded-2xl border border-white/5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 rounded-full bg-white/5 border border-white/10">
-                                                    <Wallet className="w-6 h-6 text-white" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1">Current Spend Limit</p>
-                                                    <p className="text-3xl font-black text-white">{formatCredits(chainBudgetMicro)} <span className="text-base text-gray-400 font-medium">ALEO</span></p>
-                                                </div>
+                                    <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
+                                        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-4 mb-8">
+                                            <div className="rounded-2xl border border-white/10 bg-[#050505] p-5">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Current Spend Limit</p>
+                                                <p className="text-3xl font-black text-white">{formatCredits(chainBudgetMicro)} <span className="text-sm font-medium text-zinc-500">ALEO</span></p>
+                                                <p className="text-xs text-zinc-500 mt-2">Active payroll capacity currently available for payout execution.</p>
+                                            </div>
+                                            <div className="rounded-2xl border border-white/10 bg-[#050505] p-5">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Tax Withheld</p>
+                                                <p className="text-3xl font-black text-white">{formatCredits(taxCollectedMicro)}</p>
+                                                <p className="text-xs text-zinc-500 mt-2">Collected through employee claim settlements.</p>
                                             </div>
                                         </div>
 
-                                        <div className="mb-8 p-5 rounded-2xl border border-white/10 bg-black/70 space-y-4">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div>
-                                                    <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-1">Tax Withholding Policy</p>
-                                                    <p className="text-sm text-gray-400">Set the claim-time withholding rate and the authority wallet that receives tax receipts.</p>
+                                        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.95fr)] gap-6">
+                                            <div className="rounded-[28px] border border-white/10 bg-[#050505] p-6">
+                                                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+                                                    <div>
+                                                        <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Funding Actions</p>
+                                                        <h3 className="text-2xl font-black tracking-tight text-white">Prepare and add payroll funds</h3>
+                                                    </div>
+                                                    <div className="text-sm text-zinc-500">
+                                                        Selected source: <span className="text-white font-semibold">{fundingTokenLabel}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-xs text-[#a1a1aa] uppercase tracking-widest">Active Rate</p>
-                                                    <p className="text-lg font-bold text-white">{activeTaxBps > 0 ? formatTaxRate(activeTaxBps) : 'Not set'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                <div className="space-y-2">
-                                                    <Label className="text-[#a1a1aa] font-medium tracking-wide">Tax Rate (%)</Label>
-                                                    <Input
-                                                        type="number"
-                                                        min="0.01"
-                                                        max="100"
-                                                        step="0.01"
-                                                        value={taxRateInput}
-                                                        onChange={(e) => setTaxRateInput(e.target.value)}
-                                                        className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-[#a1a1aa] font-medium tracking-wide">Tax Authority Wallet</Label>
-                                                    <Input
-                                                        placeholder="aleo1..."
-                                                        value={taxAuthorityInput}
-                                                        onChange={(e) => setTaxAuthorityInput(e.target.value)}
-                                                        className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-3">
-                                                <p className="text-xs text-gray-500">Collected so far: {formatCredits(taxCollectedMicro)} credits</p>
-                                                <button
-                                                    onClick={handleSaveTaxPolicy}
-                                                    disabled={isTransacting}
-                                                    className="px-4 py-2 rounded-lg bg-white text-black text-sm font-bold hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                                                >
-                                                    Save Tax Policy
-                                                </button>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Amount To Add</Label>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Enter amount"
-                                                    value={fundAmount}
-                                                    onChange={(e) => setFundAmount(e.target.value)}
-                                                    className="bg-black border border-white/10 rounded-xl px-4 py-6 text-lg text-white font-mono focus:border-white/30 transition-all"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Step 1 Token</Label>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {(Object.keys(FUNDING_TOKEN_META) as Array<'credits' | 'usdcx' | 'usad'>).map((token) => (
-                                                        <button
-                                                            key={token}
-                                                            type="button"
-                                                            onClick={() => setFundingToken(token)}
-                                                            className={`py-2.5 rounded-xl border text-sm font-semibold transition-colors ${fundingToken === token
-                                                                ? 'bg-white text-black border-white'
-                                                                : 'bg-black text-white border-white/10 hover:border-white/30'
-                                                                }`}
-                                                        >
-                                                            {FUNDING_TOKEN_META[token].label}
-                                                        </button>
-                                                    ))}
+                                                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_300px] gap-4 mb-6">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Amount To Add</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="Enter amount"
+                                                            value={fundAmount}
+                                                            onChange={(e) => setFundAmount(e.target.value)}
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-6 text-lg text-white font-mono focus:border-white/30 transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Funding Token</Label>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {(Object.keys(FUNDING_TOKEN_META) as Array<'credits' | 'usdcx' | 'usad'>).map((token) => (
+                                                                <button
+                                                                    key={token}
+                                                                    type="button"
+                                                                    onClick={() => setFundingToken(token)}
+                                                                    className={`py-3 rounded-xl border text-sm font-semibold transition-colors ${fundingToken === token
+                                                                        ? 'bg-white text-black border-white'
+                                                                        : 'bg-black text-white border-white/10 hover:border-white/30'
+                                                                        }`}
+                                                                >
+                                                                    {FUNDING_TOKEN_META[token].label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <button
-                                                onClick={handleFundPayroll}
-                                                disabled={isTransacting}
-                                                className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
-                                            >
-                                                {isTransacting ? (
-                                                    'Processing...'
-                                                ) : (
-                                                    <>
-                                                        <ArrowUpCircle className="w-5 h-5" />
-                                                        Step 2: Add To Payroll Budget
-                                                    </>
-                                                )}
-                                            </button>
-                                            <p className="text-xs text-gray-500 -mt-2">
-                                                Step 2 updates the payroll spend limit using ALEO funding.
-                                            </p>
 
-                                            <div className="relative py-4">
-                                                <div className="absolute inset-0 flex items-center">
-                                                    <span className="w-full border-t border-white/10" />
-                                                </div>
-                                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-                                                    <span className="bg-[#0a0a0a] px-3 font-semibold text-xs tracking-widest uppercase text-[#a1a1aa]">Guided Funding</span>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <button
+                                                        onClick={handleConvertPublicToPrivate}
+                                                        disabled={isTransacting}
+                                                        className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-xl border border-white/10 bg-black text-white font-semibold hover:bg-white/5 transition-all active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        {isTransacting ? 'Processing...' : (
+                                                            <>
+                                                                <ArrowUpCircle className="w-4 h-4" />
+                                                                Step 1: Prepare Private {fundingTokenLabel}
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={handleFundPayroll}
+                                                        disabled={isTransacting}
+                                                        className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-base hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        {isTransacting ? 'Processing...' : (
+                                                            <>
+                                                                <ArrowUpCircle className="w-5 h-5" />
+                                                                Step 2: Add To Payroll Budget
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            <p className="text-sm text-[#a1a1aa] mb-4 text-center">
-                                                Step 1 prepares private funds for the selected token in this same portal flow.
-                                            </p>
+                                            <div className="rounded-[28px] border border-white/10 bg-[#050505] p-6">
+                                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+                                                    <div>
+                                                        <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Tax Withholding Policy</p>
+                                                        <p className="text-sm text-gray-400">Set the rate used on employee claims and define the wallet that receives authority-side tax receipts.</p>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <p className="text-[11px] uppercase tracking-widest text-zinc-500">Active Rate</p>
+                                                        <p className="text-xl font-black text-white">{activeTaxBps > 0 ? formatTaxRate(activeTaxBps) : 'Not set'}</p>
+                                                    </div>
+                                                </div>
 
-                                            <button
-                                                onClick={handleConvertPublicToPrivate}
-                                                disabled={isTransacting}
-                                                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-black text-white font-semibold hover:bg-white/5 transition-all active:scale-95"
-                                            >
-                                                {isTransacting ? (
-                                                    'Processing...'
-                                                ) : (
-                                                    <>
-                                                        <ArrowUpCircle className="w-4 h-4" />
-                                                        Step 1: Prepare Private {FUNDING_TOKEN_META[fundingToken].label} Funds
-                                                    </>
-                                                )}
-                                            </button>
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[#a1a1aa] font-medium tracking-wide">Tax Rate (%)</Label>
+                                                            <Input
+                                                                type="number"
+                                                                min="0.01"
+                                                                max="100"
+                                                                step="0.01"
+                                                                value={taxRateInput}
+                                                                onChange={(e) => setTaxRateInput(e.target.value)}
+                                                                className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[#a1a1aa] font-medium tracking-wide">Tax Authority Wallet</Label>
+                                                            <Input
+                                                                placeholder="aleo1..."
+                                                                value={taxAuthorityInput}
+                                                                onChange={(e) => setTaxAuthorityInput(e.target.value)}
+                                                                className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Authority</p>
+                                                        <p className="text-sm font-medium text-white break-all">
+                                                            {activeTaxAuthority === 'Not configured' ? activeTaxAuthority : `${activeTaxAuthority.slice(0, 16)}...${activeTaxAuthority.slice(-8)}`}
+                                                        </p>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={handleSaveTaxPolicy}
+                                                        disabled={isTransacting}
+                                                        className="w-full px-4 py-3 rounded-xl bg-white text-black text-sm font-bold hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                                                    >
+                                                        Save Tax Policy
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
@@ -2176,39 +2243,52 @@ export default function AdminPage() {
                             {/* Authorize Payroll Tab */}
                             {activeTab === 'authorize' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    <GlassCard hover={false} className="max-w-xl border-white/5 bg-[#0a0a0a] p-8 rounded-3xl">
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Employee Wallet</Label>
-                                                <Input
-                                                    placeholder="aleo1..."
-                                                    value={issueRecipient}
-                                                    onChange={(e) => setIssueRecipient(e.target.value)}
-                                                    className="bg-[#050505] border border-white/10 rounded-xl px-4 py-6 text-white font-mono focus:border-white/30 transition-all"
-                                                />
+                                    <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] p-8 rounded-3xl">
+                                        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+                                            <div>
+                                                <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Payout Composer</p>
+                                                <h3 className="text-3xl font-black tracking-tight text-white">Create One Payroll Action</h3>
+                                            </div>
+                                            <div className="text-sm text-zinc-500">
+                                                Mode: <span className="text-white font-semibold">{currency === 'credits' ? 'Native ALEO' : currency === 'usdcx' ? 'USDCx' : 'USAD'}</span>
+                                                <span className="mx-2 text-white/20">/</span>
+                                                <span>{parseInt(issueVestingDelay || '0', 10) > 0 ? 'Delayed vesting path' : 'Direct settlement path'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-[28px] border border-white/10 bg-[#050505] p-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[#a1a1aa] font-medium tracking-wide">Employee Wallet</Label>
+                                                    <Input
+                                                        placeholder="aleo1..."
+                                                        value={issueRecipient}
+                                                        onChange={(e) => setIssueRecipient(e.target.value)}
+                                                        className="bg-black border border-white/10 rounded-xl px-4 py-6 text-white font-mono focus:border-white/30 transition-all"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[#a1a1aa] font-medium tracking-wide">Pay Currency</Label>
+                                                    <select
+                                                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-white/30 transition-colors"
+                                                        value={currency}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value as any;
+                                                            setCurrency(val);
+                                                            if (val !== 'credits' && parseInt(issueVestingDelay) > 0) {
+                                                                setIssueVestingDelay('0');
+                                                                toast.info("Programmable vesting is currently available only for native ALEO.");
+                                                            }
+                                                        }}
+                                                    >
+                                                        <option value="credits">Aleo Credits (Native)</option>
+                                                        <option value="usdcx">USDCx (Stablecoin)</option>
+                                                        <option value="usad">USAD (Stablecoin)</option>
+                                                    </select>
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Pay Currency</Label>
-                                                <select
-                                                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-white/30 transition-colors"
-                                                    value={currency}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value as any;
-                                                        setCurrency(val);
-                                                        if (val !== 'credits' && parseInt(issueVestingDelay) > 0) {
-                                                            setIssueVestingDelay('0');
-                                                            toast.info("Programmable Vesting is currently only supported for Native ALEO.");
-                                                        }
-                                                    }}
-                                                >
-                                                    <option value="credits">Aleo Credits (Native)</option>
-                                                    <option value="usdcx">USDCx (Stablecoin)</option>
-                                                    <option value="usad">USAD (Stablecoin)</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px] gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="text-[#a1a1aa] font-medium tracking-wide">Payout Amount</Label>
                                                     <Input
@@ -2216,7 +2296,7 @@ export default function AdminPage() {
                                                         placeholder="Tokens"
                                                         value={issueAmount}
                                                         onChange={(e) => setIssueAmount(e.target.value)}
-                                                        className="bg-[#050505] border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all"
+                                                        className="bg-black border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
@@ -2234,26 +2314,32 @@ export default function AdminPage() {
                                                                 toast.info("Vesting streams automatically converted to Native ALEO.");
                                                             }
                                                         }}
-                                                        className={`border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all ${currency !== 'credits' ? 'bg-black opacity-50 cursor-not-allowed' : 'bg-[#050505]'}`}
+                                                        className={`border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all ${currency !== 'credits' ? 'bg-black opacity-50 cursor-not-allowed' : 'bg-black'}`}
                                                     />
                                                     {currency !== 'credits' && (
-                                                        <p className="text-[10px] text-[#a1a1aa] mt-1">Delayed release is currently available for native ALEO payouts.</p>
+                                                        <p className="text-[10px] text-[#a1a1aa] mt-1">Delayed release is currently available only for native ALEO payouts.</p>
                                                     )}
+                                                </div>
+                                                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3">
+                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Execution notes</p>
+                                                    <p className="text-sm font-medium text-white leading-relaxed">{authorizeModeSummary}</p>
                                                 </div>
                                             </div>
 
-                                            <button
-                                                onClick={handleIssueCertificate}
-                                                disabled={isTransacting}
-                                                className="w-full flex items-center justify-center gap-2 py-4 px-6 mt-4 rounded-xl bg-[#22c55e] text-black font-bold text-lg hover:bg-[#16a34a] transition-all active:scale-95 disabled:opacity-50"
-                                            >
-                                                {isTransacting ? 'Processing...' : (
-                                                    <>
-                                                        <ShieldCheck className="w-5 h-5" />
-                                                        Review & Approve Payout
-                                                    </>
-                                                )}
-                                            </button>
+                                            <div className="mt-8 pt-6 border-t border-white/10">
+                                                <button
+                                                    onClick={handleIssueCertificate}
+                                                    disabled={isTransacting}
+                                                    className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {isTransacting ? 'Processing...' : (
+                                                        <>
+                                                            <ShieldCheck className="w-5 h-5" />
+                                                            Review and Approve Payout
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
@@ -2262,230 +2348,285 @@ export default function AdminPage() {
                             {/* Batch Payroll Tab */}
                             {activeTab === 'batch' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    {/* WAVE 4 DISCLAIMER */}
-                                    <div className="mb-6 p-4 border border-white/10 bg-[#0a0a0a] rounded-xl text-white">
-                                        <div className="flex gap-3">
-                                            <AlertCircle className="w-5 h-5 text-gray-400 shrink-0" />
-                                            <div className="text-sm">
-                                                <p className="font-semibold mb-1">Payroll Run Mode</p>
-                                                <p className="text-[#a1a1aa]">
-                                                    This cycle currently runs each employee payout safely one-by-one. Faster multi-currency and true parallel rollups are being prepared in upcoming Wave 4 updates.
-                                                </p>
+                                    <div className="space-y-6">
+                                        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4 text-white">
+                                            <div className="flex gap-3">
+                                                <AlertCircle className="w-5 h-5 text-gray-400 shrink-0" />
+                                                <div className="text-sm">
+                                                    <p className="font-semibold mb-1">Payroll Run Mode</p>
+                                                    <p className="text-[#a1a1aa]">
+                                                        This cycle currently executes each employee payout safely one-by-one. Faster multi-currency batching and true parallel rollups remain future upgrades.
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <GlassCard hover={false} className="max-w-2xl border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
-                                        <div className="flex justify-between items-center mb-8">
-                                            <h3 className="font-bold text-2xl text-white tracking-tight">Payroll Cycle Builder</h3>
-                                            {/* Template Loader */}
-                                            {Object.keys(templates).length > 0 && (
-                                                <select
-                                                    className="bg-[#050505] border border-white/10 text-sm rounded-lg px-4 py-2 text-white outline-none focus:border-white/30 transition-colors cursor-pointer"
-                                                    onChange={(e) => handleLoadTemplate(e.target.value)}
-                                                    value={selectedTemplate}
-                                                >
-                                                    <option value="">Load Saved Template...</option>
-                                                    {Object.keys(templates).map(name => (
-                                                        <option key={name} value={name}>{name}</option>
+                                        <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
+                                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+                                                <div>
+                                                    <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Builder Workspace</p>
+                                                    <h3 className="font-black text-3xl text-white tracking-tight">Payroll Cycle Builder</h3>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                                                    {Object.keys(templates).length > 0 && (
+                                                        <select
+                                                            className="bg-[#050505] border border-white/10 text-sm rounded-xl px-4 py-3 text-white outline-none focus:border-white/30 transition-colors cursor-pointer"
+                                                            onChange={(e) => handleLoadTemplate(e.target.value)}
+                                                            value={selectedTemplate}
+                                                        >
+                                                            <option value="">Load saved template...</option>
+                                                            {Object.keys(templates).map(name => (
+                                                                <option key={name} value={name}>{name}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                    <div className="text-sm text-zinc-500">
+                                                        {rosterEntries.length} roster rows / {bulkInterval || '0'} day cycle
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-8">
+                                                <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Quick Start Templates</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    {HR_TEMPLATE_PRESETS.map((preset) => (
+                                                        <button
+                                                            key={preset.name}
+                                                            onClick={() => handleApplyPreset(preset)}
+                                                            className="text-left p-4 rounded-2xl border border-white/10 bg-[#050505] hover:border-white/30 transition-colors"
+                                                        >
+                                                            <p className="text-base font-semibold text-white">{preset.name}</p>
+                                                            <p className="text-sm text-gray-400 mt-2 leading-relaxed">{preset.hint}</p>
+                                                            <p className="text-[11px] text-cyan-400 mt-3">
+                                                                Base {preset.baseSalary} credits | Every {preset.interval} days
+                                                            </p>
+                                                        </button>
                                                     ))}
-                                                </select>
-                                            )}
-                                        </div>
+                                                </div>
+                                            </div>
 
-                                        <div className="mb-8">
-                                            <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Quick Start Templates</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                {HR_TEMPLATE_PRESETS.map((preset) => (
-                                                    <button
-                                                        key={preset.name}
-                                                        onClick={() => handleApplyPreset(preset)}
-                                                        className="text-left p-4 rounded-xl border border-white/10 bg-[#050505] hover:border-white/30 transition-colors"
-                                                    >
-                                                        <p className="text-sm font-semibold text-white">{preset.name}</p>
-                                                        <p className="text-xs text-gray-400 mt-1">{preset.hint}</p>
-                                                        <p className="text-[11px] text-cyan-400 mt-2">
-                                                            Base {preset.baseSalary} credits | Every {preset.interval} days
+                                            <div className="rounded-[28px] border border-white/10 bg-[#050505] p-6">
+                                                <div className="grid grid-cols-1 lg:grid-cols-[220px_220px_minmax(0,1fr)] gap-4 mb-6">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Step 1: Base Salary (credits)</Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={baseSalary}
+                                                            onChange={(e) => setBaseSalary(e.target.value)}
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all text-center font-mono"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Pay Cycle (Days)</Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={bulkInterval}
+                                                            onChange={(e) => setBulkInterval(e.target.value)}
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all text-center font-mono"
+                                                        />
+                                                    </div>
+                                                    <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Cycle notes</p>
+                                                        <p className="text-sm text-zinc-400 leading-relaxed">
+                                                            Example: `0.5` means 0.5 credits for junior level before role multiplier. Roles in the roster define the multiplier for each line.
                                                         </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 mb-6">
+                                                    <Label className="text-[#a1a1aa] font-medium tracking-wide">Step 2: Team Roster (Wallet, Role)</Label>
+                                                    <textarea
+                                                        placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
+                                                        className="bg-black border border-white/10 rounded-xl w-full h-44 font-mono text-sm p-4 outline-none focus:border-white/30 transition-colors text-white placeholder:text-[#a1a1aa]/50 resize-none"
+                                                        value={bulkRecipients}
+                                                        onChange={(e) => setBulkRecipients(e.target.value)}
+                                                    />
+                                                </div>
+
+                                                {batchStatus && (
+                                                    <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl text-sm font-mono text-white relative overflow-hidden">
+                                                        {batchStatus}
+                                                    </div>
+                                                )}
+
+                                                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_300px] gap-4 items-center">
+                                                    <button
+                                                        onClick={handleBulkIssue}
+                                                        disabled={isTransacting}
+                                                        className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-sm lg:text-base hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
+                                                        title="Recommended: runs each payout safely in order."
+                                                    >
+                                                        {isTransacting ? 'Processing...' : 'Step 3: Run Payroll Cycle'}
                                                     </button>
-                                                ))}
+                                                    <button
+                                                        onClick={handlePrivacyBatch}
+                                                        disabled={isTransacting}
+                                                        className="w-full py-4 px-6 border border-white/10 rounded-xl bg-black text-white font-bold text-sm lg:text-base hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
+                                                        title="Advanced mode with extra privacy routing (beta)."
+                                                    >
+                                                        Assisted Privacy Run (Beta)
+                                                    </button>
+                                                    <div className="flex gap-3 items-center">
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Save this payroll setup as..."
+                                                            value={newTemplateName}
+                                                            onChange={(e) => setNewTemplateName(e.target.value)}
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-gray-600 focus:border-white/30"
+                                                        />
+                                                        <button
+                                                            onClick={handleSaveTemplate}
+                                                            className="px-5 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all active:scale-95 whitespace-nowrap"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-6 mb-8">
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Step 1: Base Salary (credits)</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={baseSalary}
-                                                    onChange={(e) => setBaseSalary(e.target.value)}
-                                                    className="bg-[#050505] border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all text-center font-mono"
-                                                />
-                                                <p className="text-[11px] text-[#a1a1aa]">
-                                                    Example: `0.5` means 0.5 credits for junior level before role multiplier.
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Pay Cycle (Days)</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={bulkInterval}
-                                                    onChange={(e) => setBulkInterval(e.target.value)}
-                                                    className="bg-[#050505] border border-white/10 rounded-xl px-4 py-6 text-white text-lg focus:border-white/30 transition-all text-center font-mono"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2 mb-8">
-                                            <Label className="text-[#a1a1aa] font-medium tracking-wide">Step 2: Team Roster (Wallet, Role)</Label>
-                                            <textarea
-                                                placeholder="aleo1...address, Junior&#10;aleo1...address, Senior"
-                                                className="bg-[#050505] border border-white/10 rounded-xl w-full h-40 font-mono text-sm p-4 outline-none focus:border-white/30 transition-colors text-white placeholder:text-[#a1a1aa]/50 resize-none"
-                                                value={bulkRecipients}
-                                                onChange={(e) => setBulkRecipients(e.target.value)}
-                                            />
-                                        </div>
-
-                                        {batchStatus && (
-                                            <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl text-sm font-mono text-white relative overflow-hidden">
-                                                {batchStatus}
-                                            </div>
-                                        )}
-
-                                        <div className="flex gap-4 mb-8">
-                                            <button
-                                                onClick={handleBulkIssue}
-                                                disabled={isTransacting}
-                                                className="flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-sm lg:text-base hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
-                                                title="Recommended: runs each payout safely in order."
-                                            >
-                                                {isTransacting ? 'Processing...' : 'Step 3: Run Payroll Cycle'}
-                                            </button>
-                                            <button
-                                                onClick={handlePrivacyBatch}
-                                                disabled={isTransacting}
-                                                className="flex-1 py-4 px-6 border border-white/10 rounded-xl bg-black text-white font-bold text-sm lg:text-base hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
-                                                title="Advanced mode with extra privacy routing (beta)."
-                                            >
-                                                Assisted Privacy Run (Beta)
-                                            </button>
-                                        </div>
-
-                                        <div className="flex gap-3 items-center pt-8 border-t border-white/5">
-                                            <Input
-                                                type="text"
-                                                placeholder="Save this setup as..."
-                                                value={newTemplateName}
-                                                onChange={(e) => setNewTemplateName(e.target.value)}
-                                                className="bg-[#050505] border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-gray-600 focus:border-white/30"
-                                            />
-                                            <button
-                                                onClick={handleSaveTemplate}
-                                                className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all active:scale-95"
-                                            >
-                                                Save Template
-                                            </button>
-                                        </div>
-                                    </GlassCard>
+                                        </GlassCard>
+                                    </div>
                                 </motion.div>
                             )}
 
                             {/* Compliance Tab */}
                             {activeTab === 'compliance' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    <GlassCard hover={false} className="max-w-xl border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="p-3 rounded-full bg-white/5 border border-white/10">
-                                                <FileCheck className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-white tracking-tight">Audit Report Export</h3>
-                                                <p className="text-sm text-[#a1a1aa]">Create a privacy-preserving payroll summary for compliance and audit teams.</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Payroll Period Reference (Optional)</Label>
-                                                <Input
-                                                    value={periodHash}
-                                                    onChange={e => setPeriodHash(e.target.value)}
-                                                    placeholder="e.g. 1234field"
-                                                    className="bg-[#050505] border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[#a1a1aa] font-medium tracking-wide">Team Snapshot Hash (Optional)</Label>
-                                                <Input
-                                                    value={merkleRoot}
-                                                    onChange={e => setMerkleRoot(e.target.value)}
-                                                    placeholder="e.g. 5678field"
-                                                    className="bg-[#050505] border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
-                                                />
+                                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_360px] gap-6 items-start">
+                                        <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
+                                            <div className="flex items-center gap-4 mb-8">
+                                                <div className="p-3 rounded-full bg-white/5 border border-white/10">
+                                                    <FileCheck className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-white tracking-tight">Audit Report Export</h3>
+                                                    <p className="text-sm text-[#a1a1aa] mt-1">Create a privacy-preserving payroll summary for auditors, finance leads, and internal reviews.</p>
+                                                </div>
                                             </div>
 
-                                            <button
-                                                onClick={handleGenerateReport}
-                                                disabled={isTransacting}
-                                                className="w-full flex items-center justify-center gap-2 py-4 px-6 mt-4 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
-                                            >
-                                                {isTransacting ? 'Generating...' : (
-                                                    <>
-                                                        <FileCheck className="w-5 h-5" />
-                                                        Generate Audit Report
-                                                    </>
-                                                )}
-                                            </button>
+                                            <div className="rounded-[28px] border border-white/10 bg-[#050505] p-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Payroll Period Reference (Optional)</Label>
+                                                        <Input
+                                                            value={periodHash}
+                                                            onChange={e => setPeriodHash(e.target.value)}
+                                                            placeholder="e.g. 1234field"
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[#a1a1aa] font-medium tracking-wide">Team Snapshot Hash (Optional)</Label>
+                                                        <Input
+                                                            value={merkleRoot}
+                                                            onChange={e => setMerkleRoot(e.target.value)}
+                                                            placeholder="e.g. 5678field"
+                                                            className="bg-black border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-white/30 transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-8 pt-6 border-t border-white/10">
+                                                    <button
+                                                        onClick={handleGenerateReport}
+                                                        disabled={isTransacting}
+                                                        className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        {isTransacting ? 'Generating...' : (
+                                                            <>
+                                                                <FileCheck className="w-5 h-5" />
+                                                                Generate Audit Report
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </GlassCard>
+
+                                        <div className="space-y-6 xl:sticky xl:top-36">
+                                            <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-6">
+                                                <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Report Contents</p>
+                                                <div className="space-y-3 text-sm text-zinc-400">
+                                                    <div className="rounded-2xl border border-white/10 bg-[#050505] p-4">Total spent summary</div>
+                                                    <div className="rounded-2xl border border-white/10 bg-[#050505] p-4">Recipient count</div>
+                                                    <div className="rounded-2xl border border-white/10 bg-[#050505] p-4">Merkle commitment references</div>
+                                                </div>
+                                            </GlassCard>
                                         </div>
-                                    </GlassCard>
+                                    </div>
                                 </motion.div>
                             )}
 
                             {/* Relayer Tab */}
                             {activeTab === 'relayer' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                    <GlassCard hover={false} className="max-w-2xl border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
-                                        <div className="flex items-center gap-4 mb-8 p-6 bg-[#050505] rounded-2xl border border-white/5">
-                                            <div className="p-3 rounded-full bg-white/5 border border-white/10">
-                                                <Activity className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-white tracking-tight">Employee Claim Queue</h3>
-                                                <p className="text-sm text-[#a1a1aa]">Review employee claim requests and approve payouts when ready.</p>
-                                            </div>
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-5">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Pending Requests</p>
+                                                <p className="text-3xl font-black text-white">{pendingClaimCount}</p>
+                                            </GlassCard>
+                                            <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-5">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Requested Volume</p>
+                                                <p className="text-3xl font-black text-white">{formatCredits(pendingClaimTotalMicro)}</p>
+                                                <p className="text-xs text-zinc-500 mt-1">ALEO waiting in queue</p>
+                                            </GlassCard>
+                                            <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-5">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Claim Flow</p>
+                                                <p className="text-lg font-black text-white">{activeTaxBps > 0 ? formatTaxRate(activeTaxBps) : 'No tax policy'}</p>
+                                                <p className="text-xs text-zinc-500 mt-1">Withholding applied at settlement</p>
+                                            </GlassCard>
                                         </div>
 
-                                        {pendingPulls.length === 0 ? (
-                                            <div className="text-center py-16 border border-white/10 rounded-2xl bg-black">
-                                                <Activity className="w-8 h-8 text-[#a1a1aa] mx-auto mb-3" />
-                                                <p className="text-[#a1a1aa] font-medium">No employee claim requests waiting right now.</p>
+                                        <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
+                                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+                                                <div>
+                                                    <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3">Employee Claim Queue</p>
+                                                    <h3 className="text-3xl font-black tracking-tight text-white">Settle Pending Pull Requests</h3>
+                                                    <p className="text-sm text-[#a1a1aa] mt-3 max-w-2xl">Review employee pull requests and settle them through the claim path when ready.</p>
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                {pendingPulls.map((pull, idx) => {
-                                                    const amtStr = pull.certificateRecord.match(/amount:\s*([\d_]+)u64/)?.[1] || "0";
-                                                    const amt = parseInt(amtStr.replace(/_/g, ''));
-                                                    const displayAmt = (amt / 1000000).toFixed(2);
-                                                    return (
-                                                        <div key={idx} className="flex flex-col md:flex-row items-center justify-between p-4 bg-[#050505] border border-white/10 rounded-xl">
-                                                            <div>
-                                                                <p className="text-sm font-bold text-white mb-1"><span className="text-gray-400">Employee:</span> {pull.employee.slice(0, 8)}...{pull.employee.slice(-8)}</p>
-                                                                <p className="text-xs text-gray-400">Requested payout: {displayAmt} ALEO</p>
-                                                                <p className="text-[10px] text-gray-600 mt-1">Submitted: {new Date(pull.timestamp).toLocaleString()}</p>
+
+                                            {pendingPulls.length === 0 ? (
+                                                <div className="text-center py-20 border border-white/10 rounded-[28px] bg-[#050505]">
+                                                    <Activity className="w-10 h-10 text-[#a1a1aa] mx-auto mb-4" />
+                                                    <p className="text-[#a1a1aa] font-medium text-lg">No employee pull requests are waiting right now.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {pendingPulls.map((pull, idx) => {
+                                                        const amtStr = pull.certificateRecord.match(/amount:\s*([\d_]+)u64/)?.[1] || "0";
+                                                        const amt = parseInt(amtStr.replace(/_/g, ''));
+                                                        const displayAmt = (amt / 1000000).toFixed(2);
+                                                        return (
+                                                            <div key={idx} className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px] gap-4 items-center p-5 bg-[#050505] border border-white/10 rounded-2xl">
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                    <div>
+                                                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Employee</p>
+                                                                        <p className="text-sm font-bold text-white">{pull.employee.slice(0, 10)}...{pull.employee.slice(-8)}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Requested payout</p>
+                                                                        <p className="text-sm font-bold text-white">{displayAmt} ALEO</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Submitted</p>
+                                                                        <p className="text-xs text-gray-400">{new Date(pull.timestamp).toLocaleString()}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleProcessPull(pull, idx)}
+                                                                    disabled={isTransacting}
+                                                                    className="w-full px-6 py-3 bg-white text-black hover:bg-gray-200 disabled:opacity-50 text-sm font-bold rounded-xl transition-colors"
+                                                                >
+                                                                    {isTransacting ? "Processing..." : "Approve Claim"}
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                onClick={() => handleProcessPull(pull, idx)}
-                                                                disabled={isTransacting}
-                                                                className="mt-4 md:mt-0 px-6 py-2 bg-white text-black hover:bg-gray-200 disabled:opacity-50 text-sm font-bold rounded-lg transition-colors"
-                                                            >
-                                                                {isTransacting ? "Processing..." : "Approve Request"}
-                                                            </button>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
-                                    </GlassCard>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </GlassCard>
+                                    </div>
                                 </motion.div>
                             )}
 

@@ -28,6 +28,73 @@ export async function fetchBlockHeight(): Promise<number> {
     }
 }
 
+function walletErrorMessage(err: any): string {
+    return String(err?.message || err || '')
+}
+
+export function isRetryableWalletError(err: any): boolean {
+    const msg = walletErrorMessage(err).toLowerCase()
+    if (!msg) return false
+    return (
+        msg.includes('no response') ||
+        msg.includes('disconnected port') ||
+        msg.includes('not connected') ||
+        msg.includes('network changed') ||
+        msg.includes('failed to fetch') ||
+        msg.includes('internal json-rpc error') ||
+        msg.includes('timeout')
+    )
+}
+
+async function wait(ms: number) {
+    await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function nextFrame() {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+export async function requestWalletRecords(
+    requestRecordsFn: ((program: string, decrypted: boolean) => Promise<any[]>) | undefined,
+    programId: string,
+    decrypted: boolean,
+    walletAdapter?: any
+): Promise<any[]> {
+    const executeOnce = async (): Promise<any[]> => {
+        await nextFrame()
+
+        if (requestRecordsFn) {
+            const result = await requestRecordsFn(programId, decrypted)
+            if (!result) throw new Error('No response')
+            return result
+        }
+
+        if (walletAdapter?.requestRecords) {
+            const result = await walletAdapter.requestRecords(programId, decrypted)
+            if (!result) throw new Error('No response')
+            return result
+        }
+
+        throw new Error('Wallet does not support record requests')
+    }
+
+    let lastError: any = null
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            return await executeOnce()
+        } catch (err: any) {
+            lastError = err
+            if (!isRetryableWalletError(err) || attempt === 3) {
+                throw err
+            }
+            console.warn(`Transient wallet record-read error, retrying (${attempt}/3):`, err)
+            await wait(250 * attempt)
+        }
+    }
+
+    throw lastError || new Error('No response')
+}
+
 export async function requestTransaction(
     walletAdapter: any,
     publicKey: string,
@@ -57,43 +124,53 @@ export async function requestTransaction(
         return null;
     };
 
-    const isRetryableWalletError = (err: any): boolean => {
-        const msg = String(err?.message || err || '').toLowerCase();
-        if (!msg) return false;
-        return (
-            msg.includes('no response') ||
-            msg.includes('disconnected port') ||
-            msg.includes('not connected') ||
-            msg.includes('network changed')
-        );
-    };
-
     const executeOnce = async (): Promise<string> => {
-        if (walletAdapter.executeTransaction) {
-            const result = await walletAdapter.executeTransaction(transaction);
-            const txId = extractTxId(result);
-            if (!txId) throw new Error("No response");
-            return txId;
+        await nextFrame()
+
+        const methods = [
+            walletAdapter.executeTransaction
+                ? async () => walletAdapter.executeTransaction(transaction)
+                : null,
+            walletAdapter.requestTransaction
+                ? async () => walletAdapter.requestTransaction(transaction)
+                : null,
+        ].filter(Boolean) as Array<() => Promise<any>>
+
+        if (!methods.length) {
+            throw new Error("Wallet adapter does not support executeTransaction");
         }
 
-        if (walletAdapter.requestTransaction) {
-            const result = await walletAdapter.requestTransaction(transaction);
-            const txId = extractTxId(result);
-            if (!txId) throw new Error("No response");
-            return txId;
+        let lastError: any = null
+        for (const method of methods) {
+            try {
+                const result = await method()
+                const txId = extractTxId(result)
+                if (!txId) throw new Error("No response")
+                return txId
+            } catch (err: any) {
+                lastError = err
+                if (!isRetryableWalletError(err)) {
+                    throw err
+                }
+            }
         }
 
-        throw new Error("Wallet adapter does not support executeTransaction");
+        throw lastError || new Error("No response");
     };
 
-    try {
-        return await executeOnce();
-    } catch (err: any) {
-        if (!isRetryableWalletError(err)) throw err;
-        console.warn("Transient wallet error, retrying once:", err);
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        return await executeOnce();
+    let lastError: any = null
+    for (let attempt = 1; attempt <= 4; attempt++) {
+        try {
+            return await executeOnce();
+        } catch (err: any) {
+            lastError = err
+            if (!isRetryableWalletError(err) || attempt === 4) throw err;
+            console.warn(`Transient wallet transaction error, retrying (${attempt}/4):`, err);
+            await wait(350 * attempt);
+        }
     }
+
+    throw lastError || new Error("No response")
 }
 
 export async function waitForTransaction(txId: string): Promise<boolean> {

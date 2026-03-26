@@ -57,7 +57,7 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
             <div className="flex justify-between items-start mb-6 z-10 relative">
                 <div className="flex items-center gap-2 text-gray-500">
                     <Link className="w-4 h-4 rotate-45" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Salary Right</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Payroll Right</span>
                 </div>
                 <div className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest border ${canClaim
                     ? 'bg-[#1A3325] text-[#4ADE80] border-[#4ADE80]/20'
@@ -73,7 +73,7 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
                     <span className="text-4xl font-bold text-white tracking-tight">{displayAmount}</span>
                     <span className="text-sm text-gray-500 font-medium">credits</span>
                 </div>
-                <p className="text-xs text-gray-600 mt-1 pl-0.5">{certificate.recordName === 'VestingRecord' ? 'Total Allocation' : 'Per Interval'}</p>
+                <p className="text-xs text-gray-600 mt-1 pl-0.5">{certificate.recordName === 'VestingRecord' ? 'Total vesting allocation' : 'Claimable interval amount'}</p>
             </div>
 
             {/* Info Grid */}
@@ -86,7 +86,7 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
                 </div>
                 <div className="p-4 bg-black/40 rounded-lg border border-white/5">
                     <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Type</span>
-                    <span className="text-sm font-bold text-gray-200">{certificate.recordName === 'VestingRecord' ? 'Time-Delayed Vesting' : 'Recurring Stream'}</span>
+                    <span className="text-sm font-bold text-gray-200">{certificate.recordName === 'VestingRecord' ? 'Time-Locked Vesting' : 'Recurring Claim Stream'}</span>
                 </div>
             </div>
 
@@ -102,7 +102,7 @@ export function EmployeeClaimComponent({ certificate, currentBlockHeight, onClai
                 >
                     {loading ? 'Processing...' : canClaim ? (
                         <>
-                            Withdraw Funds <ArrowRight className="w-4 h-4 ml-1" />
+                            Continue Claim <ArrowRight className="w-4 h-4 ml-1" />
                         </>
                     ) : (
                         <>
