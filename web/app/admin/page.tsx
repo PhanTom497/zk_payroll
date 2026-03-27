@@ -148,10 +148,10 @@ const HR_TAB_TITLES: Record<AdminTab, string> = {
 
 const HR_TAB_DESCRIPTIONS: Record<AdminTab, string> = {
     dashboard: 'Monitor payroll health, payout trends, budget posture, and tax activity from one operations view.',
-    deposit: 'Fund payroll, prepare private balances, and manage claim-time withholding policy.',
+    deposit: 'Fund payroll, prepare private balances, and manage the payroll tax setup.',
     authorize: 'Create a one-off payout, stablecoin transfer, or vesting schedule for a single teammate.',
     batch: 'Run a full payroll cycle for multiple team members using reusable HR-style templates.',
-    relayer: 'Approve employee pull requests and process the private claim path with withholding applied.',
+    relayer: 'Approve employee withdrawal requests and finish payroll settlement with withholding applied.',
     compliance: 'Generate privacy-preserving payroll summaries for auditors and internal review.',
 }
 
@@ -892,8 +892,12 @@ export default function AdminPage() {
                 ['1field', `${taxBps}u16`, authority],
                 300_000
             )
+            setActiveTaxBps(taxBps)
+            setActiveTaxAuthority(authority)
             toast.success(`Tax policy updated. Tx: ${txId}`)
-            await fetchState()
+            window.setTimeout(() => {
+                void fetchState()
+            }, 2500)
         } catch (err: any) {
             console.error('set_tax_policy failed:', err)
             toast.error('Failed to update tax policy: ' + err.message)
@@ -2186,7 +2190,7 @@ export default function AdminPage() {
                                                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
                                                     <div>
                                                         <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2">Tax Withholding Policy</p>
-                                                        <p className="text-sm text-gray-400">Set the rate used on employee claims and define the wallet that receives authority-side tax receipts.</p>
+                                                        <p className="text-sm text-gray-400">Set the payroll withholding rate and choose the wallet that receives withheld tax amounts.</p>
                                                     </div>
                                                     <div className="text-right shrink-0">
                                                         <p className="text-[11px] uppercase tracking-widest text-zinc-500">Active Rate</p>
@@ -2349,18 +2353,6 @@ export default function AdminPage() {
                             {activeTab === 'batch' && (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                     <div className="space-y-6">
-                                        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4 text-white">
-                                            <div className="flex gap-3">
-                                                <AlertCircle className="w-5 h-5 text-gray-400 shrink-0" />
-                                                <div className="text-sm">
-                                                    <p className="font-semibold mb-1">Payroll Run Mode</p>
-                                                    <p className="text-[#a1a1aa]">
-                                                        This cycle currently executes each employee payout safely one-by-one. Faster multi-currency batching and true parallel rollups remain future upgrades.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         <GlassCard hover={false} className="border-white/5 bg-[#0a0a0a] rounded-3xl p-8">
                                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                                                 <div>
@@ -2428,7 +2420,7 @@ export default function AdminPage() {
                                                     <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
                                                         <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Cycle notes</p>
                                                         <p className="text-sm text-zinc-400 leading-relaxed">
-                                                            Example: `0.5` means 0.5 credits for junior level before role multiplier. Roles in the roster define the multiplier for each line.
+                                                            Example: `0.5` means 0.5 credits for a junior teammate before the role multiplier is applied. Each roster row adjusts that base amount automatically.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -2449,7 +2441,7 @@ export default function AdminPage() {
                                                     </div>
                                                 )}
 
-                                                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_300px] gap-4 items-center">
+                                                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
                                                     <button
                                                         onClick={handleBulkIssue}
                                                         disabled={isTransacting}
@@ -2458,15 +2450,7 @@ export default function AdminPage() {
                                                     >
                                                         {isTransacting ? 'Processing...' : 'Step 3: Run Payroll Cycle'}
                                                     </button>
-                                                    <button
-                                                        onClick={handlePrivacyBatch}
-                                                        disabled={isTransacting}
-                                                        className="w-full py-4 px-6 border border-white/10 rounded-xl bg-black text-white font-bold text-sm lg:text-base hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95"
-                                                        title="Advanced mode with extra privacy routing (beta)."
-                                                    >
-                                                        Assisted Privacy Run (Beta)
-                                                    </button>
-                                                    <div className="flex gap-3 items-center">
+                                                    <div className="space-y-3">
                                                         <Input
                                                             type="text"
                                                             placeholder="Save this payroll setup as..."
@@ -2480,8 +2464,19 @@ export default function AdminPage() {
                                                         >
                                                             Save
                                                         </button>
+                                                        <button
+                                                            onClick={handlePrivacyBatch}
+                                                            disabled={isTransacting}
+                                                            className="px-4 py-4 border border-white/10 rounded-xl bg-black text-white font-semibold text-sm hover:bg-white/5 transition-all disabled:opacity-50 active:scale-95 whitespace-nowrap"
+                                                            title="Legacy compatibility path. It uses the same one-by-one payout flow with an older memo format."
+                                                        >
+                                                            Legacy Compatibility Run
+                                                        </button>
                                                     </div>
                                                 </div>
+                                                <p className="mt-4 text-xs text-zinc-500 leading-relaxed">
+                                                    Use `Run Payroll Cycle` for day-to-day payroll. `Legacy Compatibility Run` exists only to verify older payout memo formatting for backward-compatibility checks.
+                                                </p>
                                             </div>
                                         </GlassCard>
                                     </div>

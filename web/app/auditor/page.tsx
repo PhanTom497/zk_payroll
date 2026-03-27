@@ -64,8 +64,10 @@ export default function AuditorDashboard() {
         }
     }
 
-    // Helper to clean Aleo values
     const cleanValue = (val: string) => val.replace(/u64|u32|field|\.private/g, '')
+    const parseLiteralNumber = (val: string) => parseInt(cleanValue(val).replace(/_/g, ''), 10) || 0
+    const formatCredits = (microcredits: number) =>
+        (microcredits / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 })
 
     return (
         <div className="relative min-h-screen text-white bg-black selection:bg-white/30 overflow-hidden font-sans">
@@ -121,7 +123,7 @@ export default function AuditorDashboard() {
                         {isConnected && (
                             <GlassCard className="p-8 border-white/5 bg-[#0a0a0a] rounded-3xl">
                                 <h2 className="text-xl font-bold mb-3 text-white tracking-tight">Fetch Reports</h2>
-                                <p className="text-sm text-[#a1a1aa] mb-8">Scan the connected auditor wallet for decrypted `AuditReport` records.</p>
+                                <p className="text-sm text-[#a1a1aa] mb-8">Scan this auditor wallet for payroll summary reports that are ready for review.</p>
                                 <button
                                     onClick={fetchReports}
                                     disabled={loading}
@@ -163,7 +165,7 @@ export default function AuditorDashboard() {
                                     <GlassCard className="p-16 text-center flex flex-col items-center justify-center border-dashed border-white/5 bg-[#0a0a0a]/50 rounded-3xl min-h-[400px]">
                                         <Database className="w-20 h-20 text-white/20 mb-8" />
                                         <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">No Reports Found</h3>
-                                        <p className="text-[#a1a1aa] max-w-md text-lg">No decrypted `AuditReport` records are visible to this wallet yet.</p>
+                                        <p className="text-[#a1a1aa] max-w-md text-lg">No payroll summary reports are visible to this wallet yet.</p>
                                     </GlassCard>
                                 )}
 
@@ -195,7 +197,7 @@ export default function AuditorDashboard() {
                                                 <div className="p-6 rounded-2xl bg-[#050505] border border-white/5 group-hover:bg-white/5 transition-colors group-hover:border-white/10 relative overflow-hidden">
                                                     <div className="text-xs text-[#a1a1aa] font-bold uppercase tracking-widest mb-3 relative z-10">Total Volume</div>
                                                     <div className="text-4xl font-black font-mono tracking-tighter text-white flex items-baseline gap-2 relative z-10">
-                                                        {cleanValue(report.data.total_spent)}
+                                                        {formatCredits(parseLiteralNumber(report.data.total_spent))}
                                                         <span className="text-base font-sans font-bold text-gray-400 uppercase tracking-widest ml-1">Credits</span>
                                                     </div>
                                                 </div>

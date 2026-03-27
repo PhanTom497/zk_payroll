@@ -245,7 +245,7 @@ export default function TaxAuthorityPage() {
                         Tax Receipt Vault
                     </h1>
                     <p className="text-[#a1a1aa] text-lg max-w-3xl">
-                        Review authority-owned withholding receipts, reconcile collected totals, and export structured JSON records from the tax authority wallet.
+                        Review withheld payroll amounts, confirm collected totals, and download receipt files for record keeping.
                     </p>
                 </div>
 
@@ -258,7 +258,7 @@ export default function TaxAuthorityPage() {
                         </div>
                         <h2 className="text-2xl text-white font-bold mb-3 tracking-tight">Wallet Not Connected</h2>
                         <p className="text-[#a1a1aa] text-base max-w-md text-center mb-8">
-                            Connect the configured tax authority wallet to review `TaxVaultRecord` receipts and withholding activity.
+                            Connect the assigned tax authority wallet to review withheld payroll amounts and download receipt files.
                         </p>
                         <WalletConnectButton />
                     </GlassCard>
@@ -267,7 +267,7 @@ export default function TaxAuthorityPage() {
                         <RefreshCw className="w-16 h-16 text-white/20 mb-6 animate-spin" />
                         <h3 className="text-2xl font-bold mb-3 text-white tracking-tight">Validating Tax Authority Access</h3>
                         <p className="text-[#a1a1aa] max-w-xl">
-                            Verifying the on-chain authority assignment and syncing payroll tax policy details.
+                            Checking the assigned tax authority wallet and loading the current payroll withholding settings.
                         </p>
                     </GlassCard>
                 ) : !taxAuthorityAddress ? (
@@ -302,7 +302,7 @@ export default function TaxAuthorityPage() {
                                     {publicKey}
                                 </div>
                                 <p className="text-sm text-[#71717a] mt-3">
-                                    This wallet matches the on-chain `tax_authority` mapping for payroll withholding receipts.
+                                    This is the wallet currently assigned to receive withheld payroll amounts.
                                 </p>
                             </GlassCard>
 
@@ -315,7 +315,7 @@ export default function TaxAuthorityPage() {
                                     #{currentHeight > 0 ? currentHeight : '---'}
                                 </div>
                                 <p className="text-sm text-[#71717a] mt-3">
-                                    Current withholding rate: {(activeTaxBps / 100).toFixed(2)}% on employee claim payouts.
+                                    Current payroll withholding rate: {(activeTaxBps / 100).toFixed(2)}% on employee withdrawals.
                                 </p>
                             </GlassCard>
                         </div>
@@ -330,13 +330,13 @@ export default function TaxAuthorityPage() {
                             <GlassCard className="border-white/5 bg-[#0a0a0a] p-6 rounded-3xl">
                                 <p className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-wider mb-3">Wallet Receipts Total</p>
                                 <p className="text-4xl font-black text-white">{formatCredits(totalWithheldFromWallet)}</p>
-                                <p className="text-sm text-[#71717a] mt-2">Only receipts visible to this authority wallet are counted here</p>
+                                <p className="text-sm text-[#71717a] mt-2">Only receipts available to this wallet are included here</p>
                             </GlassCard>
 
                             <GlassCard className="border-white/5 bg-[#0a0a0a] p-6 rounded-3xl">
                                 <p className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-wider mb-3">Employees Covered</p>
                                 <p className="text-4xl font-black text-white">{uniqueEmployees}</p>
-                                <p className="text-sm text-[#71717a] mt-2">Unique employee wallets represented in scanned receipts</p>
+                                <p className="text-sm text-[#71717a] mt-2">Unique employees included in the scanned receipt list</p>
                             </GlassCard>
 
                             <GlassCard className="border-white/5 bg-[#0a0a0a] p-6 rounded-3xl">
@@ -344,7 +344,7 @@ export default function TaxAuthorityPage() {
                                 <p className="text-2xl font-black text-white leading-tight">
                                     {latestReceipt?.timestamp ? new Date(latestReceipt.timestamp * 1000).toLocaleString() : 'No receipt yet'}
                                 </p>
-                                <p className="text-sm text-[#71717a] mt-2">Derived from encoded payment ids</p>
+                                <p className="text-sm text-[#71717a] mt-2">Most recent withholding receipt found in this wallet</p>
                             </GlassCard>
                         </div>
 
@@ -358,7 +358,7 @@ export default function TaxAuthorityPage() {
                                         Withholding Receipt Ledger
                                     </h2>
                                     <p className="text-sm text-[#a1a1aa] mt-2 max-w-2xl">
-                                        Scan decrypted `TaxVaultRecord` entries owned by this authority wallet and export each one as structured JSON evidence.
+                                        Scan this wallet for payroll withholding receipts and export each one as a receipt file when needed.
                                     </p>
                                 </div>
                                 <button
@@ -372,7 +372,7 @@ export default function TaxAuthorityPage() {
                             </div>
 
                             <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-[#a1a1aa]">
-                                Data Scope: this portal shows only receipts visible to the currently connected tax authority wallet. Admin dashboards can see policy and totals, but not these private authority-owned records.
+                                This view only shows receipts available to the connected tax authority wallet. Admin dashboards can see payroll policy and totals, but not these authority-owned receipt details.
                             </div>
                         </GlassCard>
 
@@ -440,7 +440,7 @@ export default function TaxAuthorityPage() {
                             ) : (
                                 <div className="p-16 text-center text-[#a1a1aa] text-sm relative z-10">
                                     <Users className="w-8 h-8 text-white/20 mx-auto mb-4" />
-                                    No `TaxVaultRecord` receipts found yet. Process a taxed payroll claim and scan again with the authority wallet.
+                                    No withholding receipts found yet. Process a taxed payroll claim and scan again with the authority wallet.
                                 </div>
                             )}
                         </GlassCard>

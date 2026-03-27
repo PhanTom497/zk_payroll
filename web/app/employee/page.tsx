@@ -28,6 +28,8 @@ interface SalaryRecord {
     amount: string
     payment_id: string
     payroll_id: string
+    payment_date: string
+    payment_time: string
 }
 
 interface TaxPaidProofEntry {
@@ -51,12 +53,17 @@ const parsePaymentId = (paymentIdRecordString: string) => {
         // Sanity check timestamp (between Jan 1 2024 and Jan 1 2030)
         if (timestamp > 1704067200 && timestamp < 1893456000) {
             const currency = currencyCode === '1' ? 'CREDITS' : currencyCode === '2' ? 'USDCx' : 'USAD';
-            const date = new Date(timestamp * 1000).toLocaleString();
-            return { currency, date, id };
+            const displayDate = new Date(timestamp * 1000)
+            return {
+                currency,
+                date: displayDate.toLocaleDateString(),
+                time: displayDate.toLocaleTimeString(),
+                id
+            };
         }
     }
 
-    return { currency: 'CREDITS (Legacy)', date: 'Time Unavailable', id };
+    return { currency: 'CREDITS (Legacy)', date: 'Date unavailable', time: 'Time unavailable', id };
 }
 
 const parseLiteralNumber = (value?: string) => {
@@ -151,12 +158,15 @@ export default function EmployeePage() {
                     const amountRaw = getRecordField(rec, 'amount');
                     const paymentIdRaw = getRecordField(rec, 'payment_id');
                     const payrollIdRaw = getRecordField(rec, 'payroll_id');
+                    const parsed = parsePaymentId(paymentIdRaw || 'unknown')
 
                     return {
                         id: rec.serialNumber || 'unknown',
                         amount: amountRaw || '0u64',
                         payment_id: paymentIdRaw || 'unknown',
-                        payroll_id: payrollIdRaw || 'unknown'
+                        payroll_id: payrollIdRaw || 'unknown',
+                        payment_date: parsed.date,
+                        payment_time: parsed.time,
                     };
                 })
             setSalaryRecords(payments)
@@ -400,8 +410,8 @@ export default function EmployeePage() {
                                 <div>
                                     <h2 className="text-2xl font-bold text-white tracking-tight">Private Payment History</h2>
                                     <p className="text-sm text-[#a1a1aa] mt-2 max-w-2xl">
-                                        Direct payroll payouts appear here as encrypted `SalaryRecord` vouchers in your wallet.
-                                        <span className="block mt-1 italic text-gray-500">Relayer-processed pull claims settle privately too, but may not always create the same history memo shape.</span>
+                                        Completed payroll payments appear here after they are settled to your wallet.
+                                        <span className="block mt-1 text-gray-500">Some claim-based payouts may arrive without the same payment memo details, but the amount and payroll reference remain visible here whenever a history entry is created.</span>
                                     </p>
                                 </div>
                             </div>
@@ -414,6 +424,7 @@ export default function EmployeePage() {
                                                 <tr>
                                                     <th className="px-6 py-6 font-semibold">Amount</th>
                                                     <th className="px-6 py-6 font-semibold">Payment ID</th>
+                                                    <th className="px-6 py-6 font-semibold">Date &amp; Time</th>
                                                     <th className="px-6 py-6 font-semibold">Payroll ID</th>
                                                     <th className="px-6 py-6 font-semibold text-right">Status</th>
                                                 </tr>
@@ -427,9 +438,12 @@ export default function EmployeePage() {
                                                                 {(Number(rec.amount.replace('.private', '').replace('u64', '')) / 1000000).toLocaleString(undefined, { maximumFractionDigits: 6 })} <span className="text-xs text-blue-400 font-medium uppercase ml-1">{parsed.currency}</span>
                                                             </td>
                                                             <td className="px-6 py-5 text-[#a1a1aa] group-hover:text-white transition-colors">
+                                                                <span className="font-mono">{parsed.id.length > 15 ? `${parsed.id.slice(0, 10)}...${parsed.id.slice(-4)}` : parsed.id}</span>
+                                                            </td>
+                                                            <td className="px-6 py-5 text-[#a1a1aa] group-hover:text-white transition-colors">
                                                                 <div className="flex flex-col">
-                                                                    <span className="font-mono">{parsed.id.length > 15 ? `${parsed.id.slice(0, 10)}...${parsed.id.slice(-4)}` : parsed.id}</span>
-                                                                    <span className="text-[10px] text-gray-500 tracking-wide mt-0.5">{parsed.date}</span>
+                                                                    <span>{rec.payment_date}</span>
+                                                                    <span className="text-[10px] text-gray-500 tracking-wide mt-0.5">{rec.payment_time}</span>
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-5 font-mono text-[#a1a1aa] group-hover:text-white transition-colors">
@@ -463,7 +477,7 @@ export default function EmployeePage() {
                                 <div>
                                     <h2 className="text-2xl font-bold text-white tracking-tight">Tax Withholding Proofs</h2>
                                     <p className="text-sm text-[#a1a1aa] mt-2 max-w-2xl">
-                                        Whenever a taxed payroll claim is processed, you can export the employee-side proof JSON from here.
+                                        When payroll withholding is applied, you can download your proof file from here for your records.
                                     </p>
                                 </div>
                             </div>
