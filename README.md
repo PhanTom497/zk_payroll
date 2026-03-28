@@ -15,7 +15,7 @@
 ## 🌐 Live Links
 
 - **Live app:** [https://zk-payroll.vercel.app/](https://zk-payroll.vercel.app/)
-- **Demo video:** [https://youtu.be/4R66Od57dDc](https://youtu.be/4R66Od57dDc)
+- **Demo video:** [https://youtu.be/AFNqGmKYIfg](https://youtu.be/AFNqGmKYIfg)
 - **Frontend docs:** [https://zk-payroll.vercel.app/docs](https://zk-payroll.vercel.app/docs)
 
 ---
