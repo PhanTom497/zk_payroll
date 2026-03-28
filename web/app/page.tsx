@@ -69,13 +69,13 @@ export default function Home() {
                         loop
                         muted
                         playsInline
-                        className="w-full h-full object-cover opacity-60"
-                        style={{ filter: "brightness(1) contrast(1.1) saturate(1.1)" }}
+                        className="w-full h-full object-cover opacity-82"
+                        style={{ filter: "brightness(1.04) contrast(1.06) saturate(1.08)" }}
                     >
-                        <source src="/assets/hero-bg.mp4" type="video/mp4" />
+                        <source src="/assets/8733055-uhd_3840_2160_30fps.mp4" type="video/mp4" />
                     </video>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/52 via-black/12 to-transparent pointer-events-none" />
                 </motion.div>
 
                 <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-12 pt-8 md:pt-12">

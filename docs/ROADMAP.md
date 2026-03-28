@@ -109,14 +109,20 @@ Status: Planned
 
 ### 5.1 Advanced Batch Processing
 
-Goal:
-- Move beyond the current sequential payroll runner into a stronger batch-execution model.
+Focus:
+- Move ZK Payroll from a safe sequential payroll runner to a more scalable batch-execution system.
 
 Planned work:
-- True single-transition parallel batch proving.
-- Native multi-currency batch execution.
-- Threshold authorization over a batch root instead of per-transaction approval.
-- Fewer repeated wallet approvals for large payroll runs.
+- True batch payroll execution:
+  Re-architect payroll issuance so multiple employee payouts can be processed as a stronger batch flow rather than one wallet approval per employee.
+- Multi-currency batch support:
+  Extend batch payroll to support native ALEO, `USDCx`, and `USAD` in larger payroll runs instead of limiting richer batch behavior to future manual expansion.
+- Reduced approval friction:
+  Design a model that reduces repeated wallet popups and makes large payroll cycles faster and more practical for real operators.
+- Stronger batch authorization:
+  Explore batch-level authorization patterns, such as approving a batch root or consolidated batch intent, rather than treating every payout as an isolated action.
+- Scalable execution UX:
+  Upgrade the admin payroll-cycle experience so larger rosters, more currencies, and bigger payroll runs remain understandable, safe, and easy to review.
 
 ## Next Practical Priorities
 
@@ -140,10 +146,20 @@ Planned work:
 ### Wave 6: HR / Oracle Integrations
 Status: Planned
 
-Possible direction:
-- Privacy-preserving sync with Web2 HR systems.
-- Off-chain employment attestations converted into private on-chain salary rights.
-- Stronger automation for payroll roster updates.
+Focus:
+- Connect ZK Payroll to real-world HR and business systems so payroll data can flow in without exposing sensitive employee information publicly.
+
+Planned work:
+- HR system connectivity:
+  Integrate with external HR-style systems so payroll rosters, roles, and compensation inputs can be synced into ZK Payroll more efficiently.
+- Private employment attestations:
+  Introduce a model where off-chain employment or compensation approvals can be turned into privacy-preserving on-chain payroll rights.
+- Automated payroll data ingestion:
+  Reduce manual admin entry by allowing verified workforce data to feed payroll setup and recurring payroll generation.
+- Better roster lifecycle management:
+  Support smoother updates for onboarding, offboarding, salary changes, and recurring employment-state changes without requiring fully manual recreation of payroll state.
+- Bridge between Web2 HR and ZK Payroll:
+  Make ZK Payroll feel less like an isolated blockchain app and more like a privacy-preserving payroll layer that can plug into real business workflows.
 
 ### Wave 7: Enterprise Funding and Fiat Rails
 Status: Planned

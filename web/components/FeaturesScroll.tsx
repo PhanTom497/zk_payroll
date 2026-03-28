@@ -98,7 +98,7 @@ export default function FeaturesScroll() {
                             transition={{ duration: 0.1 }}
                             className="absolute inset-0 rounded-[24px] overflow-hidden bg-[#2a1b38]"
                         >
-                            <img src="/assets/feature-bg.jpg" alt="Features" className="w-full h-full object-cover" />
+                            <img src="/assets/feature-bg.png" alt="Features" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/10" />
                         </motion.div>
 
@@ -152,7 +152,7 @@ export default function FeaturesScroll() {
                                                     left: i === 0 ? "0%" : i === 1 ? "-100%" : "-200%" 
                                                 }}
                                             >
-                                                <img src="/assets/feature-bg.jpg" alt={`Feature ${i+1}`} className="w-full h-full object-cover" />
+                                                <img src="/assets/feature-bg.png" alt={`Feature ${i+1}`} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="absolute inset-0 bg-black/10" />
                                             <div className="absolute inset-0 border border-white/5" />
